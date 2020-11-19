@@ -106,9 +106,19 @@ contract BondingCurve {
 		) external view returns (uint256) { 
 		uint256 newX = _x.add(shardAmount);
 		uint256 newY = k.div(newX);
-		uint weiPayout = _y.sub(newY);
+		uint256 weiPayout = _y.sub(newY);
 
 		return weiPayout;
+	} 
+
+	function calcShardPayoutForSellEth (
+		uint256 ethAmount
+		) external view returns (uint256) { 
+		uint256 newY = _y.add(ethAmount);
+		uint256 newX = k.div(newY);
+		uint256 shardPayout = _x.sub(newX);
+
+		return shardPayout;
 	} 
 
 	function supplyShards(
@@ -153,7 +163,29 @@ contract BondingCurve {
 	function withdrawSuppliedEther(
 		uint256 ethAmount
 		) {
+		require(
+			ethAmount <= _mapSuppliedEth[msg.sender],
+			"Cannot withdraw more than deposited amount of eth"
+			);
 
+		uint256 memory ethToSellOnMarket = 0;
+
+		if (_ethInPoolInWei < ethAmount) {
+			ethToSellOnMarket = ethAmount.sub(_ethInPoolInWei);
+		}
+
+		uint256 memory shardPayout = calcShardPayoutForSellEth(ethToSellOnMarket);
+
+		require(shardPayout <= _shardsInPoolInWei);
+
+		_totalSuppliedEth -= ethAmount;
+		_mapSuppliedEth[msg.sender] -= ethAmount;
+
+		_ethInPoolInWei -= ethAmount.sub(ethToSellOnMarket);
+		// guard against msg.sender being contract
+		(bool success, ) = msg.sender.call.value(ethAmount.sub(ethToSellOnMarket))("");
+		require(success, "[sell] ETH transfer failed.");
+		buy(shardPayout);
 	}
 
 	function currentPrice() external returns (uint) {
