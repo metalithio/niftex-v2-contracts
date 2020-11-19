@@ -13,8 +13,14 @@ contract BondingCurve {
 	uint256 internal _y; // Hypothetical ETH to satisfy k
 	uint256 internal _x; // Shards in the curve
 	uint256 internal _k;
+	uint256 internal _ethInPoolInWei;
+	uint256 internal _shardsInPoolInWei;
+	uint256 internal _totalSuppliedEth;
+	uint256 internal _totalSuppliedShards;
 
 	address internal _shardRegistryAddress;
+	mapping(address => uint256) internal _mapETHLPTokens;
+	mapping(address => uint256) internal _mapShardLPTokens;
 
 
 	function initialize(
@@ -32,13 +38,19 @@ contract BondingCurve {
 		_x = unsoldShards;
 		_y = unsoldShards.mul(initialPriceInWei);
 		_k = _x.mul(_y);
-
+		_ethInPoolInWei = msg.value;
+		_shardsInPoolInWei = suppliedShards;
 		_shardRegistryAddress = shardRegistryAddress;
+		_mapETHLPTokens[msg.sender] = msg.value;
+		_mapShardLPTokens[msg.sender] = suppliedShards;
+		_totalSuppliedEth = msg.value;
+		_totalSuppliedShards = suppliedShards;
 	}
 
 	function buy(
 		uint256 shardAmount,
 	) public {
+		require (shardAmount >= _shardsInPoolInWei);
 		uint256 newX = _x.sub(shardAmount);
 		uint256 newY = k.div(newX);
 		uint weiRequired = newY.sub(_y);
@@ -49,6 +61,10 @@ contract BondingCurve {
 		_x = newX;
 
 		ERC20(_shardRegistryAddress).transfer(address(this), msg.sender, shardAmount);
+		_ethInPoolInWei += weiRequired;
+		_shardsInPoolInWei -= shardAmount;
+
+		// refund extra ETH back to buyers
 		if (msg.value > weiRequired) {
 			// guard against msg.sender being contract
 			(bool success, ) = msg.sender.call.value(msg.value.sub(weiRequired))("");
@@ -66,10 +82,15 @@ contract BondingCurve {
 		uint weiPayout = _y.sub(newY);
 
 		require(weiPayout >= minEthForShardAmount);
+		require(weiPayout <= _ethInPoolInWei);
 
 		_y = newY;
 		_x = newX;
 
+		ERC20(_shardRegistryAddress).transferFrom(msg.sender, address(this), shardAmount);
+
+		_ethInPoolInWei -= weiPayout;
+		_shardsInPoolInWei += shardAmount;
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call.value(weiPayout)("");
 		require(success, "[sell] ETH transfer failed.");
