@@ -19,8 +19,8 @@ contract BondingCurve {
 	uint256 internal _totalSuppliedShards;
 
 	address internal _shardRegistryAddress;
-	mapping(address => uint256) internal _mapETHLPTokens;
-	mapping(address => uint256) internal _mapShardLPTokens;
+	mapping(address => uint256) internal _mapSuppliedEth;
+	mapping(address => uint256) internal _mapSuppliedShards;
 
 
 	function initialize(
@@ -41,15 +41,15 @@ contract BondingCurve {
 		_ethInPoolInWei = msg.value;
 		_shardsInPoolInWei = suppliedShards;
 		_shardRegistryAddress = shardRegistryAddress;
-		_mapETHLPTokens[msg.sender] = msg.value;
-		_mapShardLPTokens[msg.sender] = suppliedShards;
+		_mapSuppliedEth[msg.sender] = msg.value;
+		_mapSuppliedShards[msg.sender] = suppliedShards;
 		_totalSuppliedEth = msg.value;
 		_totalSuppliedShards = suppliedShards;
 	}
 
 	function buy(
 		uint256 shardAmount,
-	) public {
+	) public payable {
 		require (shardAmount >= _shardsInPoolInWei);
 		uint256 newX = _x.sub(shardAmount);
 		uint256 newY = k.div(newX);
@@ -81,7 +81,10 @@ contract BondingCurve {
 		uint256 newY = k.div(newX);
 		uint weiPayout = _y.sub(newY);
 
-		require(weiPayout >= minEthForShardAmount);
+		if (minEthForShardAmount > 0) {
+			require(weiPayout >= minEthForShardAmount);
+		}
+		
 		require(weiPayout <= _ethInPoolInWei);
 
 		_y = newY;
@@ -94,24 +97,62 @@ contract BondingCurve {
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call.value(weiPayout)("");
 		require(success, "[sell] ETH transfer failed.");
+
+
 	}
+
+	function calcEthPayoutForSellShards (
+		uint256 shardAmount
+		) external view returns (uint256) { 
+		uint256 newX = _x.add(shardAmount);
+		uint256 newY = k.div(newX);
+		uint weiPayout = _y.sub(newY);
+
+		return weiPayout;
+	} 
 
 	function supplyShards(
 		uint256 shardAmount
-	) {
+	) public {
 		ERC20(_shardRegistryAddress).transferFrom(owner, address(this), shardAmount);
-
+		_mapSuppliedShards[msg.sender] += shardAmount;
+		_totalSuppliedShards += shardAmount;
 	}
 
-	function supplyEther() {
-
+	function supplyEther() public payable {
+		_mapSuppliedEth[msg.sender] = msg.value;
+		_totalSuppliedEth += msg.value;
 	}
 
-	function withdrawSuppliedToken() {
+	function withdrawSuppliedShards(
+		uint256 shardAmount
+	) {
+		require(
+			shardAmount <= _mapSuppliedShards[msg.sender],
+			"Cannot withdraw more than deposited amount of shards"
+			);
+		
+		uint256 memory shardsToSellOnMarket = 0;
 
+		if (_shardsInPoolInWei < shardAmount) {
+			shardsToSellOnMarket = shardAmount - _shardsInPoolInWei;
+		}
+
+		uint256 memory ethPayout = calcEthPayoutForSellShards(shardsToSellOnMarket);
+
+		require(ethPayout <= _ethInPoolInWei);
+
+		_totalSuppliedShards -= shardAmount;
+		_mapSuppliedShards[msg.sender] -= shardAmount;
+
+		_shardsInPoolInWei -= shardAmount.sub(shardsToSellOnMarket);
+		ERC20(_shardRegistryAddress).transferFrom(address(this), msg.sender, shardAmount.sub(shardsToSellOnMarket));
+		sell(shardsToSellOnMarket, 0);
 	}
 
-	function withdrawSuppliedEther() {
+	function withdrawSuppliedEther(
+		uint256 ethAmount
+		) {
 
 	}
 
