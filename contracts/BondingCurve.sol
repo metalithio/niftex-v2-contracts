@@ -185,6 +185,7 @@ contract BondingCurve {
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call.value(ethAmount.sub(ethToSellOnMarket))("");
 		require(success, "[sell] ETH transfer failed.");
+		// oh well need another buy shards with eth input for this function...
 		buy(shardPayout);
 	}
 
