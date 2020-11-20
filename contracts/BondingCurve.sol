@@ -26,7 +26,7 @@ contract BondingCurve {
 	mapping(address => uint256) internal _mapSuppliedEth;
 	mapping(address => uint256) internal _mapSuppliedShards;
 
-	IERC20 _shardRegistry;
+	IERC20 internal _shardRegistry;
 
 
 	function initialize(
@@ -149,8 +149,9 @@ contract BondingCurve {
 
 		uint256 shardsToSell;
 
-		if (_shardRegistry.balanceOf(address(this)) < shardAmount) {
-			shardsToSell = shardAmount.sub(_shardRegistry.balanceOf(address(this)));
+		uint256 curveBalance = _shardRegistry.balanceOf(address(this));
+		if (curveBalance < shardAmount) {
+			shardsToSell = shardAmount.sub(curveBalance);
 		}
 
 		uint256 ethPayout = calcEthPayoutForShardSale(shardsToSell);
