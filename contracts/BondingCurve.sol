@@ -165,7 +165,10 @@ contract BondingCurve {
 		_mapSuppliedShards[msg.sender] -= shardAmount;
 
 		_shardRegistry.transfer(msg.sender, shardAmount.sub(shardsToSell));
-		sellShards(shardsToSell, 0);
+		(bool success, ) = msg.sender.call{
+			value: ethPayout
+		}("");
+		require(success, "[buy] ETH transfer failed.");
 	}
 
 	// !TODO liquidity lock for owner?
@@ -193,8 +196,7 @@ contract BondingCurve {
 			value: ethAmount.sub(ethToSellOnMarket)
 		}("");
 		require(success, "[sell] ETH transfer failed.");
-		// oh well need another buy shards with eth input for this function...
-		buyShards(shardPayout);
+		_shardRegistry.transfer(msg.sender, shardPayout);
 	}
 
 	function currentPrice() external view returns (uint) {
