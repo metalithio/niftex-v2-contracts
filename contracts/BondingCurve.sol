@@ -61,13 +61,16 @@ contract BondingCurve {
 	function buyShards(
 		uint256 shardAmount
 	) public payable {
-		require(shardAmount >= _shardRegistry.balanceOf(address(this)));
+		require(
+			_shardRegistry.balanceOf(address(this)) >= shardAmount,
+			"1"
+		);
 		// !TODO require to check if newX < supply?
 		uint256 newX = _x.sub(shardAmount);
 		uint256 newY = _k.div(newX);
 		uint weiRequired = newY.sub(_y);
-		require(weiRequired <= msg.value);
-		require(msg.value >= weiRequired);
+		require(weiRequired <= msg.value, "2");
+		require(msg.value >= weiRequired, "3");
 
 		_y = newY;
 		_x = newX;
@@ -113,9 +116,24 @@ contract BondingCurve {
 
 	}
 
-	function calcEthPayoutForShardSale (
-		uint256 shardAmount
-	) public view returns (uint256) {
+	// could also be done offline
+	function calcEthRequiredForShardBuy(uint256 shardAmount) public view returns (uint256) {
+		uint256 newX = _x.sub(shardAmount);
+		uint256 newY = _k.div(newX);
+		uint256 ethRequired = newY.sub(_y);
+
+		return ethRequired;
+	}
+
+	function calcShardRequiredForEthSale(uint256 ethAmount) public view returns (uint256) {
+		uint256 newY = _y.sub(ethAmount);
+		uint256 newX = _k.div(newY);
+		uint256 shardsRequired = newX.sub(_x);
+
+		return shardsRequired;
+	}
+
+	function calcEthPayoutForShardSale(uint256 shardAmount) public view returns (uint256) {
 		uint256 newX = _x.add(shardAmount);
 		uint256 newY = _k.div(newX);
 		uint256 weiPayout = _y.sub(newY);
@@ -123,9 +141,7 @@ contract BondingCurve {
 		return weiPayout;
 	}
 
-	function calcShardPayoutForEthSale (
-		uint256 ethAmount
-	) public view returns (uint256) {
+	function calcShardPayoutForEthSale(uint256 ethAmount) public view returns (uint256) {
 		uint256 newY = _y.add(ethAmount);
 		uint256 newX = _k.div(newY);
 		uint256 shardPayout = _x.sub(newX);
@@ -207,5 +223,9 @@ contract BondingCurve {
 
 	function currentPrice() external view returns (uint) {
 		return _y.div(_x);
+	}
+
+	function getCurveCoordinates() external view returns (uint, uint, uint) {
+		return (_x, _y, _k);
 	}
 }
