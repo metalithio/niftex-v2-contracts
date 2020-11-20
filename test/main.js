@@ -4,46 +4,58 @@ const ShardRegistry = artifacts.require("ERC20PresetMinterPauser");
 const SHARD_SUPPLY = 1000;
 const UNSOLD_SHARDS = 700;
 const SUPPLIED_SHARDS = 500;
+const SUPPLIED_ETH = 10;
 const SHARD_REGISTRY_ADDRESS = '';
-const INITIAL_PRICE_WEI = 10**18; // 1 ETH?
+const INITIAL_PRICE_WEI = 1; // 1 ETH?
 
 let registryInstance;
 let curveInstance;
 
-contract("Bonding curve test", async accounts => {
+contract("Bonding curve setup", async accounts => {
 
-	it("should return a shard balance of 1000", async () => {
-		curveInstance = await BondingCurve.deployed();
+	it("registry should return a shard balance of 1000", async () => {
 		registryInstance = await ShardRegistry.new(
 			'TestTokens',
 			'TEST',
 			{ from: accounts[0] }
 		);
-		await registryInstance.mint(accounts[0], 1000);
+		curveInstance = await BondingCurve.new({ from: accounts[0] });
+		await registryInstance.mint(accounts[0], SHARD_SUPPLY);
 		const balance = await registryInstance.balanceOf.call(accounts[0]);
-		assert.equal(balance.valueOf(), 1000);
+		assert.equal(balance.valueOf(), SHARD_SUPPLY);
 	});
 
-	it("should return an approved balance of 500", async () => {
-		await registryInstance.approve(curveInstance.address, 500);
+	it("registry should return an approved balance of 500", async () => {
+		// curveInstance = await BondingCurve.deployed();
+		await registryInstance.approve(curveInstance.address, SUPPLIED_SHARDS);
 		const approved = await registryInstance.allowance.call(
 			accounts[0],
 			curveInstance.address
 		);
-		assert.equal(approved.valueOf(), 500);
+		assert.equal(approved.valueOf(), SUPPLIED_SHARDS);
 	});
 
+	it(`curve should return price ${INITIAL_PRICE_WEI} after setup`, async () => {
+		await curveInstance.initialize(
+			UNSOLD_SHARDS,
+			SUPPLIED_SHARDS,
+			registryInstance.address,
+			accounts[0], // owner
+			INITIAL_PRICE_WEI,
+			{ value: web3.utils.toWei(SUPPLIED_ETH.toString(), "ether") }
+		);
+		const price = await curveInstance.currentPrice();
+		assert.equal(price.valueOf(), INITIAL_PRICE_WEI);
+	});
 
-	// it("should return price 1/300", async () => {
-	// 	const instance = await BondingCurve.deployed();
-	// 	await BondingCurve.initialize(
-	// 		UNSOLD_SHARDS,
-	// 		SUPPLIED_SHARDS,
-	// 		SHARD_REGISTRY_ADDRESS,
-	// 		accounts[0] //owner,
-	// 		INITIAL_PRICE_WEI
-	// 	);
-	// 	const price = await BondingCurve.currentPrice();
-	// 	console.log(price)
-	// });
+	it(`curve should return shards balance of ${SUPPLIED_SHARDS} after setup`, async () => {
+		const balance = await registryInstance.balanceOf.call(curveInstance.address);
+		assert.equal(balance.valueOf(), SUPPLIED_SHARDS);
+	});
+
+	it(`curve should return eth balance of ${SUPPLIED_ETH} after setup`, async () => {
+		let balance = await web3.eth.getBalance(curveInstance.address);
+		balance = web3.utils.fromWei(balance, 'ether');
+		assert.equal(balance.valueOf(), SUPPLIED_ETH);
+	});
 });

@@ -36,12 +36,18 @@ contract BondingCurve {
 		address owner,
 		uint256 initialPriceInWei
 	) public payable {
-		require(msg.sender == owner);
+		require(
+			msg.sender == owner,
+			"[initialize] only owner can initialize"
+		);
 		// assumes ERC20.approve
 		// can also be used for WETH
 		// wrap in require?
-		require(_shardRegistry.transferFrom(owner, address(this), suppliedShards));
 		_shardRegistry = IERC20(shardRegistryAddress);
+		require(
+			_shardRegistry.transferFrom(owner, address(this), suppliedShards),
+			"[initialize] initialization token transfer failed"
+		);
 		_x = unsoldShards;
 		_y = unsoldShards.mul(initialPriceInWei);
 		_k = _x.mul(_y);
