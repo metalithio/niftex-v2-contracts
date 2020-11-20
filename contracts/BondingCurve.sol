@@ -17,6 +17,7 @@ contract BondingCurve {
 	uint256 internal _x; // Shards in the curve
 	uint256 internal _k;
 
+	// are these needed? all we do is add subtract
 	uint256 internal _totalSuppliedEth;
 	uint256 internal _totalSuppliedShards;
 
@@ -106,7 +107,7 @@ contract BondingCurve {
 
 	}
 
-	function calcEthPayoutForSellShards (
+	function calcEthPayoutForShardSale (
 		uint256 shardAmount
 	) public view returns (uint256) {
 		uint256 newX = _x.add(shardAmount);
@@ -116,7 +117,7 @@ contract BondingCurve {
 		return weiPayout;
 	}
 
-	function calcShardPayoutForSellEth (
+	function calcShardPayoutForEthSale (
 		uint256 ethAmount
 	) public view returns (uint256) {
 		uint256 newY = _y.add(ethAmount);
@@ -128,6 +129,7 @@ contract BondingCurve {
 
 	function supplyShards(uint256 shardAmount) external {
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
+		// safemath?
 		_mapSuppliedShards[msg.sender] += shardAmount;
 		_totalSuppliedShards += shardAmount;
 	}
@@ -139,22 +141,22 @@ contract BondingCurve {
 	}
 
 	// !TODO liquidity lock for owner?
-	function withdrawSuppliedShards(
-		uint256 shardAmount
-	) external {
+	function withdrawSuppliedShards(uint256 shardAmount) external {
 		require(
 			shardAmount <= _mapSuppliedShards[msg.sender],
 			"Cannot withdraw more than deposited amount of shards"
 		);
 
-		uint256 shardsToSell = 0;
+		uint256 shardsToSell;
 
 		if (_shardRegistry.balanceOf(address(this)) < shardAmount) {
 			shardsToSell = shardAmount.sub(_shardRegistry.balanceOf(address(this)));
 		}
 
-		uint256 ethPayout = calcEthPayoutForSellShards(shardsToSell);
+		uint256 ethPayout = calcEthPayoutForShardSale(shardsToSell);
 
+		// !WARNING are there edge cases where this could fail and the person is blocked from withdrawing?
+		// is also checked in sellShards
 		require(ethPayout <= address(this).balance);
 
 		// safemath?
@@ -178,7 +180,7 @@ contract BondingCurve {
 			ethToSellOnMarket = ethAmount.sub(address(this).balance);
 		}
 
-		uint256 shardPayout = calcShardPayoutForSellEth(ethToSellOnMarket);
+		uint256 shardPayout = calcShardPayoutForEthSale(ethToSellOnMarket);
 
 		require(shardPayout <= _shardRegistry.balanceOf(address(this)));
 
