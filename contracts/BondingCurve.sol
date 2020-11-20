@@ -1,7 +1,10 @@
 /* solhint-disable no-mix-tabs-and-spaces */
 /* solhint-disable indent */
 
-import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 pragma solidity ^0.6.0;
 
@@ -13,10 +16,12 @@ contract BondingCurve {
 	uint256 internal _y; // Hypothetical ETH to satisfy k
 	uint256 internal _x; // Shards in the curve
 	uint256 internal _k;
+
 	uint256 internal _totalSuppliedEth;
 	uint256 internal _totalSuppliedShards;
 
 	address internal _shardRegistryAddress;
+
 	mapping(address => uint256) internal _mapSuppliedEth;
 	mapping(address => uint256) internal _mapSuppliedShards;
 
@@ -32,7 +37,7 @@ contract BondingCurve {
 		// assumes ERC20.approve
 		// can also be used for WETH
 		// wrap in require?
-		ERC20(shardRegistryAddress).transferFrom(owner, address(this), suppliedShards);
+		IERC20(shardRegistryAddress).transferFrom(owner, address(this), suppliedShards);
 		_x = unsoldShards;
 		_y = unsoldShards.mul(initialPriceInWei);
 		_k = _x.mul(_y);
@@ -43,12 +48,12 @@ contract BondingCurve {
 		_totalSuppliedShards = suppliedShards;
 	}
 
-	function buy(
-		uint256 shardAmount,
+	function buyShards(
+		uint256 shardAmount
 	) public payable {
-		require (shardAmount >= ERC20(shardRegistryAddress).balanceOf(address(this)));
+		require(shardAmount >= IERC20(_shardRegistryAddress).balanceOf(address(this)));
 		uint256 newX = _x.sub(shardAmount);
-		uint256 newY = k.div(newX);
+		uint256 newY = _k.div(newX);
 		uint weiRequired = newY.sub(_y);
 		require(weiRequired <= msg.value);
 		require(msg.value >= weiRequired);
@@ -56,38 +61,42 @@ contract BondingCurve {
 		_y = newY;
 		_x = newX;
 
-		ERC20(_shardRegistryAddress).transfer(address(this), msg.sender, shardAmount);
+		IERC20(_shardRegistryAddress).transfer(msg.sender, shardAmount);
 
 		// refund extra ETH back to buyers
 		if (msg.value > weiRequired) {
 			// guard against msg.sender being contract
-			(bool success, ) = msg.sender.call.value(msg.value.sub(weiRequired))("");
+			(bool success, ) = msg.sender.call{
+				value: msg.value.sub(weiRequired)
+			}("");
 			require(success, "[buy] ETH transfer failed.");
 		}
 	}
 
-	function sell(
+	function sellShards(
 		uint256 shardAmount,
 		uint256 minEthForShardAmount
 	) public {
 		// check user shard balance first?
 		uint256 newX = _x.add(shardAmount);
-		uint256 newY = k.div(newX);
+		uint256 newY = _k.div(newX);
 		uint weiPayout = _y.sub(newY);
 
 		if (minEthForShardAmount > 0) {
 			require(weiPayout >= minEthForShardAmount);
 		}
-		
+
 		require(weiPayout <= address(this).balance);
 
 		_y = newY;
 		_x = newX;
 
-		ERC20(_shardRegistryAddress).transferFrom(msg.sender, address(this), shardAmount);
+		IERC20(_shardRegistryAddress).transferFrom(msg.sender, address(this), shardAmount);
 
 		// guard against msg.sender being contract
-		(bool success, ) = msg.sender.call.value(weiPayout)("");
+		(bool success, ) = msg.sender.call{
+			value: weiPayout
+		}("");
 		require(success, "[sell] ETH transfer failed.");
 
 
@@ -95,28 +104,28 @@ contract BondingCurve {
 
 	function calcEthPayoutForSellShards (
 		uint256 shardAmount
-		) external view returns (uint256) { 
+	) public view returns (uint256) {
 		uint256 newX = _x.add(shardAmount);
-		uint256 newY = k.div(newX);
+		uint256 newY = _k.div(newX);
 		uint256 weiPayout = _y.sub(newY);
 
 		return weiPayout;
-	} 
+	}
 
 	function calcShardPayoutForSellEth (
 		uint256 ethAmount
-		) external view returns (uint256) { 
+	) public view returns (uint256) {
 		uint256 newY = _y.add(ethAmount);
-		uint256 newX = k.div(newY);
+		uint256 newX = _k.div(newY);
 		uint256 shardPayout = _x.sub(newX);
 
 		return shardPayout;
-	} 
+	}
 
 	function supplyShards(
 		uint256 shardAmount
 	) public {
-		ERC20(_shardRegistryAddress).transferFrom(owner, address(this), shardAmount);
+		IERC20(_shardRegistryAddress).transferFrom(msg.sender, address(this), shardAmount);
 		_mapSuppliedShards[msg.sender] += shardAmount;
 		_totalSuppliedShards += shardAmount;
 	}
@@ -128,58 +137,60 @@ contract BondingCurve {
 
 	function withdrawSuppliedShards(
 		uint256 shardAmount
-	) {
+	) external {
 		require(
 			shardAmount <= _mapSuppliedShards[msg.sender],
 			"Cannot withdraw more than deposited amount of shards"
 			);
-		
-		uint256 memory shardsToSellOnMarket = 0;
 
-		if (ERC20(_shardRegistryAddress).balanceOf(address(this)) < shardAmount) {
-			shardsToSellOnMarket = shardAmount - ERC20(_shardRegistryAddress).balanceOf(address(this));
+		uint256 shardsToSellOnMarket = 0;
+
+		if (IERC20(_shardRegistryAddress).balanceOf(address(this)) < shardAmount) {
+			shardsToSellOnMarket = shardAmount - IERC20(_shardRegistryAddress).balanceOf(address(this));
 		}
 
-		uint256 memory ethPayout = calcEthPayoutForSellShards(shardsToSellOnMarket);
+		uint256 ethPayout = calcEthPayoutForSellShards(shardsToSellOnMarket);
 
 		require(ethPayout <= address(this).balance);
 
 		_totalSuppliedShards -= shardAmount;
 		_mapSuppliedShards[msg.sender] -= shardAmount;
 
-		ERC20(_shardRegistryAddress).transferFrom(address(this), msg.sender, shardAmount.sub(shardsToSellOnMarket));
-		sell(shardsToSellOnMarket, 0);
+		IERC20(_shardRegistryAddress).transfer(msg.sender, shardAmount.sub(shardsToSellOnMarket));
+		sellShards(shardsToSellOnMarket, 0);
 	}
 
 	function withdrawSuppliedEther(
 		uint256 ethAmount
-		) {
+	) external {
 		require(
 			ethAmount <= _mapSuppliedEth[msg.sender],
 			"Cannot withdraw more than deposited amount of eth"
 			);
 
-		uint256 memory ethToSellOnMarket = 0;
+		uint256 ethToSellOnMarket = 0;
 
 		if (address(this).balance < ethAmount) {
 			ethToSellOnMarket = ethAmount.sub(address(this).balance);
 		}
 
-		uint256 memory shardPayout = calcShardPayoutForSellEth(ethToSellOnMarket);
+		uint256 shardPayout = calcShardPayoutForSellEth(ethToSellOnMarket);
 
-		require(shardPayout <= ERC20(_shardRegistryAddress).balanceOf(address(this)));
+		require(shardPayout <= IERC20(_shardRegistryAddress).balanceOf(address(this)));
 
 		_totalSuppliedEth -= ethAmount;
 		_mapSuppliedEth[msg.sender] -= ethAmount;
 
 		// guard against msg.sender being contract
-		(bool success, ) = msg.sender.call.value(ethAmount.sub(ethToSellOnMarket))("");
+		(bool success, ) = msg.sender.call{
+			value: ethAmount.sub(ethToSellOnMarket)
+		}("");
 		require(success, "[sell] ETH transfer failed.");
 		// oh well need another buy shards with eth input for this function...
-		buy(shardPayout);
+		buyShards(shardPayout);
 	}
 
-	function currentPrice() external returns (uint) {
+	function currentPrice() external view returns (uint) {
 		return _y.div(_x);
 	}
 }
