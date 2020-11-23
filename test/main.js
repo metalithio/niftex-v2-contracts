@@ -57,7 +57,7 @@ contract("Bonding curve testing", async accounts => {
 			INITIAL_PRICE_WEI,
 			{ value: SUPPLIED_ETH.times(10**18) }
 		);
-		const price = await curveInstance.currentPrice();
+		const price = await curveInstance.getCurrentPrice();
 		assert.equal(price.valueOf(), INITIAL_PRICE_WEI.valueOf());
 
 		const coords = await curveInstance.getCurveCoordinates();
