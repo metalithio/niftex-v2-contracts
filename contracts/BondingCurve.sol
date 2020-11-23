@@ -13,15 +13,14 @@ contract BondingCurve {
 
 	using SafeMath for uint256;
 
-	uint256 internal _y; // Hypothetical ETH to satisfy k
-	uint256 internal _x; // Shards in the curve
+	uint256 internal _y;
+	uint256 internal _x;
 	uint256 internal _k;
 
 	// are these needed? all we do is add subtract
+	// needed for fees?
 	uint256 internal _totalSuppliedEth;
 	uint256 internal _totalSuppliedShards;
-
-	address internal _shardRegistryAddress;
 
 	mapping(address => uint256) internal _mapSuppliedEth;
 	mapping(address => uint256) internal _mapSuppliedShards;
@@ -50,8 +49,9 @@ contract BondingCurve {
 		);
 		_x = unsoldShards;
 		_y = unsoldShards.mul(initialPriceInWei);
+		assert(_x > 0);
+		assert(_y > 0);
 		_k = _x.mul(_y);
-		_shardRegistryAddress = shardRegistryAddress;
 		_mapSuppliedEth[msg.sender] = msg.value;
 		_mapSuppliedShards[msg.sender] = suppliedShards;
 		_totalSuppliedEth = msg.value;
@@ -65,9 +65,12 @@ contract BondingCurve {
 			_shardRegistry.balanceOf(address(this)) >= shardAmount,
 			"1"
 		);
-		// !TODO require to check if newX < supply?
+
 		uint256 newX = _x.sub(shardAmount);
 		uint256 newY = _k.div(newX);
+		assert(newY > 0);
+		assert(newX > 0);
+
 		uint weiRequired = newY.sub(_y);
 		require(weiRequired <= msg.value, "2");
 		require(msg.value >= weiRequired, "3");
@@ -90,10 +93,13 @@ contract BondingCurve {
 		uint256 shardAmount,
 		uint256 minEthForShardAmount
 	) public {
-		// !TODO require to check if newX > 0?
-		// check user shard balance first?
+		require(_shardRegistry.balanceOf(msg.sender) >= shardAmount);
+
 		uint256 newX = _x.add(shardAmount);
 		uint256 newY = _k.div(newX);
+		assert(newY > 0);
+		assert(newX > 0);
+
 		uint weiPayout = _y.sub(newY);
 
 		if (minEthForShardAmount > 0) {
@@ -116,10 +122,11 @@ contract BondingCurve {
 
 	}
 
-	// could also be done offline
 	function calcEthRequiredForShardBuy(uint256 shardAmount) public view returns (uint256) {
 		uint256 newX = _x.sub(shardAmount);
 		uint256 newY = _k.div(newX);
+		assert(newY > 0);
+		assert(newX > 0);
 		uint256 ethRequired = newY.sub(_y);
 
 		return ethRequired;
@@ -128,6 +135,8 @@ contract BondingCurve {
 	function calcShardRequiredForEthSale(uint256 ethAmount) public view returns (uint256) {
 		uint256 newY = _y.sub(ethAmount);
 		uint256 newX = _k.div(newY);
+		assert(newY > 0);
+		assert(newX > 0);
 		uint256 shardsRequired = newX.sub(_x);
 
 		return shardsRequired;
@@ -136,6 +145,8 @@ contract BondingCurve {
 	function calcEthPayoutForShardSale(uint256 shardAmount) public view returns (uint256) {
 		uint256 newX = _x.add(shardAmount);
 		uint256 newY = _k.div(newX);
+		assert(newY > 0);
+		assert(newX > 0);
 		uint256 weiPayout = _y.sub(newY);
 
 		return weiPayout;
@@ -144,6 +155,8 @@ contract BondingCurve {
 	function calcShardPayoutForEthSale(uint256 ethAmount) public view returns (uint256) {
 		uint256 newY = _y.add(ethAmount);
 		uint256 newX = _k.div(newY);
+		assert(newY > 0);
+		assert(newX > 0);
 		uint256 shardPayout = _x.sub(newX);
 
 		return shardPayout;
@@ -162,7 +175,6 @@ contract BondingCurve {
 		_totalSuppliedEth += msg.value;
 	}
 
-	// !TODO liquidity lock for owner?
 	function withdrawSuppliedShards(uint256 shardAmount) external {
 		require(
 			shardAmount <= _mapSuppliedShards[msg.sender],
@@ -179,21 +191,28 @@ contract BondingCurve {
 		uint256 ethPayout = calcEthPayoutForShardSale(shardsToSell);
 
 		// !WARNING are there edge cases where this could fail and the person is blocked from withdrawing?
-		// is also checked in sellShards
 		require(ethPayout <= address(this).balance);
 
 		// safemath?
 		_totalSuppliedShards -= shardAmount;
 		_mapSuppliedShards[msg.sender] -= shardAmount;
 
-		_shardRegistry.transfer(msg.sender, shardAmount.sub(shardsToSell));
+		// Adjust x/y to compensate for ether leaving the curve
+		if (ethPayout > 0) {
+			_y = _y.sub(ethPayout);
+			_x = _k.div(_y);
+		}
+
+		assert(_y > 0);
+		assert(_x > 0);
+
+		require(_shardRegistry.transfer(msg.sender, shardAmount.sub(shardsToSell)));
 		(bool success, ) = msg.sender.call{
 			value: ethPayout
 		}("");
 		require(success, "[buy] ETH transfer failed.");
 	}
 
-	// !TODO liquidity lock for owner?
 	function withdrawSuppliedEther(uint256 ethAmount) external {
 		require(
 			ethAmount <= _mapSuppliedEth[msg.sender],
@@ -213,19 +232,44 @@ contract BondingCurve {
 		_totalSuppliedEth -= ethAmount;
 		_mapSuppliedEth[msg.sender] -= ethAmount;
 
+		// Adjust x/y to compensate for ether leaving the curve
+		if (shardPayout > 0) {
+			_x = _x.sub(shardPayout);
+			_y = _k.div(_x);
+		}
+
+		assert(_y > 0);
+		assert(_x > 0);
+
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
 			value: ethAmount.sub(ethToSellOnMarket)
 		}("");
 		require(success, "[sell] ETH transfer failed.");
-		_shardRegistry.transfer(msg.sender, shardPayout);
+		require(_shardRegistry.transfer(msg.sender, shardPayout));
 	}
 
-	function currentPrice() external view returns (uint) {
+	function getCurrentPrice() external view returns (uint) {
 		return _y.div(_x);
 	}
 
 	function getCurveCoordinates() external view returns (uint, uint, uint) {
 		return (_x, _y, _k);
+	}
+
+	function getTotalSuppliedEth() external view returns (uint) {
+		return _totalSuppliedEth;
+	}
+
+	function getTotalSuppliedShards() external view returns (uint) {
+		return _totalSuppliedShards;
+	}
+
+	function getSuppliedEth(address user) external view returns (uint) {
+		return _mapSuppliedEth[user];
+	}
+
+	function getSuppliedShards(address user) external view returns (uint) {
+		return _mapSuppliedShards[user];
 	}
 }
