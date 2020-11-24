@@ -27,6 +27,13 @@ contract BondingCurve {
 
 	IERC20 internal _shardRegistry;
 
+	event Initialized(address, address);
+	event ShardsBought(uint, address);
+	event ShardsSold(uint, address);
+	event ShardsSupplied(uint, address);
+	event EtherSupplied(uint, address);
+	event ShardsWithdrawn(uint, uint, address);
+	event EtherWithdrawn(uint, uint, address);
 
 	function initialize(
 		uint256 unsoldShards,
@@ -56,6 +63,8 @@ contract BondingCurve {
 		_mapSuppliedShards[msg.sender] = suppliedShards;
 		_totalSuppliedEth = msg.value;
 		_totalSuppliedShards = suppliedShards;
+
+		emit Initialized(shardRegistryAddress, address(this));
 	}
 
 	function buyShards(
@@ -87,6 +96,8 @@ contract BondingCurve {
 			}("");
 			require(success, "[buy] ETH transfer failed.");
 		}
+
+		emit ShardsBought(shardAmount, msg.sender);
 	}
 
 	function sellShards(
@@ -119,7 +130,7 @@ contract BondingCurve {
 		}("");
 		require(success, "[sell] ETH transfer failed.");
 
-
+		emit ShardsSold(shardAmount, msg.sender);
 	}
 
 	function calcEthRequiredForShardBuy(uint256 shardAmount) public view returns (uint256) {
@@ -164,15 +175,19 @@ contract BondingCurve {
 
 	function supplyShards(uint256 shardAmount) external {
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
-		// safemath?
-		_mapSuppliedShards[msg.sender] += shardAmount;
-		_totalSuppliedShards += shardAmount;
+
+		_mapSuppliedShards[msg.sender] = _mapSuppliedShards[msg.sender].add(shardAmount);
+		_totalSuppliedShards = _totalSuppliedShards.add(shardAmount);
+
+		emit ShardsSupplied(shardAmount, msg.sender);
 	}
 
 	function supplyEther() external payable {
-		// safemath?
-		_mapSuppliedEth[msg.sender] = msg.value;
-		_totalSuppliedEth += msg.value;
+
+		_mapSuppliedEth[msg.sender] = _mapSuppliedEth[msg.sender].add(msg.value);
+		_totalSuppliedEth = _totalSuppliedEth.add(msg.value);
+
+		emit EtherSupplied(msg.value, msg.sender);
 	}
 
 	function withdrawSuppliedShards(uint256 shardAmount) external {
@@ -193,9 +208,8 @@ contract BondingCurve {
 		// !WARNING are there edge cases where this could fail and the person is blocked from withdrawing?
 		require(ethPayout <= address(this).balance);
 
-		// safemath?
-		_totalSuppliedShards -= shardAmount;
-		_mapSuppliedShards[msg.sender] -= shardAmount;
+		_totalSuppliedShards = _totalSuppliedShards.sub(shardAmount);
+		_mapSuppliedShards[msg.sender] = _mapSuppliedShards[msg.sender].sub(shardAmount);
 
 		// Adjust x/y to compensate for ether leaving the curve
 		if (ethPayout > 0) {
@@ -206,11 +220,14 @@ contract BondingCurve {
 		assert(_y > 0);
 		assert(_x > 0);
 
-		require(_shardRegistry.transfer(msg.sender, shardAmount.sub(shardsToSell)));
+		uint shardsToTransfer = shardAmount.sub(shardsToSell);
+		require(_shardRegistry.transfer(msg.sender, shardsToTransfer));
 		(bool success, ) = msg.sender.call{
 			value: ethPayout
 		}("");
 		require(success, "[buy] ETH transfer failed.");
+
+		emit ShardsWithdrawn(shardsToTransfer, ethPayout, msg.sender);
 	}
 
 	function withdrawSuppliedEther(uint256 ethAmount) external {
@@ -241,12 +258,15 @@ contract BondingCurve {
 		assert(_y > 0);
 		assert(_x > 0);
 
+		uint ethToSend = ethAmount.sub(ethToSellOnMarket);
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
-			value: ethAmount.sub(ethToSellOnMarket)
+			value: ethToSend
 		}("");
 		require(success, "[sell] ETH transfer failed.");
 		require(_shardRegistry.transfer(msg.sender, shardPayout));
+
+		emit EtherWithdrawn(ethToSend, shardPayout, msg.sender);
 	}
 
 	function getCurrentPrice() external view returns (uint) {
