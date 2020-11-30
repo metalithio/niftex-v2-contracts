@@ -28,12 +28,12 @@ contract BondingCurve {
 	IERC20 internal _shardRegistry;
 
 	event Initialized(address, address);
-	event ShardsBought(uint, address);
-	event ShardsSold(uint, address);
-	event ShardsSupplied(uint, address);
-	event EtherSupplied(uint, address);
-	event ShardsWithdrawn(uint, uint, address);
-	event EtherWithdrawn(uint, uint, address);
+	event ShardsBought(uint256, address);
+	event ShardsSold(uint256, address);
+	event ShardsSupplied(uint256, address);
+	event EtherSupplied(uint256, address);
+	event ShardsWithdrawn(uint256, uint256, address);
+	event EtherWithdrawn(uint256, uint256, address);
 
 	function initialize(
 		uint256 unsoldShards,
@@ -80,7 +80,7 @@ contract BondingCurve {
 		assert(newY > 0);
 		assert(newX > 0);
 
-		uint weiRequired = newY.sub(_y);
+		uint256 weiRequired = newY.sub(_y);
 		require(weiRequired <= msg.value, "2");
 		require(msg.value >= weiRequired, "3");
 
@@ -111,7 +111,7 @@ contract BondingCurve {
 		assert(newY > 0);
 		assert(newX > 0);
 
-		uint weiPayout = _y.sub(newY);
+		uint256 weiPayout = _y.sub(newY);
 
 		if (minEthForShardAmount > 0) {
 			require(weiPayout >= minEthForShardAmount);
@@ -220,7 +220,7 @@ contract BondingCurve {
 		assert(_y > 0);
 		assert(_x > 0);
 
-		uint shardsToTransfer = shardAmount.sub(shardsToSell);
+		uint256 shardsToTransfer = shardAmount.sub(shardsToSell);
 		require(_shardRegistry.transfer(msg.sender, shardsToTransfer));
 		(bool success, ) = msg.sender.call{
 			value: ethPayout
@@ -258,7 +258,7 @@ contract BondingCurve {
 		assert(_y > 0);
 		assert(_x > 0);
 
-		uint ethToSend = ethAmount.sub(ethToSellOnMarket);
+		uint256 ethToSend = ethAmount.sub(ethToSellOnMarket);
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
 			value: ethToSend
@@ -269,27 +269,27 @@ contract BondingCurve {
 		emit EtherWithdrawn(ethToSend, shardPayout, msg.sender);
 	}
 
-	function getCurrentPrice() external view returns (uint) {
+	function getCurrentPrice() external view returns (uint256) {
 		return _y.div(_x);
 	}
 
-	function getCurveCoordinates() external view returns (uint, uint, uint) {
+	function getCurveCoordinates() external view returns (uint256, uint256, uint256) {
 		return (_x, _y, _k);
 	}
 
-	function getTotalSuppliedEth() external view returns (uint) {
+	function getTotalSuppliedEth() external view returns (uint256) {
 		return _totalSuppliedEth;
 	}
 
-	function getTotalSuppliedShards() external view returns (uint) {
+	function getTotalSuppliedShards() external view returns (uint256) {
 		return _totalSuppliedShards;
 	}
 
-	function getSuppliedEth(address user) external view returns (uint) {
+	function getSuppliedEth(address user) external view returns (uint256) {
 		return _mapSuppliedEth[user];
 	}
 
-	function getSuppliedShards(address user) external view returns (uint) {
+	function getSuppliedShards(address user) external view returns (uint256) {
 		return _mapSuppliedShards[user];
 	}
 }
