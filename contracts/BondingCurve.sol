@@ -19,12 +19,26 @@ contract BondingCurve {
 
 	// are these needed? all we do is add subtract
 	// needed for fees?
-	uint256 internal _totalSuppliedEth;
-	uint256 internal _totalSuppliedShards;
 
-	mapping(address => uint256) internal _mapSuppliedEth;
-	mapping(address => uint256) internal _mapSuppliedShards;
+	struct ethSuppliers {
+		uint256 _totalSuppliedEth;
+		uint256 _ethFeesToSuppliers;
+		uint256 _ethFeesToNiftex;
+		mapping(address => uint256) _mappingEthLPTokens;
+		uint256 _totalEthLPTokens;
+	}
 
+	struct shardSuppliers {
+		uint256 _totalSuppliedShards;
+		uint256 _shardFeesToSuppliers;
+		uint256 _shardFeesToNiftex;
+		mapping(address => uint256) _mappingShardLPTokens;
+		uint256 _totalShardLPTokens;
+	}
+
+	ethSuppliers internal _ethSuppliers;
+	shardSuppliers internal _shardSuppliers;
+	
 	IERC20 internal _shardRegistry;
 
 	event Initialized(address, address);
@@ -46,6 +60,11 @@ contract BondingCurve {
 			msg.sender == owner,
 			"[initialize] only owner can initialize"
 		);
+
+		require(
+			msg.value > 0,
+			"[initialize] requires ETH to bootstrap this bonding curve"
+			);
 		// assumes ERC20.approve
 		// can also be used for WETH
 		// wrap in require?
@@ -59,11 +78,15 @@ contract BondingCurve {
 		assert(_x > 0);
 		assert(_y > 0);
 		_k = _x.mul(_y);
-		_mapSuppliedEth[msg.sender] = msg.value;
-		_mapSuppliedShards[msg.sender] = suppliedShards;
-		_totalSuppliedEth = msg.value;
-		_totalSuppliedShards = suppliedShards;
+		_ethSuppliers._totalSuppliedEth = msg.value;
+		_shardSuppliers._totalSuppliedShards = suppliedShards;
 
+		_ethSuppliers._mappingEthLPTokens[msg.sender] = msg.value;
+		_ethSuppliers._totalEthLPTokens = msg.value;
+
+		_shardSuppliers._mappingShardLPTokens[msg.sender] = suppliedShards;
+		_shardSuppliers._totalShardLPTokens = suppliedShards;
+		
 		emit Initialized(shardRegistryAddress, address(this));
 	}
 
@@ -176,25 +199,22 @@ contract BondingCurve {
 	function supplyShards(uint256 shardAmount) external {
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
 
-		_mapSuppliedShards[msg.sender] = _mapSuppliedShards[msg.sender].add(shardAmount);
 		_totalSuppliedShards = _totalSuppliedShards.add(shardAmount);
 
 		emit ShardsSupplied(shardAmount, msg.sender);
 	}
 
 	function supplyEther() external payable {
-
-		_mapSuppliedEth[msg.sender] = _mapSuppliedEth[msg.sender].add(msg.value);
 		_totalSuppliedEth = _totalSuppliedEth.add(msg.value);
 
 		emit EtherSupplied(msg.value, msg.sender);
 	}
 
 	function withdrawSuppliedShards(uint256 shardAmount) external {
-		require(
-			shardAmount <= _mapSuppliedShards[msg.sender],
-			"Cannot withdraw more than deposited amount of shards"
-		);
+		// require(
+		// 	shardAmount <= _mapSuppliedShards[msg.sender],
+		// 	"Cannot withdraw more than deposited amount of shards"
+		// );
 
 		uint256 shardsToSell;
 
@@ -231,10 +251,10 @@ contract BondingCurve {
 	}
 
 	function withdrawSuppliedEther(uint256 ethAmount) external {
-		require(
-			ethAmount <= _mapSuppliedEth[msg.sender],
-			"Cannot withdraw more than deposited amount of eth"
-		);
+		// require(
+		// 	ethAmount <= _mapSuppliedEth[msg.sender],
+		// 	"Cannot withdraw more than deposited amount of eth"
+		// );
 
 		uint256 ethToSellOnMarket;
 
@@ -283,13 +303,5 @@ contract BondingCurve {
 
 	function getTotalSuppliedShards() external view returns (uint256) {
 		return _totalSuppliedShards;
-	}
-
-	function getSuppliedEth(address user) external view returns (uint256) {
-		return _mapSuppliedEth[user];
-	}
-
-	function getSuppliedShards(address user) external view returns (uint256) {
-		return _mapSuppliedShards[user];
 	}
 }
