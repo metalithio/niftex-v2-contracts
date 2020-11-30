@@ -303,10 +303,12 @@ contract BondingCurve {
 	}
 
 	function withdrawSuppliedEther(uint256 ethAmount) external {
-		// require(
-		// 	ethAmount <= _mapSuppliedEth[msg.sender],
-		// 	"Cannot withdraw more than deposited amount of eth"
-		// );
+		uint256 maxEthToWithdraw = _ethSuppliers._mappingEthLPTokens[msg.sender].div(_ethSuppliers._totalEthLPTokens).times(_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers);
+
+		require(
+			ethAmount <= maxEthToWithdraw,
+			"Cannot withdraw more than your current amount of eth in the pool"
+		);
 
 		uint256 ethToSellOnMarket;
 
@@ -318,8 +320,14 @@ contract BondingCurve {
 
 		require(shardPayout <= _shardRegistry.balanceOf(address(this)));
 
-		_totalSuppliedEth -= ethAmount;
-		_mapSuppliedEth[msg.sender] -= ethAmount;
+		uint256 otherEthLPTokens = _ethSuppliers._totalEthLPTokens.sub(_ethSuppliers._mappingEthLPTokens[msg.sender]);
+		uint256 remainingEthOfCurrentLP = maxEthToWithdraw.sub(ethAmount);
+		uint256 remainingEthOfOtherLPs = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.sub(maxEthToWithdraw);
+		uint256 newEthLPTokensOfCurrentLP = remainingEthOfCurrentLP.div(remainingEthOfOtherLPs).times(otherEthLPTokens);
+
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.sub(ethAmount);
+		_ethSuppliers._totalEthLPTokens = otherEthLPTokens.add(newEthLPTokensOfCurrentLP);
+		_ethSuppliers._mappingEthLPTokens[msg.sender] = newEthLPTokensOfCurrentLP;
 
 		// Adjust x/y to compensate for ether leaving the curve
 		if (shardPayout > 0) {
