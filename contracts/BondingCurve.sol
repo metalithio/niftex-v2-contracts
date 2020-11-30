@@ -274,8 +274,14 @@ contract BondingCurve {
 		// !WARNING are there edge cases where this could fail and the person is blocked from withdrawing?
 		require(ethPayout <= address(this).balance);
 
-		_totalSuppliedShards = _totalSuppliedShards.sub(shardAmount);
-		_mapSuppliedShards[msg.sender] = _mapSuppliedShards[msg.sender].sub(shardAmount);
+		uint256 otherShardLPTokens = _shardSuppliers._totalShardLPTokens.sub(_shardSuppliers._mappingShardLPTokens[msg.sender]);
+		uint256 remainingShardsOfCurrentLP = maxShardsToWithdraw.sub(shardAmount);
+		uint256 remainingShardsOfOtherLPs = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.sub(maxShardsToWithdraw);
+		uint256 newShardLPTokensOfCurrentLP = remainingShardsOfCurrentLP.div(remainingShardsOfOtherLPs).times(otherShardLPTokens);
+
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.sub(shardAmount);
+		_shardSuppliers._totalShardLPTokens = otherShardLPTokens.add(newShardLPTokensOfCurrentLP);
+		_shardSuppliers._mappingShardLPTokens[msg.sender] = newShardLPTokensOfCurrentLP;
 
 		// Adjust x/y to compensate for ether leaving the curve
 		if (ethPayout > 0) {
