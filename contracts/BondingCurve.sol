@@ -112,10 +112,12 @@ contract BondingCurve {
 
 		require(
 			_shardRegistry.balanceOf(address(this)) >= actualShardsAfterNiftex,
-			"1"
+			"[buyShards] not having enough shards in the curve"
 		);
-		require(weiRequired <= msg.value, "2");
-		require(msg.value >= weiRequired, "3");
+		require(
+			weiRequired <= msg.value,
+			"[buyShards] user not putting enough eth to buy shards"
+		);
 
 		newX = _x.sub(actualShardsAfterNiftex);
 		newY = _k.div(newY);
