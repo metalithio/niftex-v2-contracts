@@ -76,7 +76,8 @@ contract BondingCurve {
 			"[initialize] initialization token transfer failed"
 		);
 		_x = unsoldShards;
-		_y = unsoldShards.mul(initialPriceInWei);
+		// !TODO should get 1e18 based on current IERC20 decimals instead of hardcoding here...
+		_y = unsoldShards.mul(initialPriceInWei).div(1e18);
 		assert(_x > 0);
 		assert(_y > 0);
 		_k = _x.mul(_y);
