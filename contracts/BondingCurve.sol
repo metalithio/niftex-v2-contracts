@@ -357,11 +357,11 @@ contract BondingCurve {
 		return (_x, _y, _k);
 	}
 
-	function getTotalSuppliedEth() external view returns (uint256) {
-		return _totalSuppliedEth;
+	function getEthSuppliers() external view returns (uint256, uint256, uint256) {
+		return (_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers, _ethSuppliers._totalEthLPTokens, _ethSuppliers._ethFeesToNiftex);
 	}
 
-	function getTotalSuppliedShards() external view returns (uint256) {
-		return _totalSuppliedShards;
+	function getShardSuppliers() external view returns (uint256, uint256, uint256) {
+		return (_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers, _shardSuppliers._totalShardLPTokens, _shardSuppliers._shardFeesToNiftex);
 	}
 }
