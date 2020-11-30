@@ -277,14 +277,11 @@ contract BondingCurve {
 		// !WARNING are there edge cases where this could fail and the person is blocked from withdrawing?
 		require(ethPayout <= address(this).balance);
 
-		uint256 otherShardLPTokens = _shardSuppliers._totalShardLPTokens.sub(_shardSuppliers._mappingShardLPTokens[msg.sender]);
-		uint256 remainingShardsOfCurrentLP = maxShardsToWithdraw.sub(shardAmount);
-		uint256 remainingShardsOfOtherLPs = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.sub(maxShardsToWithdraw);
-		uint256 newShardLPTokensOfCurrentLP = remainingShardsOfCurrentLP.div(remainingShardsOfOtherLPs).mul(otherShardLPTokens);
+		uint256 shardLPTokensToBurn = shardAmount.div(maxShardsToWithdraw).mul(_shardSuppliers._mappingShardLPTokens[msg.sender]);
 
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.sub(shardAmount);
-		_shardSuppliers._totalShardLPTokens = otherShardLPTokens.add(newShardLPTokensOfCurrentLP);
-		_shardSuppliers._mappingShardLPTokens[msg.sender] = newShardLPTokensOfCurrentLP;
+		_shardSuppliers._totalShardLPTokens = _shardSuppliers._totalShardLPTokens.sub(shardLPTokensToBurn);
+		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].sub(shardLPTokensToBurn);
 
 		// Adjust x/y to compensate for ether leaving the curve
 		if (ethPayout > 0) {
@@ -323,14 +320,11 @@ contract BondingCurve {
 
 		require(shardPayout <= _shardRegistry.balanceOf(address(this)));
 
-		uint256 otherEthLPTokens = _ethSuppliers._totalEthLPTokens.sub(_ethSuppliers._mappingEthLPTokens[msg.sender]);
-		uint256 remainingEthOfCurrentLP = maxEthToWithdraw.sub(ethAmount);
-		uint256 remainingEthOfOtherLPs = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.sub(maxEthToWithdraw);
-		uint256 newEthLPTokensOfCurrentLP = remainingEthOfCurrentLP.div(remainingEthOfOtherLPs).mul(otherEthLPTokens);
+		uint256 ethLPTokensToBurn = ethAmount.div(maxEthToWithdraw).mul(_ethSuppliers._mappingEthLPTokens[msg.sender]);
 
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.sub(ethAmount);
-		_ethSuppliers._totalEthLPTokens = otherEthLPTokens.add(newEthLPTokensOfCurrentLP);
-		_ethSuppliers._mappingEthLPTokens[msg.sender] = newEthLPTokensOfCurrentLP;
+		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.sub(ethLPTokensToBurn);
+		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].sub(ethLPTokensToBurn);
 
 		// Adjust x/y to compensate for ether leaving the curve
 		if (shardPayout > 0) {
