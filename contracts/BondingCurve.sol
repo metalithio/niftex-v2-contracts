@@ -97,8 +97,6 @@ contract BondingCurve {
 	function buyShards(
 		uint256 shardAmount
 	) public payable {
-		
-
 		uint256 newX = _x.sub(shardAmount);
 		uint256 newY = _k.div(newX);
 		assert(newY > 0);
@@ -165,6 +163,11 @@ contract BondingCurve {
 		_x = newX;
 
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
+
+		_ethSuppliers._ethFeesToSuppliers = _ethSuppliers._ethFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(1000));
+		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(1000));
+
+		weiPayout = weiPayout.mul(uint256(1000).sub(_feePctToNiftex).sub(_feePctToSuppliers)).div(1000);
 
 		// !TODO guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
