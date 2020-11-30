@@ -86,7 +86,7 @@ contract BondingCurve {
 
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = suppliedShards;
 		_shardSuppliers._totalShardLPTokens = suppliedShards;
-		
+
 		emit Initialized(shardRegistryAddress, address(this));
 	}
 
@@ -196,16 +196,41 @@ contract BondingCurve {
 		return shardPayout;
 	}
 
+	function calcNewShardLPTokensToIssue(uint256 addedAmount) public view returns (uint256) {
+		uint256 existingShardPool = _shardSuppliers._totalSuppliedShards.add(_shardSuppliers._shardFeesToSuppliers);
+		uint256 proportion = addedAmount.mul(1000).div(existingShardPool.add(addedAmount));
+		uint256 newShardLPTokensToIssue = proportion.div(uint256(1000).sub(proportion)).mul(existingShardPool);
+		return newShardLPTokensToIssue;
+	}
+
+	function calcNewEthLPTokensToIssue(uint256 addedAmount) public view returns (uint256) {
+		uint256 existingEthPool = _ethSuppliers._totalSuppliedEth.add(_ethSuppliers._ethFeesToSuppliers);
+		uint256 proportion = addedAmount.mul(1000).div(existingEthPool.add(addedAmount));
+		uint256 newEthLPTokensToIssue = proportion.div(uint256(1000).sub(proportion)).mul(existingEthPool);
+		return newEthLPTokensToIssue;
+	}
+
 	function supplyShards(uint256 shardAmount) external {
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
 
-		_totalSuppliedShards = _totalSuppliedShards.add(shardAmount);
+		uint256 newShardLPTokensToIssue = calcNewShardLPTokensToIssue(shardAmount);
+		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].add(newShardLPTokensToIssue);
+		_shardSuppliers._totalShardLPTokens = _shardSuppliers._totalShardLPTokens.add(newShardLPTokensToIssue);
+		_shardSuppliers._totalSuppliedShards = _shardSuppliers._totalSuppliedShards.add(shardAmount);
 
 		emit ShardsSupplied(shardAmount, msg.sender);
 	}
 
 	function supplyEther() external payable {
-		_totalSuppliedEth = _totalSuppliedEth.add(msg.value);
+		require(
+			msg.value > 0,
+			"[supplyEther] No ETH supplied in this transaction"
+			);
+
+		uint256 newEthLPTokensToIssue = calcNewEthLPTokensToIssue(msg.value);
+		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].add(newEthLPTokensToIssue);
+		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.add(newEthLPTokensToIssue);
+		_ethSuppliers._totalSuppliedEth = _ethSuppliers._totalSuppliedEth.add(msg.value);
 
 		emit EtherSupplied(msg.value, msg.sender);
 	}
