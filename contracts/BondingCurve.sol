@@ -25,16 +25,14 @@ contract BondingCurve {
 	// needed for fees?
 
 	struct ethSuppliers {
-		uint256 _totalSuppliedEth;
-		uint256 _ethFeesToSuppliers;
+		uint256 _totalSuppliedEthPlusFeesToSuppliers;
 		uint256 _ethFeesToNiftex;
 		mapping(address => uint256) _mappingEthLPTokens;
 		uint256 _totalEthLPTokens;
 	}
 
 	struct shardSuppliers {
-		uint256 _totalSuppliedShards;
-		uint256 _shardFeesToSuppliers;
+		uint256 _totalSuppliedShardsPlusFeesToSuppliers;
 		uint256 _shardFeesToNiftex;
 		mapping(address => uint256) _mappingShardLPTokens;
 		uint256 _totalShardLPTokens;
@@ -82,8 +80,8 @@ contract BondingCurve {
 		assert(_x > 0);
 		assert(_y > 0);
 		_k = _x.mul(_y);
-		_ethSuppliers._totalSuppliedEth = msg.value;
-		_shardSuppliers._totalSuppliedShards = suppliedShards;
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = suppliedShards;
 
 		_ethSuppliers._mappingEthLPTokens[msg.sender] = msg.value;
 		_ethSuppliers._totalEthLPTokens = msg.value;
@@ -124,7 +122,7 @@ contract BondingCurve {
 		_y = newY;
 		_x = newX;
 
-		_shardSuppliers._shardFeesToSuppliers = _shardSuppliers._shardFeesToSuppliers.add(actualShardsBeforeNiftex.sub(shardAmount));
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(actualShardsBeforeNiftex.sub(shardAmount));
 		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(actualShardsAfterNiftex.sub(actualShardsBeforeNiftex));
 
 		_shardRegistry.transfer(msg.sender, shardAmount);
@@ -164,7 +162,7 @@ contract BondingCurve {
 
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
 
-		_ethSuppliers._ethFeesToSuppliers = _ethSuppliers._ethFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(1000));
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(1000));
 		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(1000));
 
 		weiPayout = weiPayout.mul(uint256(1000).sub(_feePctToNiftex).sub(_feePctToSuppliers)).div(1000);
@@ -219,14 +217,14 @@ contract BondingCurve {
 	}
 
 	function calcNewShardLPTokensToIssue(uint256 addedAmount) public view returns (uint256) {
-		uint256 existingShardPool = _shardSuppliers._totalSuppliedShards.add(_shardSuppliers._shardFeesToSuppliers);
+		uint256 existingShardPool = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers;
 		uint256 proportion = addedAmount.mul(1000).div(existingShardPool.add(addedAmount));
 		uint256 newShardLPTokensToIssue = proportion.div(uint256(1000).sub(proportion)).mul(existingShardPool);
 		return newShardLPTokensToIssue;
 	}
 
 	function calcNewEthLPTokensToIssue(uint256 addedAmount) public view returns (uint256) {
-		uint256 existingEthPool = _ethSuppliers._totalSuppliedEth.add(_ethSuppliers._ethFeesToSuppliers);
+		uint256 existingEthPool = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers;
 		uint256 proportion = addedAmount.mul(1000).div(existingEthPool.add(addedAmount));
 		uint256 newEthLPTokensToIssue = proportion.div(uint256(1000).sub(proportion)).mul(existingEthPool);
 		return newEthLPTokensToIssue;
@@ -238,7 +236,7 @@ contract BondingCurve {
 		uint256 newShardLPTokensToIssue = calcNewShardLPTokensToIssue(shardAmount);
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].add(newShardLPTokensToIssue);
 		_shardSuppliers._totalShardLPTokens = _shardSuppliers._totalShardLPTokens.add(newShardLPTokensToIssue);
-		_shardSuppliers._totalSuppliedShards = _shardSuppliers._totalSuppliedShards.add(shardAmount);
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount);
 
 		emit ShardsSupplied(shardAmount, msg.sender);
 	}
@@ -252,16 +250,17 @@ contract BondingCurve {
 		uint256 newEthLPTokensToIssue = calcNewEthLPTokensToIssue(msg.value);
 		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].add(newEthLPTokensToIssue);
 		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.add(newEthLPTokensToIssue);
-		_ethSuppliers._totalSuppliedEth = _ethSuppliers._totalSuppliedEth.add(msg.value);
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(msg.value);
 
 		emit EtherSupplied(msg.value, msg.sender);
 	}
 
 	function withdrawSuppliedShards(uint256 shardAmount) external {
-		// require(
-		// 	shardAmount <= _mapSuppliedShards[msg.sender],
-		// 	"Cannot withdraw more than deposited amount of shards"
-		// );
+		uint256 maxShardsToWithdraw = _shardSuppliers._mappingShardLPTokens[msg.sender].div(_shardSuppliers._totalShardLPTokens).times(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers);
+		require(
+			shardAmount <= maxShardsToWithdraw,
+			"Cannot withdraw more than your current amount of shards in the pool"
+		);
 
 		uint256 shardsToSell;
 
