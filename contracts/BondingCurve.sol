@@ -196,7 +196,7 @@ contract BondingCurve {
 		return shardsRequired;
 	}
 
-	function calcEthPayoutForShardSale(uint256 shardAmount) public view returns (uint256) {
+	function calcEthPayoutForShardLP(uint256 shardAmount) public view returns (uint256) {
 		uint256 newX = _x.add(shardAmount);
 		uint256 newY = _k.div(newX);
 		assert(newY > 0);
@@ -206,7 +206,7 @@ contract BondingCurve {
 		return weiPayout;
 	}
 
-	function calcShardPayoutForEthSale(uint256 ethAmount) public view returns (uint256) {
+	function calcShardPayoutForEthLP(uint256 ethAmount) public view returns (uint256) {
 		uint256 newY = _y.add(ethAmount);
 		uint256 newX = _k.div(newY);
 		assert(newY > 0);
@@ -269,7 +269,7 @@ contract BondingCurve {
 			shardsToSell = shardAmount.sub(curveBalance);
 		}
 
-		uint256 ethPayout = calcEthPayoutForShardSale(shardsToSell);
+		uint256 ethPayout = calcEthPayoutForShardLP(shardsToSell);
 
 		// !WARNING are there edge cases where this could fail and the person is blocked from withdrawing?
 		require(ethPayout <= address(this).balance);
@@ -316,7 +316,7 @@ contract BondingCurve {
 			ethToSellOnMarket = ethAmount.sub(address(this).balance);
 		}
 
-		uint256 shardPayout = calcShardPayoutForEthSale(ethToSellOnMarket);
+		uint256 shardPayout = calcShardPayoutForEthLP(ethToSellOnMarket);
 
 		require(shardPayout <= _shardRegistry.balanceOf(address(this)));
 
