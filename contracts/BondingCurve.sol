@@ -17,6 +17,10 @@ contract BondingCurve {
 	uint256 internal _x;
 	uint256 internal _k;
 
+	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
+	uint256 internal _feePctToSuppliers = 75; // 1 -> 1000 (1% is 100)
+	uint256 internal _feePctToNiftex = 25; // 1 -> 1000 (0.25% is 25)
+
 	// are these needed? all we do is add subtract
 	// needed for fees?
 
@@ -93,10 +97,7 @@ contract BondingCurve {
 	function buyShards(
 		uint256 shardAmount
 	) public payable {
-		require(
-			_shardRegistry.balanceOf(address(this)) >= shardAmount,
-			"1"
-		);
+		
 
 		uint256 newX = _x.sub(shardAmount);
 		uint256 newY = _k.div(newX);
@@ -104,11 +105,29 @@ contract BondingCurve {
 		assert(newX > 0);
 
 		uint256 weiRequired = newY.sub(_y);
+		uint256 weiRequiredBeforeNiftex = weiRequired.div(1000).times(uint256(1000).add(_feePctToSuppliers));
+		uint256 weiRequiredAfterNiftex = weiRequired.div(1000).times(uint256(1000).add(_feePctToSuppliers).add(_feePctToNiftex));
+
+		uint256 actualShardsBeforeNiftex = _x.minus(_k.div(_y.add(weiRequiredBeforeNiftex)));
+		uint256 actualShardsAfterNiftex = _x.minus(_k.div(_y.add(weiRequiredAfterNiftex)));
+
+		weiRequired = weiRequiredAfterNiftex;
+
+		require(
+			_shardRegistry.balanceOf(address(this)) >= actualShardsAfterNiftex,
+			"1"
+		);
 		require(weiRequired <= msg.value, "2");
 		require(msg.value >= weiRequired, "3");
 
+		newX = _x.sub(actualShardsAfterNiftex);
+		newY = _k.div(newY);
+
 		_y = newY;
 		_x = newX;
+
+		_shardSuppliers._shardFeesToSuppliers = _shardSuppliers._shardFeesToSuppliers.add(actualShardsBeforeNiftex.sub(shardAmount));
+		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(actualShardsAfterNiftex.sub(actualShardsBeforeNiftex));
 
 		_shardRegistry.transfer(msg.sender, shardAmount);
 
