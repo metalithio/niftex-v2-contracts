@@ -353,7 +353,8 @@ contract BondingCurve {
 	}
 
 	function getCurrentPrice() external view returns (uint256) {
-		return _y.div(_x);
+		// !TODO get 1e18 based on ERC20 decimals - not all ERC20 have 18 decimals
+		return _y.div(_x).mul(1e18);
 	}
 
 	function getCurveCoordinates() external view returns (uint256, uint256, uint256) {
