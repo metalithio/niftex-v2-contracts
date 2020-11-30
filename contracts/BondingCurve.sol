@@ -120,7 +120,7 @@ contract BondingCurve {
 		);
 
 		newX = _x.sub(actualShardsAfterNiftex);
-		newY = _k.div(newY);
+		newY = _k.div(newX);
 
 		_y = newY;
 		_x = newX;
