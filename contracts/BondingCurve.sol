@@ -108,8 +108,8 @@ contract BondingCurve {
 		uint256 weiRequiredBeforeNiftex = weiRequired.div(1000).times(uint256(1000).add(_feePctToSuppliers));
 		uint256 weiRequiredAfterNiftex = weiRequired.div(1000).times(uint256(1000).add(_feePctToSuppliers).add(_feePctToNiftex));
 
-		uint256 actualShardsBeforeNiftex = _x.minus(_k.div(_y.add(weiRequiredBeforeNiftex)));
-		uint256 actualShardsAfterNiftex = _x.minus(_k.div(_y.add(weiRequiredAfterNiftex)));
+		uint256 actualShardsBeforeNiftex = _x.sub(_k.div(_y.add(weiRequiredBeforeNiftex)));
+		uint256 actualShardsAfterNiftex = _x.sub(_k.div(_y.add(weiRequiredAfterNiftex)));
 
 		weiRequired = weiRequiredAfterNiftex;
 
