@@ -15,15 +15,17 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 	// Benefits: loop transfer per registry, control, potential cost reduction for owner
 	// Potential issues: more implementation/compatibility issues
 	// Could be combined with free transfer pattern to cover all assets...
-	// in which case confirmCustody should only call the registries that transferToCustody()...
+	// in which case confirmCustody() should only call the registries that transferToCustody()...
 	// did not cover
 
 	address[] private _nftRegistryAddresses;
-	uint[] private assetType;
-	mapping(address => uint[]) registryTokenIdMapping;
+	uint[] private _assetType;
+	mapping(address => uint[]) _registryTokenIdMapping;
 	// ERC1155-only
-	mapping(address => uint[]) valueMapping;
-	bytes memory data;
+	mapping(address => uint[]) _valueMapping;
+	bytes memory _data;
+
+	address[] _nonStandardRegistries;
 
 	function transferToCustody() {
 		for (uint x = 0; x < _nftRegistryAddresses.length; x++) {
@@ -58,17 +60,21 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 	uint[] private implementationType;
 	mapping(address => uint[]) registryTokenIdMapping;
 
+	address[] _nonStandardRegistries;
 
 	function confirmCustody() {
+		// get whitelist
 		callableFunctions = constantsContract.callableFunctions();
-		for (uint x = 0; x < _nftRegistryAddresses.length; x++) {
-			if (assetType[x] == 3) {
-				selector = callableFunctions[implementationType[x]];
-				uint[] tokenIds = registryTokenIdMapping[_nftRegistryAddresses[x]];
-				for (uint y = 0; y < tokenIds.length; y++) {
-					bytes memory callData = abi.encodeWithSelector(selector, owner, tokenIds[y])
-					(bool success, bytes memory returnData) = target.call.value(0)(callData);
-				}
+		for (uint x = 0; x < _nonStandardRegistries.length; x++) {
+			address registryAddress = _nonStandardRegistries[x];
+			// the selector is an ownerOf-type function
+			selector = callableFunctions[implementationType[x]];
+			uint[] tokenIds = registryTokenIdMapping[registryAddress];
+			for (uint y = 0; y < tokenIds.length; y++) {
+				bytes memory callData = abi.encodeWithSelector(selector, owner, tokenIds[y])
+				(bool success, bytes memory returnData) = registryAddress.call.value(0)(callData);
+				// what does returnData look like?
+				assert(returnData == address(this));
 			}
 		}
 	}
