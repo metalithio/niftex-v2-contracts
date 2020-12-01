@@ -26,8 +26,10 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 	bytes memory _data;
 
 	address[] _nonStandardRegistries;
+	uint _custodyStage;
 
 	function transferToCustody() {
+		require(_nftRegistryAddresses.length > 0);
 		for (uint x = 0; x < _nftRegistryAddresses.length; x++) {
 			uint[] tokenIds = registryTokenIdMapping[_nftRegistryAddresses[x]];
 			if (assetType == 1) {
@@ -47,6 +49,7 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 				// skip, this is a nonstandard asset - check ownership via confirmCustody()
 			}
 		}
+		_custodyStage = 1;
 	}
 	///////////////////
 
@@ -62,7 +65,11 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 
 	address[] _nonStandardRegistries;
 
-	function confirmCustody() {
+	function confirmCustody() internal {
+		require(
+			_custodyStage == 1 ||
+			_nftRegistryAddresses.length > 0 && _nftRegistryAddresses.length == _nonStandardRegistries.length
+		);
 		// get whitelist
 		callableFunctions = constantsContract.callableFunctions();
 		for (uint x = 0; x < _nonStandardRegistries.length; x++) {
@@ -71,12 +78,15 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 			selector = callableFunctions[implementationType[x]];
 			uint[] tokenIds = registryTokenIdMapping[registryAddress];
 			for (uint y = 0; y < tokenIds.length; y++) {
-				bytes memory callData = abi.encodeWithSelector(selector, owner, tokenIds[y])
-				(bool success, bytes memory returnData) = registryAddress.call.value(0)(callData);
-				// what does returnData look like?
-				assert(returnData == address(this));
+				// reference https://ethereum.stackexchange.com/questions/88069/what-does-the-function-abi-encodewithselectorbytes4-selector-returns-by
+				// THE ARGUMENT AND RETURN TYPE ARE STILL ASSUMED... won't work for ERC1155
+				bytes memory callData = abi.encodeWithSelector(selector, tokenIds[y])
+				(bool success, bytes memory returnData) = address(registryAddress).staticcall(callData);
+				address owner = abi.decode(returnData, (address));
+				assert(owner == address(this));
 			}
 		}
+		_custodyStage = 2;
 	}
 
 	///////////////////
