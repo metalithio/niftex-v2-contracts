@@ -12,17 +12,20 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 
 	///////////////////
 	// APPROVAL PATTERN
+	// Benefits: loop transfer per registry, control, potential cost reduction for owner
 	// Potential issues: more implementation/compatibility issues
-	// Could be combined with free transfer pattern to cover all assets
+	// Could be combined with free transfer pattern to cover all assets...
+	// in which case confirmCustody should only call the registries that transferToCustody()...
+	// did not cover
 
 	address[] private _nftRegistryAddresses;
 	uint[] private assetType;
 	mapping(address => uint[]) registryTokenIdMapping;
 	// ERC1155-only
 	mapping(address => uint[]) valueMapping;
-	bytes[] memory data;
+	bytes memory data;
 
-	function custody() {
+	function transferToCustody() {
 		for (uint x = 0; x < _nftRegistryAddresses.length; x++) {
 			uint[] tokenIds = registryTokenIdMapping[_nftRegistryAddresses[x]];
 			if (assetType == 1) {
@@ -38,6 +41,8 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 					values,
 					data[x]
 				)
+			} else if (assetType == 3) {
+				// skip, this is a nonstandard asset - check ownership via confirmCustody()
 			}
 		}
 	}
@@ -45,21 +50,25 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 
 	///////////////////
 	// FREE TRANSFER + CUSTODY CHECK PATTERN
-	// Potential issues: requires selector whitelist, more expensive
+	// Benefits: implementation agnostic, confirm ownership of anything
+	// Potential issues: requires selector whitelist, more expensive?
 
 	address[] private _nftRegistryAddresses;
+	uint[] private assetType;
 	uint[] private implementationType;
-	mapping(address => uint[]) custodyAssets;
+	mapping(address => uint[]) registryTokenIdMapping;
 
 
 	function confirmCustody() {
-		callableFunctions = paramContract.callableFunctions();
+		callableFunctions = constantsContract.callableFunctions();
 		for (uint x = 0; x < _nftRegistryAddresses.length; x++) {
-			selector = callableFunctions[implementationType[x]];
-			uint[] tokenIds = custodyAssets[_nftRegistryAddresses[x]];
-			for (uint y = 0; y < tokenIds.length; y++) {
-				bytes memory callData = abi.encodeWithSelector(selector, owner, tokenIds[y])
-				(bool success, bytes memory returnData) = target.call.value(0)(callData);
+			if (assetType[x] == 3) {
+				selector = callableFunctions[implementationType[x]];
+				uint[] tokenIds = registryTokenIdMapping[_nftRegistryAddresses[x]];
+				for (uint y = 0; y < tokenIds.length; y++) {
+					bytes memory callData = abi.encodeWithSelector(selector, owner, tokenIds[y])
+					(bool success, bytes memory returnData) = target.call.value(0)(callData);
+				}
 			}
 		}
 	}
