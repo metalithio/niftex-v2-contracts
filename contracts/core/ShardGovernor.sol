@@ -2,19 +2,21 @@
 /* solhint-disable indent */
 
 // questions
-// what is cheaper/better: saving contract to state or instantiating every time?
 // should we store all assets of a type in one contract, or each their own?
 // e.g. store NFTs in singleton or not, ETH raises in singleton or not
 
 pragma solidity ^0.6.0;
 
+import "./interfaces/IERC20Factory.sol";
+import "./interfaces/IERC20.sol";
+import "./interfaces/IUpfrontSaleFactory.sol";
+import "./interfaces/IUpfrontSale.sol";
+import "./interfaces/IBuyoutFactory.sol";
+import "./interfaces/IConstants.sol";
 
 contract ShardGovernor {
 
 	uint private _fracId;
-	ERC20Factory erc20Factory;
-	UpfrontSaleFactory upfrontSaleFactory;
-	BuyoutFactory buyoutFactory;
 
 	struct Fractions {
 		address[] nftRegistryAddresses;
@@ -26,11 +28,15 @@ contract ShardGovernor {
 		address[] buyouts;
 	}
 
-	mapping(uint => Fractions) fractionMapping;
+	mapping(uint => Fractions) _fractionMapping;
+
+	address _constantsAddress;
 
 	// pull niftexWalletAddress from constants
 
-	constructor() {}
+	constructor(constantsAddress) {
+		_constantsAddress = constantsAddress;
+	}
 
 	function newShards(
 		// [] nftRegistryAddresses
@@ -51,8 +57,9 @@ contract ShardGovernor {
 		string calldata symbol,
 		bool shotgunDisabled,
 	) public {
+		address factory = IConstants(_constantsAddress).upfrontSaleFactoryAddress();
 		// dynamically choose from fixed sale type: fixed price, auction, skip...
-		address upfrontSaleAddress = upfrontSaleFactory.deploy(...);
+		address upfrontSaleAddress = IUpFrontSaleFactory(factory).deploy(...);
 		_fracId++;
 		Fractions f = Fractions({
 			nftRegistryAddresses: paramAddresses[0],
@@ -68,17 +75,18 @@ contract ShardGovernor {
 	// assumes no singleton for upfront sales
 	function distributeShards(uint fracId, uint recipient) {
 		f = fractionMapping[fracId];
-		UpfrontSale s = UpfrontSale(f.upfrontSaleAddress);
-		if (s.registryAddress == address(0)) {
+		if (f.registryAddress == address(0)) {
 			// should mint everything upfront to avoid user confusion
 			// + automatically mint to niftex wallet/artists?
-			ERC20 registry = erc20Factory.deploy(...);
+			address factory = IConstants(_constantsAddress).erc20FactoryAddress();
+			IERC20 registry = IERC20Factory(factory).deploy(...);
+			f.registryAddress = address(registry);
 			// deploy bonding curve too?
 		} else {
-			ERC20 registry = ERC20(f.registryAddress);
+			IERC20 registry = IERC20(f.registryAddress);
 		}
 		// mark as claimed in UpfrontSale
-		uint shardAmount = s.getShardAmount(recipient);
+		uint shardAmount = IUpfrontSale(f.upfrontSaleAddress).getShardAmount(recipient);
 		registry.mint(recipient, shardAmount);
 	}
 
@@ -86,11 +94,13 @@ contract ShardGovernor {
 	// assumes governor does shard custody for buyout
 	function newBuyout(uint fracId, address claimant) public payable {
 		f = fractionMapping[fracId];
-		ERC20 registry = ERC20(f.registryAddress);
+		IERC20 registry = IERC20(f.registryAddress);
 		uint balance = registry.balanceOf(claimant);
 		require(balance > 1% of supply);
 		registry.transferFrom(claimant, address(this), balance);
-		address buyoutAddress = buyoutFactory.deploy(...);
+
+		address factory = IConstants(_constantsAddress).buyoutFactoryAddress();
+		address buyoutAddress = IBuyoutFactory(factory).deploy(...);
 		f.buyouts.push(buyoutAddress);
 	}
 
