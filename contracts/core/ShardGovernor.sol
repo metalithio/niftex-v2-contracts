@@ -26,6 +26,10 @@ contract ShardGovernor {
 		address registryAddress;
 		address upfrontSaleAddress;
 		address[] buyouts;
+		string name;
+		string symbol;
+		uint cap;
+		bool shotgunDisabled;
 	}
 
 	mapping(uint => Fractions) _fractionMapping;
@@ -67,7 +71,11 @@ contract ShardGovernor {
 			ownerAddress: paramAddresses[1][0],
 			artistAddresses: paramAddresses[?],
 			registryAddress: registryAddress,
-			upfrontSaleAdddress: upfrontSaleAddress
+			upfrontSaleAdddress: upfrontSaleAddress,
+			name: name,
+			symbol: symbol,
+			cap: paramNumbers[1][0],
+			shotgunDisabled: shotgunDisabled
 		});
 		fractionMapping[_fracId] = f;
 	}
@@ -79,7 +87,12 @@ contract ShardGovernor {
 			// should mint everything upfront to avoid user confusion
 			// + automatically mint to niftex wallet/artists?
 			address factory = IConstants(_constantsAddress).erc20FactoryAddress();
-			IERC20 registry = IERC20Factory(factory).deploy(...);
+			IERC20 registry = IERC20Factory(factory).deploy(
+				f.name,
+				f.symbol,
+				f.cap,
+				address(this) // desiredOwner
+			);
 			f.registryAddress = address(registry);
 			// deploy bonding curve too?
 		} else {
