@@ -11,12 +11,12 @@ import "./interfaces/IERC20Factory.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IUpfrontSaleFactory.sol";
 import "./interfaces/IUpfrontSale.sol";
-import "./interfaces/IBuyoutFactory.sol";
 import "./interfaces/IConstants.sol";
+
 
 contract ShardGovernor {
 
-	uint private _fracId;
+	uint _fracId;
 
 	struct Fractions {
 		address[] nftRegistryAddresses;
@@ -25,11 +25,10 @@ contract ShardGovernor {
 		address[][] artistWalletAddresses;
 		address registryAddress;
 		address upfrontSaleAddress;
-		address[] buyouts;
 		string name;
 		string symbol;
 		uint cap;
-		bool shotgunDisabled;
+		bool buyoutDisabled;
 	}
 
 	mapping(uint => Fractions) _fractionMapping;
@@ -37,7 +36,6 @@ contract ShardGovernor {
 	address _constantsAddress;
 
 	// pull niftexWalletAddress from constants
-
 	constructor(constantsAddress) {
 		_constantsAddress = constantsAddress;
 	}
@@ -59,13 +57,13 @@ contract ShardGovernor {
 		uint[][] paramNumbers
 		string calldata name,
 		string calldata symbol,
-		bool shotgunDisabled,
+		bool buyoutDisabled,
 	) public {
 		address factory = IConstants(_constantsAddress).upfrontSaleFactoryAddress();
 		// dynamically choose from fixed sale type: fixed price, auction, skip...
 		address upfrontSaleAddress = IUpFrontSaleFactory(factory).deploy(...);
 		_fracId++;
-		Fractions f = Fractions({
+		fractionMapping[_fracId] = Fractions({
 			nftRegistryAddresses: paramAddresses[0],
 			tokenIds: paramNumbers[?],
 			ownerAddress: paramAddresses[1][0],
@@ -75,9 +73,8 @@ contract ShardGovernor {
 			name: name,
 			symbol: symbol,
 			cap: paramNumbers[1][0],
-			shotgunDisabled: shotgunDisabled
-		});
-		fractionMapping[_fracId] = f;
+			buyoutDisabled: buyoutDisabled
+		});;
 	}
 
 	// assumes no singleton for upfront sales
@@ -103,18 +100,12 @@ contract ShardGovernor {
 		registry.mint(recipient, shardAmount);
 	}
 
-	// assumes approve
-	// assumes governor does shard custody for buyout
-	function newBuyout(uint fracId, address claimant) public payable {
-		f = fractionMapping[fracId];
-		IERC20 registry = IERC20(f.registryAddress);
-		uint balance = registry.balanceOf(claimant);
-		require(balance > 1% of supply);
-		registry.transferFrom(claimant, address(this), balance);
-
-		address factory = IConstants(_constantsAddress).buyoutFactoryAddress();
-		address buyoutAddress = IBuyoutFactory(factory).deploy(...);
-		f.buyouts.push(buyoutAddress);
+	function getBuyoutParams(uint fracId) public view returns (address, uint, bool) {
+		return (
+			fractionMapping[fracId].registryAddress,
+			fractionMapping[fracId].cap,
+			fractionMapping[fracId].buyoutDisabled
+		);
 	}
 
 }
