@@ -12,7 +12,7 @@ import "./interfaces/IERC20.sol";
 import "./interfaces/IUpfrontSaleFactory.sol";
 import "./interfaces/IUpfrontSale.sol";
 import "./interfaces/IConstants.sol";
-
+import "./interfaces/ICustodian.sol";
 
 contract ShardGovernor {
 
@@ -46,23 +46,36 @@ contract ShardGovernor {
 		// niftexWalletAddress
 		// artistWalletAddress
 		// factoryAddress
+		// [] upfrontSaleParams
 		address[][] paramAddresses,
 		// [][] tokenIds (per registry)
 		// liqProviderCutInShards
 		// artistCutInShards
-		// pricePerShardInWei
-		// shardAmountOffered
 		// offeringDeadline
 		// cap
+		// upfrontSaleType
+		// [] upfrontSaleParams -> pricePerShardInWei, shardAmountOffered
 		uint[][] paramNumbers
 		string calldata name,
 		string calldata symbol,
 		bool buyoutDisabled,
 	) public {
-		address factory = IConstants(_constantsAddress).upfrontSaleFactoryAddress();
-		// dynamically choose from fixed sale type: fixed price, auction, skip...
-		address upfrontSaleAddress = IUpFrontSaleFactory(factory).deploy(...);
 		_fracId++;
+		IConstants c = IConstants(_constantsAddress);
+		// dynamically choose from fixed sale type: fixed price, auction, skip...
+		address upfrontSaleAddress = IConstants(_constantsAddress).getUpfrontSaleContract(
+			// upfront sale type
+			// 1 - fixed price sale
+			// 2 - skip - directly to bonding curve with arbitrary price
+			// 3 - auction
+			// 4 - etc
+			paramNumbers[2][0]
+		);
+		IUpfrontSale(upfrontSaleAddress).newSale(
+			fracId,
+			paramAddresses[2], // upfrontSaleParams
+			paramNumbers[3] // upfrontSaleParams
+		);
 		fractionMapping[_fracId] = Fractions({
 			nftRegistryAddresses: paramAddresses[0],
 			tokenIds: paramNumbers[?],
@@ -73,13 +86,22 @@ contract ShardGovernor {
 			name: name,
 			symbol: symbol,
 			cap: paramNumbers[1][0],
-			buyoutDisabled: buyoutDisabled
+			buyoutDisabled: buyoutDisabled,
+			upfrontSaleType: paramNumbers[2][0] // does this need to be documented?
 		});;
 	}
+
+	/* function windDownSale(fracId) {
+		f = fractionMapping[fracId];
+		(bool expired) = IUpfrontSale.hasExpired(fracId);
+		require(expired);
+
+	} */
 
 	// assumes no singleton for upfront sales
 	function distributeShards(uint fracId, uint recipient) {
 		f = fractionMapping[fracId];
+		require(IUpfrontSale(f.upfrontSaleAddress).isCompleted());
 		if (f.registryAddress == address(0)) {
 			// should mint everything upfront to avoid user confusion
 			// + automatically mint to niftex wallet/artists?

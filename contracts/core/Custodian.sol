@@ -98,7 +98,7 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 		string memory signature, // what is this?
 		bytes memory data
 	) {
-		require(buyoutSuccessful, "[Custodian] Conditions not met");
+		require(buyoutSuccessful || saleExpired, "[Custodian] Conditions not met");
 		execute(target, value, signature, data);
 	}
 
