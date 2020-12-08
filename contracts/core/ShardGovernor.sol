@@ -48,19 +48,46 @@ contract ShardGovernor {
 		// factoryAddress
 		// [] upfrontSaleParams
 		address[][] paramAddresses,
-		// [][] tokenIds (per registry)
 		// liqProviderCutInShards
 		// artistCutInShards
 		// offeringDeadline
 		// cap
 		// upfrontSaleType
 		// [] upfrontSaleParams -> pricePerShardInWei, shardAmountOffered
-		uint[][] paramNumbers
+		// [] assetType
+		// [] implementationTypes
+		uint[][] paramNumbers,
+		uint[][] tokenIds,
+		uint[][] values,
 		string calldata name,
 		string calldata symbol,
 		bool buyoutDisabled,
 	) public {
 		_fracId++;
+		fractionMapping[_fracId] = Fractions({
+			nftRegistryAddresses: paramAddresses[0], // only needed for custodian?
+			tokenIds: tokenIds, // only needed for custodian?
+			ownerAddress: paramAddresses[1][0],
+			artistAddresses: paramAddresses[?],
+			name: name,
+			symbol: symbol,
+			cap: paramNumbers[1][0],
+			buyoutDisabled: buyoutDisabled,
+			upfrontSaleType: paramNumbers[2][0]
+		});
+		address custodian = IConstants(_constantsAddress).custodianAddress();
+		ICustodian(custodian).newSet(
+			fracId,
+			paramAddresses[0], // nftRegistryAddresses
+			tokenIds,
+			paramNumbers[3], // assetTypes
+			values,
+			paramNumbers[4], // implementationTypes
+		)
+	}
+
+	function beginSale(uint fracId) {
+		f = fractionMapping[fracId];
 		IConstants c = IConstants(_constantsAddress);
 		// dynamically choose from fixed sale type: fixed price, auction, skip...
 		address upfrontSaleAddress = IConstants(_constantsAddress).getUpfrontSaleContract(
@@ -69,26 +96,13 @@ contract ShardGovernor {
 			// 2 - skip - directly to bonding curve with arbitrary price
 			// 3 - auction
 			// 4 - etc
-			paramNumbers[2][0]
+			f.upfrontSaleType
 		);
 		IUpfrontSale(upfrontSaleAddress).newSale(
 			fracId,
 			paramAddresses[2], // upfrontSaleParams
 			paramNumbers[3] // upfrontSaleParams
 		);
-		fractionMapping[_fracId] = Fractions({
-			nftRegistryAddresses: paramAddresses[0],
-			tokenIds: paramNumbers[?],
-			ownerAddress: paramAddresses[1][0],
-			artistAddresses: paramAddresses[?],
-			registryAddress: registryAddress,
-			upfrontSaleAdddress: upfrontSaleAddress,
-			name: name,
-			symbol: symbol,
-			cap: paramNumbers[1][0],
-			buyoutDisabled: buyoutDisabled,
-			upfrontSaleType: paramNumbers[2][0] // does this need to be documented?
-		});;
 	}
 
 	/* function windDownSale(fracId) {

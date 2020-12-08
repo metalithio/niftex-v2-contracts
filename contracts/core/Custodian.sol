@@ -10,6 +10,38 @@ import "./Executor.sol";
 
 contract Custodian is ERC721Holder, ERC115Holder, Executor {
 
+	struct CustodySet {
+		address[] nftRegistryAddresses,
+		// 1: 721
+		// 2: 1155
+		// 3: nonstandard, requires confirmCustody()
+		uint[][] tokenIds,
+		uint[] assetTypes,
+		uint[][] values, // 1155
+		uint[] implementationTypes, // to find selector for nonstandard assets
+		uint custodyStage // 1 = approve step done, 2 = completely done
+	}
+
+	mapping(uint => CustodySet) _setMapping;
+
+	function newSet(
+		uint fracId,
+		address[] nftRegistryAddresses,
+		uint[][] tokenIds,
+		uint[] assetTypes,
+		uint[][] values,
+		uint[] implementationTypes
+	) external {
+		// require only governor
+		_setMapping[fracId] = CustodySet(
+			nftRegistryAddresses,
+			tokenIds,
+			assetTypes,
+			values,
+			implementationTypes
+		});
+	}
+
 	///////////////////
 	// APPROVAL PATTERN
 	// Benefits: loop transfer per registry, control, potential cost reduction for owner
@@ -18,38 +50,29 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 	// in which case confirmCustody() should only call the registries that transferToCustody()...
 	// did not cover
 
-	address[] private _nftRegistryAddresses;
-	uint[] private _assetType;
-	mapping(address => uint[]) _registryTokenIdMapping;
-	// ERC1155-only
-	mapping(address => uint[]) _valueMapping;
-	bytes memory _data;
-
-	address[] _nonStandardRegistries;
-	uint _custodyStage;
-
-	function transferToCustody() {
-		require(_nftRegistryAddresses.length > 0);
-		for (uint x = 0; x < _nftRegistryAddresses.length; x++) {
-			uint[] tokenIds = registryTokenIdMapping[_nftRegistryAddresses[x]];
+	function transferToCustody(uint fracId) {
+		CustodySet c = setMapping[fracId];
+		require(c.nftRegistryAddresses.length > 0);
+		for (uint x = 0; x < c.nftRegistryAddresses.length; x++) {
+			address registry = c.nftRegistryAddresses[x];
+			uint[] tokenIds = c.tokenIds[x];
 			if (assetType == 1) {
 				for (uint y = 0; y < tokenIds.length; y++) {
-						IERC721(_nftRegistryAddresses[x]).transferFrom(owner, address(this), tokenIds[y]);
+						IERC721(registry).transferFrom(owner, address(this), tokenIds[x]);
 				}
 			} else if (assetType == 2) {
-				uint[] values = valueMapping[_nftRegistryAddresses[x]];
-				IERC1155(_nftRegistryAddresses[x]).safeBatchTransferFrom(
+				IERC1155(registry).safeBatchTransferFrom(
 					owner,
 					address(this),
 					tokenIds,
-					values,
-					data[x]
+					c.values[x],
+					"" // "data", arbitrary
 				)
 			} else if (assetType == 3) {
 				// skip, this is a nonstandard asset - check ownership via confirmCustody()
 			}
 		}
-		_custodyStage = 1;
+		c.custodyStage = 1;
 	}
 	///////////////////
 
@@ -58,35 +81,32 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 	// Benefits: implementation agnostic, confirm ownership of anything
 	// Potential issues: requires selector whitelist, more expensive?
 
-	address[] private _nftRegistryAddresses;
-	uint[] private assetType;
-	uint[] private implementationType;
-	mapping(address => uint[]) registryTokenIdMapping;
-
-	address[] _nonStandardRegistries;
-
-	function confirmCustody() internal {
+	function confirmCustody(uint fracId) internal {
+		CustodySet c = setMapping[fracId];
 		require(
-			_custodyStage == 1 ||
-			_nftRegistryAddresses.length > 0 && _nftRegistryAddresses.length == _nonStandardRegistries.length
+			c.custodyStage == 1 ||
+			c.nftRegistryAddresses.length > 0 && c.nftRegistryAddresses.length == c.nonStandardRegistries.length
 		);
 		// get whitelist
-		callableFunctions = constantsContract.callableFunctions();
-		for (uint x = 0; x < _nonStandardRegistries.length; x++) {
-			address registryAddress = _nonStandardRegistries[x];
-			// the selector is an ownerOf-type function
-			selector = callableFunctions[implementationType[x]];
-			uint[] tokenIds = registryTokenIdMapping[registryAddress];
-			for (uint y = 0; y < tokenIds.length; y++) {
-				// reference https://ethereum.stackexchange.com/questions/88069/what-does-the-function-abi-encodewithselectorbytes4-selector-returns-by
-				// THE ARGUMENT AND RETURN TYPE ARE STILL ASSUMED... won't work for ERC1155
-				bytes memory callData = abi.encodeWithSelector(selector, tokenIds[y])
-				(bool success, bytes memory returnData) = address(registryAddress).staticcall(callData);
-				address owner = abi.decode(returnData, (address));
-				assert(owner == address(this));
+		selectors = constantsContract.getSelectors();
+		uint index;
+		for (uint x = 0; x < c.assetTypes.length; x++) {
+			if (c.assetTypes[x] == 3) {
+				// the selector is an ownerOf-type function
+				selector = selectors[c.implementationTypes[index]];
+				index++;
+				uint[] tokenIds = c.tokenIds[x];
+				for (uint y = 0; y < tokenIds.length; y++) {
+					// reference https://ethereum.stackexchange.com/questions/88069/what-does-the-function-abi-encodewithselectorbytes4-selector-returns-by
+					// THE ARGUMENT AND RETURN TYPE ARE STILL ASSUMED... won't work for ERC1155
+					bytes memory callData = abi.encodeWithSelector(selector, tokenIds[y])
+					(bool success, bytes memory returnData) = address(registryAddress).staticcall(callData);
+					address owner = abi.decode(returnData, (address));
+					require(owner == address(this));
+				}
 			}
 		}
-		_custodyStage = 2;
+		c.custodyStage = 2;
 	}
 
 	///////////////////

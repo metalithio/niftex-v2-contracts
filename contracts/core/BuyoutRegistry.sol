@@ -47,6 +47,13 @@ contract BuyoutRegistry {
 		address initialClaimantAddress,
 	) payable {
 		(
+			address governor,
+			uint balanceThreshold,
+			address custodian,
+			uint buyoutDuration
+		) = IConstants(_constantsAddress).getBuyoutParams();
+
+		(
 			address registry,
 			uint cap,
 			bool buyoutDisabled
@@ -56,13 +63,6 @@ contract BuyoutRegistry {
 
 		Buyout b = getLatestBuyout(fracId);
 		require(b.status == BuyoutStatus.Completed);
-
-		(
-			address governor,
-			uint balanceThreshold,
-			address custodian,
-			uint buyoutDuration
-		) = IConstants(_constantsAddress).getBuyoutParams();
 
 		IERC20 registry = IERC20(registry);
 		uint balance = registry.balanceOf(initialClaimantAddress);

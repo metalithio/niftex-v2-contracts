@@ -8,6 +8,22 @@ contract Constants {
 	mapping(uint => address) _upfrontSaleContracts;
 	mapping(uint => uint) _upfrontSaleDurations;
 
+  // https://ethereum.stackexchange.com/questions/72363/what-is-a-function-selector
+	mapping(uint => bytes4) _selectorWhitelist;
+	uint _totalSelectors;
+
+	function changeSelectorWhitelist(uint type, bytes4 selector) {
+		_selectorWhitelist[type] = selector;
+	}
+
+	function getSelectors() returns (bytes[]) {
+		bytes[] selectorArray;
+		for (uint x = 0; x < _totalSelectors; x++) {
+			selectorArray[x] = _selectorWhitelist[x];
+		}
+		return selectorArray;
+	}
+
 	function erc20FactoryAddress() returns (address);
 	function buyoutRegistryAddress() returns (address);
 	function shardGovernorAddress() returns (address);
