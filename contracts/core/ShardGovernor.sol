@@ -87,6 +87,8 @@ contract ShardGovernor {
 	}
 
 	function beginSale(uint fracId) {
+		address custodian = IConstants(_constantsAddress).custodianAddress();
+		require(ICustodian(custodian).getCustodianStage() == 2);
 		f = fractionMapping[fracId];
 		IConstants c = IConstants(_constantsAddress);
 		// dynamically choose from fixed sale type: fixed price, auction, skip...

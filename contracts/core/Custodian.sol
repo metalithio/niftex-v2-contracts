@@ -134,6 +134,10 @@ contract Custodian is ERC721Holder, ERC115Holder, Executor {
 		}
 	}
 
+	function getCustodianStage(uint fracId) returns (uint) {
+		return tokenIdMapping[fracId].custodyStage;
+	}
+
 	// more options:
 	// targets = 1, all NFTs are from single registry
 	// mass transfer function built into registry?
