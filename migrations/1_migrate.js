@@ -1,5 +1,6 @@
 const TokenizedNFTFactory = artifacts.require('TokenizedNFTFactory')
 const TokenizedNFT        = artifacts.require('TokenizedNFT')
+const NFTBatch            = artifacts.require('NFTBatch')
 
 module.exports = async function(deployer, network, accounts)
 {
@@ -12,4 +13,5 @@ module.exports = async function(deployer, network, accounts)
 
 	await deployer.deploy(TokenizedNFT);
 	await deployer.deploy(TokenizedNFTFactory, (await TokenizedNFT.deployed()).address);
+	await deployer.deploy(NFTBatch);
 };
