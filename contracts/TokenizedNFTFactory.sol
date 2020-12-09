@@ -36,7 +36,7 @@ contract TokenizedNFTFactory
         require(owner == msg.sender, "unauthorized: only token owner can perform operation");
         IERC721(token_.registry).safeTransferFrom(owner, address(instance), token_.id);
 
-        // make the contract live, prevent erc721 transfers to it.
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = address(instance).call(msg.data);
         require(success, string(returndata));
 

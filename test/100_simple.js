@@ -197,7 +197,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await niftex.name(),                       'Tokenized NFT');
 			assert.equal(await niftex.symbol(),                     'TNFT');
 			assert.equal(await niftex.decimals(),                   '0');
-			assert.equal(await niftex.totalSupply(),                '20');
+			assert.equal(await niftex.totalSupply(),                '0');
 			assert.equal(await niftex.cap(),                        '20');
 			assert.equal(await niftex.balanceOf(niftex.address),    '0');
 			assert.equal(await niftex.balanceOf(user1),             '0');
@@ -205,7 +205,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await niftex.balanceOf(user3),             '0');
 			assert.equal(await niftex.balanceOf(other1),            '0');
 			assert.equal(await niftex.balanceOf(other2),            '0');
-			assert.equal(await niftex.balanceOf(other3),            '20');
+			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await this.nft.ownerOf(1),                 other3);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0'));
 		});

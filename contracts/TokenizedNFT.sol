@@ -68,12 +68,14 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
     function crowdsaleActive()
     internal view returns (bool)
     {
+        // solhint-disable-next-line not-rely-on-time
         return block.timestamp < crowdsaleDeadline && !crowdsaleSuccessfull();
     }
 
     function crowdsaleFailled()
     internal view returns (bool)
     {
+        // solhint-disable-next-line not-rely-on-time
         return block.timestamp >= crowdsaleDeadline && !crowdsaleSuccessfull();
     }
 
@@ -91,25 +93,22 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
         Allocation[] calldata allocations_)
     external
     {
-        // check status
         require(status == Lifecycle.UNSET);
-        // setup Ownable
+
         Ownable._initializeOwnable(admin_);
-        // setup ERC020
         ERC20._initializeERC20(name_, symbol_);
         ERC20Capped._initializeERC20Capped(cap_);
         _setupDecimals(0);
-        // crowdsale
+
+        // solhint-disable-next-line not-rely-on-time
+        crowdsaleDeadline = block.timestamp + crowdsaleDuration_;
         crowdsalePricePerShare = crowdsalePricePerShare_;
-        crowdsaleDeadline      = block.timestamp + crowdsaleDuration_;
-        // token check
         token = token_;
-        // distribute shares
-        for (uint256 i = 0; i < allocations_.length; ++i)
-        {
+
+        for (uint256 i = 0; i < allocations_.length; ++i) {
             _mint(allocations_[i].receiver, allocations_[i].amount);
         }
-        // make live
+
         status = Lifecycle.LIVE;
     }
 
@@ -143,16 +142,14 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
     {
         require(!crowdsaleActive());
         uint256 shares = crowdsaleAllocations[msg.sender];
-        if (crowdsaleSuccessfull())
-        {
+        delete crowdsaleAllocations[msg.sender];
+
+        if (crowdsaleSuccessfull()) {
             _transfer(address(this), to, shares);
-        }
-        else
-        {
+        } else {
             _burn(address(this), shares);
             Address.sendValue(to, shares.mul(crowdsalePricePerShare));
         }
-        crowdsaleAllocations[msg.sender] = 0;
     }
 
     /* On successfull crowdsale, owner then get the value of the crowdsale */
@@ -180,9 +177,10 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
         uint256 buyoutprice  = buyoutshares.mul(pricePerShare);
         Address.sendValue(msg.sender, msg.value.sub(buyoutprice));
 
-        buyoutProposer      = msg.sender;
+        // solhint-disable-next-line not-rely-on-time
+        buyoutDeadline = block.timestamp.add(2 weeks);
+        buyoutProposer = msg.sender;
         buyoutPricePerShare = pricePerShare;
-        buyoutDeadline      = block.timestamp.add(2 weeks);
 
         status = Lifecycle.BUYOUT;
     }
@@ -192,6 +190,7 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
     public payable
     {
         require(status == Lifecycle.BUYOUT, "no buyout scheduled");
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp < buyoutDeadline);
         require(msg.sender != buyoutProposer);
 
@@ -199,10 +198,10 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
 
         // refund the proposer's deposit
         uint256 buyoutshares = balanceOf(buyoutProposer);
-        uint256 buyoutprice  = totalSupply().sub(buyoutshares).mul(buyoutPricePerShare);
-        uint256 stopprice    = buyoutshares.mul(buyoutPricePerShare);
+        uint256 buyoutprice = totalSupply().sub(buyoutshares).mul(buyoutPricePerShare);
+        uint256 stopprice = buyoutshares.mul(buyoutPricePerShare);
         Address.sendValue(buyoutProposer, buyoutprice.add(stopprice)); // send deposit back + buy shares
-        Address.sendValue(msg.sender,     msg.value.sub(stopprice)); // refund extra
+        Address.sendValue(msg.sender, msg.value.sub(stopprice)); // refund extra
         _transfer(buyoutProposer, msg.sender, buyoutshares);
 
         // cleanup
@@ -215,6 +214,7 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
     public
     {
         require(status == Lifecycle.BUYOUT);
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp >= buyoutDeadline);
         require(msg.sender == buyoutProposer);
 
@@ -242,12 +242,11 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
     public
     {
         require(!crowdsaleActive());
-        if (crowdsaleSuccessfull())
-        {
-            require(balanceOf(msg.sender) == totalSupply());
-        }
-        else
-        {
+        if (crowdsaleSuccessfull()) {
+            // you need to control the entier supply
+            // require(balanceOf(msg.sender) == totalSupply());
+            _burn(msg.sender, totalSupply());
+        } else {
             // you need to be the owner
             require(msg.sender == owner());
             // TODO: burn you shares ?
