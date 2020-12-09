@@ -1,0 +1,19 @@
+{
+  "name": "niftex",
+  "version": "2.0.0",
+  "description": "proposal for a v2 of niftex",
+  "author": "Hadrien Croubois (@Amxx)",
+  "license": "MIT",
+  "scripts": {
+    "compile": "truffle compile",
+    "test": "truffle test"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.3.0-solc-0.7"
+  },
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.9",
+    "ganache-cli": "^6.12.1",
+    "truffle": "^5.1.56"
+  }
+}
