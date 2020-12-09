@@ -1,6 +1,6 @@
 {
-  "name": "niftex",
-  "version": "2.0.0",
+  "name": "niftex-v2-contracts",
+  "version": "2.0.0-alpha.0",
   "description": "proposal for a v2 of niftex",
   "author": "Hadrien Croubois (@Amxx)",
   "license": "MIT",
