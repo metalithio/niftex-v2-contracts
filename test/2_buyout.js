@@ -30,14 +30,14 @@ contract('Workflow', async (accounts) => {
 
 		it('wrap', async function () {
 			const tx = await factory.initialize(
-				user1,                                  // admin_
-				'Tokenized NFT',                        // name_
-				'TNFT',                                 // symbol_
-				20,                                     // cap_
-				web3.utils.toWei('0.01'),               // crowdsalePricePerShare_
-				3600,                                   // crownsaleDuration_
-				[[ user1, 8 ], [ user2, 2 ]],           // allocations_
-				[[ nft.address, 1], [ nft.address, 2]], // tokens_
+				user1,                        // admin_
+				'Tokenized NFT',              // name_
+				'TNFT',                       // symbol_
+				20,                           // cap_
+				web3.utils.toWei('0.01'),     // crowdsalePricePerShare_
+				3600,                         // crownsaleDuration_
+				[ nft.address, 1],            // token_
+				[[ user1, 8 ], [ user2, 2 ]], // allocations_
 				{ from: user1 }
 			);
 			niftex = await TokenizedNFT.at(tx.receipt.logs.find(({ event }) => event == 'NewInstance').args.instance);
@@ -59,7 +59,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '0');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      niftex.address);
-			assert.equal(await nft.ownerOf(2),                      niftex.address);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0'));
 		});
@@ -84,7 +84,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '0');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      niftex.address);
-			assert.equal(await nft.ownerOf(2),                      niftex.address);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0.01'));
 		});
@@ -109,7 +109,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '0');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      niftex.address);
-			assert.equal(await nft.ownerOf(2),                      niftex.address);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0.10'));
 		});
@@ -132,7 +132,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '0');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      niftex.address);
-			assert.equal(await nft.ownerOf(2),                      niftex.address);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0'));
 		});
@@ -161,7 +161,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '9');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      niftex.address);
-			assert.equal(await nft.ownerOf(2),                      niftex.address);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0'));
 		});
@@ -184,7 +184,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '9');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      niftex.address);
-			assert.equal(await nft.ownerOf(2),                      niftex.address);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0.19'));
 			// console.log(await niftex.status())
@@ -208,7 +208,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '10');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      niftex.address);
-			assert.equal(await nft.ownerOf(2),                      niftex.address);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0'));
 		});
@@ -231,7 +231,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '10');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      niftex.address);
-			assert.equal(await nft.ownerOf(2),                      niftex.address);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0.01'));
 		});
@@ -259,7 +259,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '0');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      other2);
-			assert.equal(await nft.ownerOf(2),                      other2);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0.01'));
 		});
@@ -283,7 +283,7 @@ contract('Workflow', async (accounts) => {
 			assert.equal(await niftex.balanceOf(other2),            '0');
 			assert.equal(await niftex.balanceOf(other3),            '0');
 			assert.equal(await nft.ownerOf(1),                      other2);
-			assert.equal(await nft.ownerOf(2),                      other2);
+			assert.equal(await nft.ownerOf(2),                      user1);
 			assert.equal(await nft.ownerOf(3),                      user1);
 			assert.equal(await web3.eth.getBalance(niftex.address), web3.utils.toWei('0'));
 		});

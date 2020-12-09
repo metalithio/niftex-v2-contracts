@@ -35,8 +35,8 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
 {
     using SafeMath for uint256;
 
+    NFT                         public token;
     Lifecycle                   public status;
-    NFT[]                       public tokens;
     mapping(address => uint256) public crowdsaleAllocations;
     uint256                     public crowdsalePricePerShare;
     uint256                     public crowdsaleDeadline;
@@ -87,8 +87,8 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
         uint256               cap_,
         uint256               crowdsalePricePerShare_,
         uint256               crowdsaleDuration_,
-        Allocation[] calldata allocations_,
-        NFT[]        calldata tokens_)
+        NFT          calldata token_,
+        Allocation[] calldata allocations_)
     external
     {
         // check status
@@ -102,6 +102,8 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
         // crowdsale
         crowdsalePricePerShare = crowdsalePricePerShare_;
         crowdsaleDeadline      = block.timestamp + crowdsaleDuration_;
+        // token check
+        token = token_;
         // distribute shares
         for (uint256 i = 0; i < allocations_.length; ++i)
         {
@@ -257,19 +259,14 @@ contract TokenizedNFT is Ownable, ERC20, ERC20Capped, IERC721Receiver
     function _sendNFT(address to)
     internal
     {
-        for (uint256 i = 0; i < tokens.length; ++i)
-        {
-            // TODO: custom behaviour for non ERC721 complient contracts ?
-            IERC721(tokens[i].registry).safeTransferFrom(address(this), to, tokens[i].id);
-        }
+        IERC721(token.registry).safeTransferFrom(address(this), to, token.id);
     }
 
     /* Standard interface */
-    function onERC721Received(address, address, uint256 tokenId, bytes calldata)
-    external override returns (bytes4)
+    function onERC721Received(address, address, uint256, bytes calldata)
+    external view override returns (bytes4)
     {
         require(status == Lifecycle.UNSET);
-        tokens.push(NFT(msg.sender, tokenId));
         return IERC721Receiver.onERC721Received.selector;
     }
 
