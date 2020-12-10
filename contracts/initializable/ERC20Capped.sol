@@ -16,7 +16,7 @@ abstract contract ERC20Capped is ERC20 {
      * @dev Sets the value of the `cap`. This value is immutable, it can only be
      * set once during construction.
      */
-    function _initializeERC20Capped(uint256 cap_) internal virtual {
+    function _initialize(uint256 cap_) internal virtual {
         require(cap_ > 0, "ERC20Capped: cap is 0");
         _cap = cap_;
     }

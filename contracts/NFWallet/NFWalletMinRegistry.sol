@@ -17,7 +17,7 @@ contract NFWalletMinRegistry is CloneFactory, ERC721
     function mintWallet(address to) public returns (address instance)
     {
         instance = _clone();
-        instance.initialize(address(this));
+        NFWalletMin(payable(instance)).initialize(address(this));
         _mint(to, uint256(instance));
     }
 }

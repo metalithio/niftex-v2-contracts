@@ -4,47 +4,60 @@ pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "./initializable/Ownable.sol";
+import "./initializable/ERC20.sol";
 
-contract NFWalletMin
+struct Allocation
 {
-    IERC721 public registry;
+    address receiver;
+    uint256 amount;
+}
 
-    constructor()
+contract ShardedWallet is Ownable, ERC20
+{
+    using SafeMath for uint256;
+
+    modifier restricted()
     {
-        registry = IERC721(address(0xdead));
+        require(ERC20.balanceOf(msg.sender) == ERC20.totalSupply(), "Sender must own all the shares");
+        _;
     }
 
-    receive()
-    external payable
+    function initialize(
+        address               owner_,
+        string       calldata name_,
+        string       calldata symbol_,
+        uint256               totalSupply_,
+        address               approve_,
+        Allocation[] calldata allocations_)
+    external
     {
-        /* Emit event ? */
-    }
+        require(totalSupply() == 0);
 
-    function owner()
-    public view returns (address)
-    {
-        return registry.ownerOf(uint256(address(this)));
-    }
-
-    function initialize(address registry_)
-    external virtual
-    {
-        require(address(registry) == address(0), "NFWalletMin: alrady initialized");
-        registry = IERC721(registry_);
+        // erc20
+        Ownable._initialize(owner_);
+        ERC20._initialize(name_, symbol_);
+        ERC20._setupDecimals(0);
+        for (uint256 i = 0; i < allocations_.length; ++i)
+        {
+            Allocation memory allocation = allocations_[i];
+            ERC20._mint(allocation.receiver, allocation.amount);
+            totalSupply_ = totalSupply_.sub(allocation.amount);
+        }
+        ERC20._mint(address(this), totalSupply_);
+        ERC20._approve(address(this), approve_, totalSupply_);
     }
 
     function execute(address to, uint256 value, bytes calldata data)
-    external virtual
+    external restricted()
     {
-        require(msg.sender == owner(), "NFWalletMin: access restricted to NFT owner");
         (bool success, bytes memory returndata) = to.call{value: value}(data);
         require(success, string(returndata));
     }
 
     function delegate(address to, bytes calldata data)
-    external virtual
+    external restricted()
     {
-        require(msg.sender == owner(), "NFWalletMin: access restricted to NFT owner");
         (bool success, bytes memory returndata) = to.delegatecall(data);
         require(success, string(returndata));
     }

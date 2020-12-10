@@ -52,7 +52,7 @@ contract ERC20 is Context, IERC20 {
      * All three of these values are immutable: they can only be set once during
      * construction.
      */
-    function _initializeERC20(string memory name_, string memory symbol_) internal virtual {
+    function _initialize(string memory name_, string memory symbol_) internal virtual {
         _name = name_;
         _symbol = symbol_;
         _decimals = 18;
