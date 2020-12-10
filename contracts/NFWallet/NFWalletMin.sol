@@ -21,21 +21,21 @@ contract NFWalletMin is IERC721Receiver
         /* Emit event ? */
     }
 
-    function initialize(address registry_)
-    public
-    {
-        require(registry == address(0), "NFWalletMin: alrady initialized");
-        registry = registry_;
-    }
-
     function owner()
     public view returns (address)
     {
         return IERC721(registry).ownerOf(uint256(address(this)));
     }
 
+    function initialize(address registry_)
+    external
+    {
+        require(registry == address(0), "NFWalletMin: alrady initialized");
+        registry = registry_;
+    }
+
     function execute(address to, uint256 value, bytes calldata data)
-    public
+    external
     {
         require(msg.sender == owner(), "NFWalletMin: access restricted to NFT owner");
         (bool success, bytes memory returndata) = to.call{value: value}(data);
@@ -43,7 +43,7 @@ contract NFWalletMin is IERC721Receiver
     }
 
     function delegate(address to, bytes calldata data)
-    public
+    external
     {
         require(msg.sender == owner(), "NFWalletMin: access restricted to NFT owner");
         (bool success, bytes memory returndata) = to.delegatecall(data);
