@@ -14,9 +14,11 @@ struct Allocation
     uint256 amount;
 }
 
-contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
+contract ShardedWallet is ERC20, ERC20Buyout, DelayedAction
 {
     using SafeMath for uint256;
+
+    address private _minter;
 
     modifier restricted()
     {
@@ -30,7 +32,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     }
 
     function initialize(
-        address               owner_,
+        address               minter_,
         string       calldata name_,
         string       calldata symbol_,
         uint256               totalSupply_,
@@ -38,10 +40,9 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         Allocation[] calldata allocations_)
     external
     {
-        require(totalSupply() == 0);
-
-        // owner
-        Ownable._initialize(owner_);
+        require(_minter == address(0));
+        // minter
+        _minter = minter_;
         // erc20
         ERC20._initialize(name_, symbol_);
         for (uint256 i = 0; i < allocations_.length; ++i)
@@ -94,6 +95,8 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         require(balanceOf(msg.sender) > 0);
         return DelayedAction._cancel(id);
     }
+
+    function minter() public view returns (address) { return _minter; }
 
     // inheritance cleanup
     function _initialize(uint256) internal virtual override(ERC20Buyout, DelayedAction) {}

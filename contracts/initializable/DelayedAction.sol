@@ -73,4 +73,15 @@ abstract contract DelayedAction
         return true;
     }
 
+    function delayedActionValidAt(bytes32 id)
+    public view returns (uint256)
+    {
+        return _delayedActionValidAt[id];
+    }
+
+    function delayedActionDuration()
+    public view returns (uint256)
+    {
+        return _delayedActionDuration;
+    }
 }

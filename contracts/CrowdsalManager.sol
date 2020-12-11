@@ -3,11 +3,11 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "./ShardedWallet.sol";
 
 contract CrowdsaleManager
 {
@@ -62,7 +62,7 @@ contract CrowdsaleManager
     function setup(address token, address recipient, uint256 price, uint256 duration)
     external
     {
-        require(msg.sender == Ownable(token).owner());
+        require(msg.sender == ShardedWallet(token).minter());
         require(deadlines[token] == 0);
 
         // solhint-disable-next-line not-rely-on-time
@@ -93,7 +93,7 @@ contract CrowdsaleManager
         uint256 count = shares[token][to];
         delete shares[token][to];
 
-        if (remainings[token] == 0) { // crowdsaleSuccess 
+        if (remainings[token] == 0) { // crowdsaleSuccess
             IERC20(token).transferFrom(token, to, count);
             emit SharesRedeemedSuccess(token, msg.sender, to, count);
         } else {
