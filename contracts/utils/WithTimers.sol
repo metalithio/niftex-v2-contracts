@@ -13,6 +13,7 @@ contract WithTimers
 
     event TimerStarted(bytes32 indexed timer, uint256 deadline);
     event TimerStopped(bytes32 indexed timer);
+    event TimerReset(bytes32 indexed timer);
 
     modifier onlyBeforeTimer(bytes32 id)
     {
@@ -70,9 +71,10 @@ contract WithTimers
         emit TimerStopped(id);
     }
 
-    function _cleanTimer(bytes32 id)
+    function _resetTimer(bytes32 id)
     internal onlyAfterTimer(id)
     {
         delete _deadlines[id];
+        emit TimerReset(id);
     }
 }

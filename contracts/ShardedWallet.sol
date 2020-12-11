@@ -74,18 +74,18 @@ contract ShardedWallet is ERC20, ERC20Buyout, DelayedAction
         require(success, string(returndata));
     }
 
-    function scheduleAction(ActionType actiontype, address to, uint256 value, bytes memory data)
+    function scheduleAction(ActionType actiontype, address to, bytes memory data)
     external returns (bytes32)
     {
         require(balanceOf(msg.sender) > 0);
-        return DelayedAction._schedule(actiontype, to, value, data);
+        return DelayedAction._schedule(actiontype, to, 0, data);
     }
 
-    function executeAction(ActionType actiontype, address to, uint256 value, bytes memory data)
+    function executeAction(ActionType actiontype, address to, bytes memory data)
     external onlyBeforeTimer(_ERC20BUYOUT_TIMER_) returns (bool)
     {
         require(balanceOf(msg.sender) > 0);
-        return DelayedAction._execute(actiontype, to, value, data);
+        return DelayedAction._execute(actiontype, to, 0, data);
     }
 
     function cancelAction(bytes32 id)

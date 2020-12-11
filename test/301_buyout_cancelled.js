@@ -207,7 +207,6 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
-
 	describe('Start buyout', function () {
 		it('perform', async function () {
 			const { receipt } = await instance.openBuyout(web3.utils.toWei('0.001'), { from: user1, value: web3.utils.toWei('1') });

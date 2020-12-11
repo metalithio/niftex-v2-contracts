@@ -15,6 +15,10 @@ abstract contract DelayedAction is WithTimers
 {
     uint256 private _delayedActionDuration;
 
+    event ActionScheduled(bytes32 indexed id, ActionType actiontype, address to, uint256 value, bytes data);
+    event ActionExecuted(bytes32 indexed id, ActionType actiontype, address to, uint256 value, bytes data);
+    event ActionCancelled(bytes32 indexed id);
+
     function _initialize(uint256 duration_)
     internal virtual
     {
@@ -35,7 +39,7 @@ abstract contract DelayedAction is WithTimers
         require(WithTimers._beforeTimer(id));
         WithTimers._startTimer(id, _delayedActionDuration);
 
-        // TODO: emit ActionScheduled(id, actiontype, to, value, data);
+        emit ActionScheduled(id, actiontype, to, value, data);
         return id;
     }
 
@@ -44,9 +48,7 @@ abstract contract DelayedAction is WithTimers
     {
         bytes32 id = _hash(actiontype, to, value, data);
 
-        // solhint-disable-next-line not-rely-on-time
-        require(WithTimers._afterTimer(id));
-        WithTimers._cleanTimer(id);
+        WithTimers._resetTimer(id);
 
         if (actiontype == ActionType.CALL) {
             // solhint-disable-next-line avoid-low-level-calls
@@ -60,7 +62,7 @@ abstract contract DelayedAction is WithTimers
             revert();
         }
 
-        // TODO: emit ActionExecuted(id, actiontype, to, value, data);
+        emit ActionExecuted(id, actiontype, to, value, data);
         return true;
     }
 
@@ -69,7 +71,7 @@ abstract contract DelayedAction is WithTimers
     {
         WithTimers._stopTimer(id);
 
-        // TODO: emit ActionCancelled(id);
+        emit ActionCancelled(id);
         return true;
     }
 
