@@ -6,6 +6,8 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./initializable/Ownable.sol";
 import "./initializable/ERC20.sol";
+import "./initializable/ERC20Buyout.sol";
+import "./initializable/DelayedAction.sol";
 
 struct Allocation
 {
@@ -13,13 +15,17 @@ struct Allocation
     uint256 amount;
 }
 
-contract ShardedWallet is Ownable, ERC20
+contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
 {
     using SafeMath for uint256;
 
     modifier restricted()
     {
-        require(ERC20.balanceOf(msg.sender) == ERC20.totalSupply(), "Sender must own all the shares");
+        require(
+            ERC20.balanceOf(msg.sender) == ERC20.totalSupply()
+            ||
+            (msg.sender == ERC20Buyout.buyoutProposer() && block.timestamp >= ERC20Buyout.buyoutDeadline()),
+            "Sender must own all the shares or perform a buyout");
         _;
     }
 
@@ -34,10 +40,10 @@ contract ShardedWallet is Ownable, ERC20
     {
         require(totalSupply() == 0);
 
-        // erc20
+        // owner
         Ownable._initialize(owner_);
+        // erc20
         ERC20._initialize(name_, symbol_);
-        ERC20._setupDecimals(0);
         for (uint256 i = 0; i < allocations_.length; ++i)
         {
             Allocation memory allocation = allocations_[i];
@@ -46,6 +52,10 @@ contract ShardedWallet is Ownable, ERC20
         }
         ERC20._mint(address(this), totalSupply_);
         ERC20._approve(address(this), approve_, totalSupply_);
+        // buyout
+        ERC20Buyout._initialize(2 weeks);
+        // votes
+        DelayedAction._initialize(2 weeks);
     }
 
     function execute(address to, uint256 value, bytes calldata data)
@@ -61,6 +71,30 @@ contract ShardedWallet is Ownable, ERC20
         (bool success, bytes memory returndata) = to.delegatecall(data);
         require(success, string(returndata));
     }
+
+    function scheduleAction(ActionType actiontype, address to, uint256 value, bytes memory data)
+    external beforeBuyout() returns (bytes32)
+    {
+        require(balanceOf(msg.sender) > 0);
+        return DelayedAction._schedule(actiontype, to, value, data);
+    }
+
+    function executeAction(ActionType actiontype, address to, uint256 value, bytes memory data)
+    external beforeBuyout() returns (bool)
+    {
+        require(balanceOf(msg.sender) > 0);
+        return DelayedAction._execute(actiontype, to, value, data);
+    }
+
+    function cancelAction(bytes32 id)
+    external returns (bool)
+    {
+        require(balanceOf(msg.sender) > 0);
+        return DelayedAction._cancel(id);
+    }
+
+    // inheritance cleanup
+    function _initialize(uint256) internal virtual override(ERC20Buyout, DelayedAction) {}
 
     // ERC721
     function onERC721Received(address, address, uint256, bytes calldata)
