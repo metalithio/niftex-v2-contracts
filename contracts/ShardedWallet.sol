@@ -25,8 +25,7 @@ contract ShardedWallet is ERC20, ERC20Buyout, DelayedAction
         require(
             ERC20.balanceOf(msg.sender) == ERC20.totalSupply()
             ||
-            // solhint-disable-next-line not-rely-on-time
-            (msg.sender == ERC20Buyout.buyoutProposer() && block.timestamp >= ERC20Buyout.buyoutDeadline()),
+            (msg.sender == ERC20Buyout.buyoutProposer() && WithTimers._afterTimer(_ERC20BUYOUT_TIMER_)),
             "Sender must own all the shares or perform a buyout");
         _;
     }
@@ -83,7 +82,7 @@ contract ShardedWallet is ERC20, ERC20Buyout, DelayedAction
     }
 
     function executeAction(ActionType actiontype, address to, uint256 value, bytes memory data)
-    external beforeBuyout() returns (bool)
+    external onlyBeforeTimer(_ERC20BUYOUT_TIMER_) returns (bool)
     {
         require(balanceOf(msg.sender) > 0);
         return DelayedAction._execute(actiontype, to, value, data);

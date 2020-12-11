@@ -4,36 +4,17 @@ pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/Address.sol";
+import "../utils/WithTimers.sol";
 import "./ERC20.sol";
 
-abstract contract ERC20Buyout is ERC20
+abstract contract ERC20Buyout is ERC20, WithTimers
 {
     using SafeMath for uint256;
 
+    bytes32 internal constant _ERC20BUYOUT_TIMER_ = bytes32(uint256(keccak256("_ERC20BUYOUT_TIMER_")) - 1);
     address private _buyoutProposer;
     uint256 private _buyoutPrice;
-    uint256 private _buyoutDeadline;
     uint256 private _buyoutDuration;
-
-    modifier beforeBuyout()
-    {
-        require(_buyoutProposer == address(0));
-        _;
-    }
-
-    modifier duringBuyout()
-    {
-        // solhint-disable-next-line not-rely-on-time
-        require(_buyoutProposer != address(0) && block.timestamp < _buyoutDeadline);
-        _;
-    }
-
-    modifier successfullBuyout()
-    {
-        // solhint-disable-next-line not-rely-on-time
-        require(_buyoutProposer != address(0) && block.timestamp >= _buyoutDeadline);
-        _;
-    }
 
     function _initialize(uint256 duration_)
     internal virtual
@@ -46,26 +27,25 @@ abstract contract ERC20Buyout is ERC20
     }
 
     function openBuyout(uint256 pricePerShare)
-    external payable beforeBuyout()
+    external payable onlyBeforeTimer(_ERC20BUYOUT_TIMER_)
     {
         require(balanceOf(msg.sender) > 0);
         // prepare
         uint256 ownedshares   = ERC20.balanceOf(msg.sender);
         uint256 buyoutprice   = ERC20.totalSupply().sub(ownedshares).mul(pricePerShare);
         // record buyout
-        // solhint-disable-next-line not-rely-on-time
-        _buyoutDeadline = block.timestamp.add(_buyoutDuration);
+        WithTimers._startTimer(_ERC20BUYOUT_TIMER_, _buyoutDuration);
         _buyoutProposer = msg.sender;
         _buyoutPrice = pricePerShare;
         // lock shares
         ERC20._transfer(msg.sender, address(this), ownedshares);
         // refund
         Address.sendValue(msg.sender, msg.value.sub(buyoutprice));
-        // emit Event
+        // TODO: emit Event
     }
 
     function closeBuyout()
-    external payable duringBuyout()
+    external payable onlyDuringTimer(_ERC20BUYOUT_TIMER_)
     {
         require(balanceOf(msg.sender) > 0);
         require(msg.sender != _buyoutProposer);
@@ -75,19 +55,19 @@ abstract contract ERC20Buyout is ERC20
         uint256 buyoutprice  = ERC20.totalSupply().sub(lockedshares).mul(_buyoutPrice);
         uint256 stopprice    = lockedshares.mul(_buyoutPrice);
         // clean buyout
+        WithTimers._stopTimer(_ERC20BUYOUT_TIMER_);
         delete _buyoutProposer;
         delete _buyoutPrice;
-        delete _buyoutDeadline;
         // transfer shares
         ERC20._transfer(address(this), msg.sender, lockedshares);
         // refund
         Address.sendValue(payable(proposer), buyoutprice.add(stopprice)); // send deposit back + buy shares
         Address.sendValue(msg.sender, msg.value.sub(stopprice)); // refund extra
-        // emit Event
+        // TODO: emit Event
     }
 
     function claimBuyout(address to)
-    external successfullBuyout()
+    external onlyAfterTimer(_ERC20BUYOUT_TIMER_)
     {
         // prepare
         uint256 shares = balanceOf(msg.sender);
@@ -95,7 +75,7 @@ abstract contract ERC20Buyout is ERC20
         ERC20._burn(msg.sender, shares);
         // refund
         Address.sendValue(payable(to), shares.mul(_buyoutPrice));
-        // emit Event
+        // TODO: emit Event
     }
 
     function buyoutProposer()
@@ -108,12 +88,6 @@ abstract contract ERC20Buyout is ERC20
     public view returns (uint256)
     {
         return _buyoutPrice;
-    }
-
-    function buyoutDeadline()
-    public view returns (uint256)
-    {
-        return _buyoutDeadline;
     }
 
     function buyoutDuration()

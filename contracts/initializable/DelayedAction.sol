@@ -3,15 +3,16 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
+import "../utils/WithTimers.sol";
+
 enum ActionType
 {
     CALL,
     DELEGATECALL
 }
 
-abstract contract DelayedAction
+abstract contract DelayedAction is WithTimers
 {
-    mapping(bytes32 => uint256) private _delayedActionValidAt;
     uint256 private _delayedActionDuration;
 
     function _initialize(uint256 duration_)
@@ -31,9 +32,8 @@ abstract contract DelayedAction
     {
         bytes32 id = _hash(actiontype, to, value, data);
 
-        require(_delayedActionValidAt[id] == 0);
-        // solhint-disable-next-line not-rely-on-time
-        _delayedActionValidAt[id] = block.timestamp + _delayedActionDuration;
+        require(WithTimers._beforeTimer(id));
+        WithTimers._startTimer(id, _delayedActionDuration);
 
         // TODO: emit ActionScheduled(id, actiontype, to, value, data);
         return id;
@@ -45,8 +45,8 @@ abstract contract DelayedAction
         bytes32 id = _hash(actiontype, to, value, data);
 
         // solhint-disable-next-line not-rely-on-time
-        require(_delayedActionValidAt[id] > 0 && _delayedActionValidAt[id] < block.timestamp);
-        delete _delayedActionValidAt[0];
+        require(WithTimers._afterTimer(id));
+        WithTimers._cleanTimer(id);
 
         if (actiontype == ActionType.CALL) {
             // solhint-disable-next-line avoid-low-level-calls
@@ -67,16 +67,10 @@ abstract contract DelayedAction
     function _cancel(bytes32 id)
     internal virtual returns (bool)
     {
-        delete _delayedActionValidAt[id];
+        WithTimers._stopTimer(id);
 
         // TODO: emit ActionCancelled(id);
         return true;
-    }
-
-    function delayedActionValidAt(bytes32 id)
-    public view returns (uint256)
-    {
-        return _delayedActionValidAt[id];
     }
 
     function delayedActionDuration()
