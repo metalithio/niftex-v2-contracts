@@ -207,7 +207,6 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
-
 	describe('Schedule action', function () {
 		it('perform', async function () {
 			const actiontype = '0';
