@@ -13,12 +13,12 @@ contract CrowdsaleManager
 {
     using SafeMath for uint256;
 
-    mapping(address => address)                     recipients;
-    mapping(address => uint256)                     deadlines;
-    mapping(address => uint256)                     prices;
-    mapping(address => uint256)                     remainings;
-    mapping(address => uint256)                     balance;
-    mapping(address => mapping(address => uint256)) shares;
+    mapping(address => address)                     public recipients;
+    mapping(address => uint256)                     public deadlines;
+    mapping(address => uint256)                     public prices;
+    mapping(address => uint256)                     public remainings;
+    mapping(address => uint256)                     public balance;
+    mapping(address => mapping(address => uint256)) public shares;
 
     event SharesBought(address indexed token, address indexed from, address to, uint256 count);
     event SharesRedeemedSuccess(address indexed token, address indexed from, address to, uint256 count);
@@ -28,18 +28,21 @@ contract CrowdsaleManager
 
     modifier crowdsaleActive(address token)
     {
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp < deadlines[token] && remainings[token] > 0);
         _;
     }
 
     modifier crowdsaleFinished(address token)
     {
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp >= deadlines[token] || remainings[token] == 0);
         _;
     }
 
     modifier crowdsaleFailled(address token)
     {
+        // solhint-disable-next-line not-rely-on-time
         require(block.timestamp >= deadlines[token] && remainings[token] > 0);
         _;
     }
@@ -62,6 +65,7 @@ contract CrowdsaleManager
         require(msg.sender == Ownable(token).owner());
         require(deadlines[token] == 0);
 
+        // solhint-disable-next-line not-rely-on-time
         deadlines[token] = block.timestamp + duration;
         recipients[token] = recipient;
         prices[token] = price;
@@ -89,13 +93,10 @@ contract CrowdsaleManager
         uint256 count = shares[token][to];
         delete shares[token][to];
 
-        if (remainings[token] == 0) // crowdsaleSuccess
-        {
+        if (remainings[token] == 0) { // crowdsaleSuccess 
             IERC20(token).transferFrom(token, to, count);
             emit SharesRedeemedSuccess(token, msg.sender, to, count);
-        }
-        else
-        {
+        } else {
             Address.sendValue(payable(to), count.mul(prices[token]));
             emit SharesRedeemedFaillure(token, msg.sender, to, count);
         }

@@ -3,7 +3,6 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./initializable/Ownable.sol";
 import "./initializable/ERC20.sol";
 import "./initializable/ERC20Buyout.sol";
@@ -24,6 +23,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         require(
             ERC20.balanceOf(msg.sender) == ERC20.totalSupply()
             ||
+            // solhint-disable-next-line not-rely-on-time
             (msg.sender == ERC20Buyout.buyoutProposer() && block.timestamp >= ERC20Buyout.buyoutDeadline()),
             "Sender must own all the shares or perform a buyout");
         _;
@@ -61,6 +61,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     function execute(address to, uint256 value, bytes calldata data)
     external restricted()
     {
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = to.call{value: value}(data);
         require(success, string(returndata));
     }
@@ -68,12 +69,13 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     function delegate(address to, bytes calldata data)
     external restricted()
     {
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = to.delegatecall(data);
         require(success, string(returndata));
     }
 
     function scheduleAction(ActionType actiontype, address to, uint256 value, bytes memory data)
-    external beforeBuyout() returns (bytes32)
+    external returns (bytes32)
     {
         require(balanceOf(msg.sender) > 0);
         return DelayedAction._schedule(actiontype, to, value, data);

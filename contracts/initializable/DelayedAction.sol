@@ -32,9 +32,10 @@ abstract contract DelayedAction
         bytes32 id = _hash(actiontype, to, value, data);
 
         require(_delayedActionValidAt[id] == 0);
+        // solhint-disable-next-line not-rely-on-time
         _delayedActionValidAt[id] = block.timestamp + _delayedActionDuration;
 
-        // emit ActionScheduled(id, actiontype, to, value, data);
+        // TODO: emit ActionScheduled(id, actiontype, to, value, data);
         return id;
     }
 
@@ -43,25 +44,23 @@ abstract contract DelayedAction
     {
         bytes32 id = _hash(actiontype, to, value, data);
 
+        // solhint-disable-next-line not-rely-on-time
         require(_delayedActionValidAt[id] > 0 && _delayedActionValidAt[id] < block.timestamp);
         delete _delayedActionValidAt[0];
 
-        if (actiontype == ActionType.CALL)
-        {
+        if (actiontype == ActionType.CALL) {
+            // solhint-disable-next-line avoid-low-level-calls
             (bool success, bytes memory returndata) = to.call{value: value}(data);
             require(success, string(returndata));
-        }
-        else if (actiontype == ActionType.DELEGATECALL)
-        {
+        } else if (actiontype == ActionType.DELEGATECALL) {
+            // solhint-disable-next-line avoid-low-level-calls
             (bool success, bytes memory returndata) = to.delegatecall(data);
             require(success, string(returndata));
-        }
-        else
-        {
+        } else {
             revert();
         }
 
-        // emit ActionExecuted(id, actiontype, to, value, data);
+        // TODO: emit ActionExecuted(id, actiontype, to, value, data);
         return true;
     }
 
@@ -70,7 +69,7 @@ abstract contract DelayedAction
     {
         delete _delayedActionValidAt[id];
 
-        // emit ActionCancelled(id);
+        // TODO: emit ActionCancelled(id);
         return true;
     }
 

@@ -4,7 +4,7 @@ pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "../utils/CloneFactory.sol";
+import "../../utils/CloneFactory.sol";
 import "./NFWalletMin.sol";
 
 contract NFWalletMinRegistry is CloneFactory, ERC721

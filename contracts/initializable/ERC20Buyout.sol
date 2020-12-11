@@ -23,12 +23,14 @@ abstract contract ERC20Buyout is ERC20
 
     modifier duringBuyout()
     {
+        // solhint-disable-next-line not-rely-on-time
         require(_buyoutProposer != address(0) && block.timestamp < _buyoutDeadline);
         _;
     }
 
     modifier successfullBuyout()
     {
+        // solhint-disable-next-line not-rely-on-time
         require(_buyoutProposer != address(0) && block.timestamp >= _buyoutDeadline);
         _;
     }
@@ -36,12 +38,9 @@ abstract contract ERC20Buyout is ERC20
     function _initialize(uint256 duration_)
     internal virtual
     {
-        if (duration_ == 0)
-        {
+        if (duration_ == 0) {
             _buyoutProposer = address(0xdead); // lock buyout
-        }
-        else
-        {
+        } else {
             _buyoutDuration = duration_;
         }
     }
@@ -53,13 +52,13 @@ abstract contract ERC20Buyout is ERC20
         // prepare
         uint256 ownedshares   = ERC20.balanceOf(msg.sender);
         uint256 buyoutprice   = ERC20.totalSupply().sub(ownedshares).mul(pricePerShare);
-        // lock shares
-        ERC20._transfer(msg.sender, address(this), ownedshares);
         // record buyout
         // solhint-disable-next-line not-rely-on-time
         _buyoutDeadline = block.timestamp.add(_buyoutDuration);
         _buyoutProposer = msg.sender;
         _buyoutPrice = pricePerShare;
+        // lock shares
+        ERC20._transfer(msg.sender, address(this), ownedshares);
         // refund
         Address.sendValue(msg.sender, msg.value.sub(buyoutprice));
         // emit Event
@@ -71,18 +70,19 @@ abstract contract ERC20Buyout is ERC20
         require(balanceOf(msg.sender) > 0);
         require(msg.sender != _buyoutProposer);
         // prepare
+        address proposer     = _buyoutProposer;
         uint256 lockedshares = ERC20.balanceOf(address(this));
         uint256 buyoutprice  = ERC20.totalSupply().sub(lockedshares).mul(_buyoutPrice);
         uint256 stopprice    = lockedshares.mul(_buyoutPrice);
-        // transfer shares
-        ERC20._transfer(address(this), msg.sender, lockedshares);
-        // refund
-        Address.sendValue(payable(_buyoutProposer), buyoutprice.add(stopprice)); // send deposit back + buy shares
-        Address.sendValue(msg.sender, msg.value.sub(stopprice)); // refund extra
-        // refund
+        // clean buyout
         delete _buyoutProposer;
         delete _buyoutPrice;
         delete _buyoutDeadline;
+        // transfer shares
+        ERC20._transfer(address(this), msg.sender, lockedshares);
+        // refund
+        Address.sendValue(payable(proposer), buyoutprice.add(stopprice)); // send deposit back + buy shares
+        Address.sendValue(msg.sender, msg.value.sub(stopprice)); // refund extra
         // emit Event
     }
 
