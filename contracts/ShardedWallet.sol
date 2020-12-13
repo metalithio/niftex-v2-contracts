@@ -18,6 +18,9 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
 {
     using SafeMath for uint256;
 
+    uint256 internal constant ACTION_DURATION = 2 weeks;
+    uint256 internal constant BUYOUT_DURATION = 2 weeks;
+
     modifier restricted()
     {
         require(
@@ -33,6 +36,9 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         Ownable._setOwner(address(0xdead));
     }
 
+    /*************************************************************************
+     *                 Initialization and crowdsale trigger                  *
+     *************************************************************************/
     function initialize(
         address         minter_,
         string calldata name_,
@@ -42,8 +48,6 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         require(Ownable.owner() == address(0));
         Ownable._setOwner(minter_);
         ERC20._initialize(name_, symbol_);
-        ERC20Buyout._initialize(2 weeks);
-        DelayedAction._initialize(2 weeks);
     }
 
     function startCrowdsale(
@@ -67,15 +71,9 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         (bool success, bytes memory returndata) = crowdsaleManager_.call(setupdata_);
         require(success, string(returndata));
     }
-
-    function claimOwnership(address to)
-    external onlyAfterTimer(_ERC20BUYOUT_TIMER_)
-    {
-        require(msg.sender == _buyoutProposer);
-        Ownable._setOwner(to);
-        delete _buyoutProposer;
-    }
-
+    /*************************************************************************
+     *                        Calls / Delegate calls                         *
+     *************************************************************************/
     function execute(address to, uint256 value, bytes calldata data)
     external restricted()
     {
@@ -92,11 +90,14 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         require(success, string(returndata));
     }
 
+    /*************************************************************************
+     *                       Holders actions with veto                       *
+     *************************************************************************/
     function scheduleAction(ActionType actiontype, address to, bytes memory data)
     external returns (bytes32)
     {
         require(balanceOf(msg.sender) > 0);
-        return DelayedAction._schedule(actiontype, to, 0, data);
+        return DelayedAction._schedule(actiontype, to, 0, data, ACTION_DURATION);
     }
 
     function executeAction(ActionType actiontype, address to, bytes memory data)
@@ -113,9 +114,37 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         return DelayedAction._cancel(id);
     }
 
-    // inheritance cleanup
-    function _initialize(uint256) internal virtual override(ERC20Buyout, DelayedAction) {}
+    /*************************************************************************
+     *                            Buyout support                             *
+     *************************************************************************/
+    function openBuyout(uint256 pricePerShare)
+    external payable
+    {
+        ERC20Buyout._openBuyout(pricePerShare, BUYOUT_DURATION);
+    }
 
+    function closeBuyout()
+    external payable
+    {
+        ERC20Buyout._closeBuyout();
+    }
+
+    function claimBuyout(address to)
+    external
+    {
+        ERC20Buyout._claimBuyout(to);
+    }
+
+    function claimOwnership(address to)
+    external
+    {
+        ERC20Buyout._resetBuyout();
+        Ownable._setOwner(to);
+    }
+
+    /*************************************************************************
+     *                           Standard receiver                           *
+     *************************************************************************/
     // ERC721
     function onERC721Received(address, address, uint256, bytes calldata)
     external pure returns (bytes4)

@@ -13,17 +13,9 @@ enum ActionType
 
 abstract contract DelayedAction is WithTimers
 {
-    uint256 private _delayedActionDuration;
-
     event ActionScheduled(bytes32 indexed id, ActionType actiontype, address to, uint256 value, bytes data);
     event ActionExecuted(bytes32 indexed id, ActionType actiontype, address to, uint256 value, bytes data);
     event ActionCancelled(bytes32 indexed id);
-
-    function _initialize(uint256 duration_)
-    internal virtual
-    {
-        _delayedActionDuration = duration_;
-    }
 
     function _hash(ActionType actiontype, address to, uint256 value, bytes memory data)
     internal virtual returns (bytes32)
@@ -31,13 +23,13 @@ abstract contract DelayedAction is WithTimers
         return keccak256(abi.encodePacked(actiontype, to, value, data));
     }
 
-    function _schedule(ActionType actiontype, address to, uint256 value, bytes memory data)
+    function _schedule(ActionType actiontype, address to, uint256 value, bytes memory data, uint256 duration)
     internal virtual returns (bytes32)
     {
         bytes32 id = _hash(actiontype, to, value, data);
 
         require(WithTimers._beforeTimer(id));
-        WithTimers._startTimer(id, _delayedActionDuration);
+        WithTimers._startTimer(id, duration);
 
         emit ActionScheduled(id, actiontype, to, value, data);
         return id;
@@ -73,11 +65,5 @@ abstract contract DelayedAction is WithTimers
 
         emit ActionCancelled(id);
         return true;
-    }
-
-    function delayedActionDuration()
-    public view returns (uint256)
-    {
-        return _delayedActionDuration;
     }
 }

@@ -12,29 +12,18 @@ abstract contract ERC20Buyout is ERC20, WithTimers
     using SafeMath for uint256;
 
     bytes32 internal constant _ERC20BUYOUT_TIMER_ = bytes32(uint256(keccak256("_ERC20BUYOUT_TIMER_")) - 1);
-    address internal _buyoutProposer;
-    uint256 internal _buyoutPrice;
-    uint256 internal _buyoutDuration;
+    address private _buyoutProposer;
+    uint256 private _buyoutPrice;
 
-    function _initialize(uint256 duration_)
-    internal virtual
-    {
-        if (duration_ == 0) {
-            _buyoutProposer = address(0xdead); // lock buyout
-        } else {
-            _buyoutDuration = duration_;
-        }
-    }
-
-    function openBuyout(uint256 pricePerShare)
-    external payable onlyBeforeTimer(_ERC20BUYOUT_TIMER_)
+    function _openBuyout(uint256 pricePerShare, uint256 duration)
+    internal onlyBeforeTimer(_ERC20BUYOUT_TIMER_)
     {
         require(balanceOf(msg.sender) > 0);
         // prepare
-        uint256 ownedshares   = ERC20.balanceOf(msg.sender);
-        uint256 buyoutprice   = ERC20.totalSupply().sub(ownedshares).mul(pricePerShare);
+        uint256 ownedshares = ERC20.balanceOf(msg.sender);
+        uint256 buyoutprice = ERC20.totalSupply().sub(ownedshares).mul(pricePerShare);
         // record buyout
-        WithTimers._startTimer(_ERC20BUYOUT_TIMER_, _buyoutDuration);
+        WithTimers._startTimer(_ERC20BUYOUT_TIMER_, duration);
         _buyoutProposer = msg.sender;
         _buyoutPrice = pricePerShare;
         // lock shares
@@ -44,8 +33,8 @@ abstract contract ERC20Buyout is ERC20, WithTimers
         // TODO: emit Event
     }
 
-    function closeBuyout()
-    external payable onlyDuringTimer(_ERC20BUYOUT_TIMER_)
+    function _closeBuyout()
+    internal onlyDuringTimer(_ERC20BUYOUT_TIMER_)
     {
         require(balanceOf(msg.sender) > 0);
         require(msg.sender != _buyoutProposer);
@@ -66,8 +55,8 @@ abstract contract ERC20Buyout is ERC20, WithTimers
         // TODO: emit Event
     }
 
-    function claimBuyout(address to)
-    external onlyAfterTimer(_ERC20BUYOUT_TIMER_)
+    function _claimBuyout(address to)
+    internal onlyAfterTimer(_ERC20BUYOUT_TIMER_)
     {
         // prepare
         uint256 shares = balanceOf(to);
@@ -76,6 +65,13 @@ abstract contract ERC20Buyout is ERC20, WithTimers
         // refund
         Address.sendValue(payable(to), shares.mul(_buyoutPrice));
         // TODO: emit Event
+    }
+
+    function _resetBuyout()
+    internal onlyAfterTimer(_ERC20BUYOUT_TIMER_)
+    {
+        require(msg.sender == _buyoutProposer);
+        delete _buyoutProposer;
     }
 
     function buyoutProposer()
@@ -88,11 +84,5 @@ abstract contract ERC20Buyout is ERC20, WithTimers
     public view returns (uint256)
     {
         return _buyoutPrice;
-    }
-
-    function buyoutDuration()
-    public view returns (uint256)
-    {
-        return _buyoutDuration;
     }
 }
