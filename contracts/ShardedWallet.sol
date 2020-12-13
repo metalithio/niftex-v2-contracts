@@ -62,7 +62,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         }
         ERC20._mint(address(this), totalSupply_);
         ERC20._approve(address(this), crowdsaleManager_, totalSupply_);
-        Ownable._setOwner(address(0));
+        Ownable._setOwner(crowdsaleManager_);
 
         (bool success, bytes memory returndata) = crowdsaleManager_.call(setupdata_);
         require(success, string(returndata));
