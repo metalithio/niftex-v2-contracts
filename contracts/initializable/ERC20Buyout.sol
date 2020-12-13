@@ -12,9 +12,9 @@ abstract contract ERC20Buyout is ERC20, WithTimers
     using SafeMath for uint256;
 
     bytes32 internal constant _ERC20BUYOUT_TIMER_ = bytes32(uint256(keccak256("_ERC20BUYOUT_TIMER_")) - 1);
-    address private _buyoutProposer;
-    uint256 private _buyoutPrice;
-    uint256 private _buyoutDuration;
+    address internal _buyoutProposer;
+    uint256 internal _buyoutPrice;
+    uint256 internal _buyoutDuration;
 
     function _initialize(uint256 duration_)
     internal virtual
@@ -70,9 +70,9 @@ abstract contract ERC20Buyout is ERC20, WithTimers
     external onlyAfterTimer(_ERC20BUYOUT_TIMER_)
     {
         // prepare
-        uint256 shares = balanceOf(msg.sender);
+        uint256 shares = balanceOf(to);
         // burn shares
-        ERC20._burn(msg.sender, shares);
+        ERC20._burn(to, shares);
         // refund
         Address.sendValue(payable(to), shares.mul(_buyoutPrice));
         // TODO: emit Event

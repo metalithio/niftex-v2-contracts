@@ -15,13 +15,10 @@ contract ShardedWalletFactory is CloneFactory
     function mintWallet(
             address               owner_,
             string       calldata name_,
-            string       calldata symbol_,
-            uint256               totalSupply_,
-            address               approve_,
-            Allocation[] calldata allocations_)
+            string       calldata symbol_)
     external returns (address instance)
     {
         instance = _clone();
-        ShardedWallet(instance).initialize(owner_, name_, symbol_, totalSupply_, approve_, allocations_);
+        ShardedWallet(instance).initialize(owner_, name_, symbol_);
     }
 }

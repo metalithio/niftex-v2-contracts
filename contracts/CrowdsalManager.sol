@@ -59,10 +59,10 @@ contract CrowdsaleManager
         _;
     }
 
-    function setup(address token, address recipient, uint256 price, uint256 duration)
+    function setup(address recipient, uint256 price, uint256 duration)
     external
     {
-        require(msg.sender == ShardedWallet(token).minter());
+        address token = msg.sender;
         require(deadlines[token] == 0);
 
         // solhint-disable-next-line not-rely-on-time

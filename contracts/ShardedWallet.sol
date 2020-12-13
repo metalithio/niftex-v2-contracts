@@ -14,48 +14,66 @@ struct Allocation
     uint256 amount;
 }
 
-contract ShardedWallet is ERC20, ERC20Buyout, DelayedAction
+contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
 {
     using SafeMath for uint256;
-
-    address private _minter;
 
     modifier restricted()
     {
         require(
-            ERC20.balanceOf(msg.sender) == ERC20.totalSupply()
+            Ownable.owner() == msg.sender
             ||
-            (msg.sender == ERC20Buyout.buyoutProposer() && WithTimers._afterTimer(_ERC20BUYOUT_TIMER_)),
-            "Sender must own all the shares or perform a buyout");
+            (ERC20.totalSupply() > 0 && ERC20.balanceOf(msg.sender) == ERC20.totalSupply()),
+            "Sender must be owner or own all the shares");
         _;
     }
 
+    constructor()
+    {
+        Ownable._setOwner(address(0xdead));
+    }
+
     function initialize(
-        address               minter_,
-        string       calldata name_,
-        string       calldata symbol_,
-        uint256               totalSupply_,
-        address               approve_,
-        Allocation[] calldata allocations_)
+        address         minter_,
+        string calldata name_,
+        string calldata symbol_)
     external
     {
-        require(_minter == address(0));
-        // minter
-        _minter = minter_;
-        // erc20
+        require(Ownable.owner() == address(0));
+        Ownable._setOwner(minter_);
         ERC20._initialize(name_, symbol_);
-        for (uint256 i = 0; i < allocations_.length; ++i)
+        ERC20Buyout._initialize(2 weeks);
+        DelayedAction._initialize(2 weeks);
+    }
+
+    function startCrowdsale(
+        address               crowdsaleManager_,
+        uint256               totalSupply_,
+        Allocation[] calldata mints_,
+        bytes        calldata setupdata_)
+    external onlyOwner()
+    {
+        require(totalSupply() == 0);
+        for (uint256 i = 0; i < mints_.length; ++i)
         {
-            Allocation memory allocation = allocations_[i];
+            Allocation memory allocation = mints_[i];
             ERC20._mint(allocation.receiver, allocation.amount);
             totalSupply_ = totalSupply_.sub(allocation.amount);
         }
         ERC20._mint(address(this), totalSupply_);
-        ERC20._approve(address(this), approve_, totalSupply_);
-        // buyout
-        ERC20Buyout._initialize(2 weeks);
-        // votes
-        DelayedAction._initialize(2 weeks);
+        ERC20._approve(address(this), crowdsaleManager_, totalSupply_);
+        Ownable._setOwner(address(0));
+
+        (bool success, bytes memory returndata) = crowdsaleManager_.call(setupdata_);
+        require(success, string(returndata));
+    }
+
+    function claimOwnership(address to)
+    external onlyAfterTimer(_ERC20BUYOUT_TIMER_)
+    {
+        require(msg.sender == _buyoutProposer);
+        Ownable._setOwner(to);
+        delete _buyoutProposer;
     }
 
     function execute(address to, uint256 value, bytes calldata data)
@@ -94,8 +112,6 @@ contract ShardedWallet is ERC20, ERC20Buyout, DelayedAction
         require(balanceOf(msg.sender) > 0);
         return DelayedAction._cancel(id);
     }
-
-    function minter() public view returns (address) { return _minter; }
 
     // inheritance cleanup
     function _initialize(uint256) internal virtual override(ERC20Buyout, DelayedAction) {}
