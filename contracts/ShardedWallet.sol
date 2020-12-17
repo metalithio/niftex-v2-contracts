@@ -3,6 +3,7 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
+import "@openzeppelin/contracts/math/Math.sol";
 import "./governance/IGovernance.sol";
 import "./initializable/Ownable.sol";
 import "./initializable/ERC20.sol";
@@ -86,7 +87,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     function scheduleAction(ActionType actiontype, address to, bytes memory data)
     external returns (bytes32)
     {
-        require(balanceOf(msg.sender) > 0);
+        require(balanceOf(msg.sender) >= Math.max(totalSupply().mul(governance.ACTION_REQUIRED()).div(10**18), 1));
         return DelayedAction._schedule(actiontype, to, 0, data, governance.ACTION_DURATION());
     }
 

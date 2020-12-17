@@ -13,7 +13,7 @@ contract('Workflow', function (accounts) {
 
 	before(async function () {
 		this.crowdsale  = await Crowdsale.new();
-		this.governance = await Governance.new(50400, 50400); // 2 weeks, 2 weeks
+		this.governance = await Governance.new(50400, web3.utils.toWei('0.01'), 50400); // 2 weeks, 1%, 2 weeks
 		this.nft        = await ERC721Mock.new('NFTMock', 'NFTMock');
 		this.factory    = await ShardedWalletFactory.new();
 
