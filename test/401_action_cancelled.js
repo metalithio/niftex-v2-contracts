@@ -1,6 +1,6 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 
-const CrowdsaleManager     = artifacts.require('CrowdsaleManager');
+const Crowdsale            = artifacts.require('PixedPriceCrowdsale');
 const Governance           = artifacts.require('BasicGovernance');
 const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 const ShardedWallet        = artifacts.require('ShardedWallet');
@@ -12,7 +12,7 @@ contract('Workflow', function (accounts) {
 	let instance;
 
 	before(async function () {
-		this.crowdsale  = await CrowdsaleManager.new();
+		this.crowdsale  = await Crowdsale.new();
 		this.governance = await Governance.new(50400, 50400); // 2 weeks, 2 weeks
 		this.nft        = await ERC721Mock.new('NFTMock', 'NFTMock');
 		this.factory    = await ShardedWalletFactory.new();

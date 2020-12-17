@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./ShardedWallet.sol";
+import "../ShardedWallet.sol";
 
 struct Allocation
 {
@@ -15,7 +15,7 @@ struct Allocation
     uint256 amount;
 }
 
-contract CrowdsaleManager
+contract PixedPriceCrowdsale
 {
     using SafeMath for uint256;
 
