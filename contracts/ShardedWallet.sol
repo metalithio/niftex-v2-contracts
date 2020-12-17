@@ -26,6 +26,12 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         _;
     }
 
+    modifier balanceFractionRequired(uint256 fraction, uint256 minimum)
+    {
+        require(ERC20.balanceOf(msg.sender) >= Math.max(ERC20.totalSupply().mul(fraction).div(10**18), minimum), "Sender does not control enough shares");
+        _;
+    }
+
     constructor()
     {
         Ownable._setOwner(address(0xdead));
@@ -85,23 +91,20 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
      *                       Holders actions with veto                       *
      *************************************************************************/
     function scheduleAction(ActionType actiontype, address to, bytes memory data)
-    external returns (bytes32)
+    external balanceFractionRequired(governance.ACTION_REQUIRED(), 1) returns (bytes32)
     {
-        require(balanceOf(msg.sender) >= Math.max(totalSupply().mul(governance.ACTION_REQUIRED()).div(10**18), 1));
         return DelayedAction._schedule(actiontype, to, 0, data, governance.ACTION_DURATION());
     }
 
     function executeAction(ActionType actiontype, address to, bytes memory data)
-    external onlyBeforeTimer(_ERC20BUYOUT_TIMER_) returns (bool)
+    external balanceFractionRequired(governance.ACTION_REQUIRED(), 1) onlyBeforeTimer(_ERC20BUYOUT_TIMER_) returns (bool)
     {
-        require(balanceOf(msg.sender) > 0);
         return DelayedAction._execute(actiontype, to, 0, data);
     }
 
     function cancelAction(bytes32 id)
-    external returns (bool)
+    external balanceFractionRequired(governance.ACTION_REQUIRED(), 1) returns (bool)
     {
-        require(balanceOf(msg.sender) > 0);
         return DelayedAction._cancel(id);
     }
 
@@ -109,16 +112,14 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
      *                            Buyout support                             *
      *************************************************************************/
     function openBuyout(uint256 pricePerShare)
-    external payable
+    external balanceFractionRequired(governance.BUYOUT_REQUIRED(), 1) payable
     {
-        require(balanceOf(msg.sender) >= Math.max(totalSupply().mul(governance.BUYOUT_REQUIRED()).div(10**18), 1));
         ERC20Buyout._openBuyout(pricePerShare, governance.BUYOUT_DURATION());
     }
 
     function closeBuyout()
-    external payable
+    external balanceFractionRequired(governance.BUYOUT_REQUIRED(), 1) payable
     {
-        require(balanceOf(msg.sender) > 0);
         ERC20Buyout._closeBuyout();
     }
 
