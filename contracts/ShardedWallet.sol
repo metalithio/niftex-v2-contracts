@@ -111,12 +111,14 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     function openBuyout(uint256 pricePerShare)
     external payable
     {
+        require(balanceOf(msg.sender) >= Math.max(totalSupply().mul(governance.BUYOUT_REQUIRED()).div(10**18), 1));
         ERC20Buyout._openBuyout(pricePerShare, governance.BUYOUT_DURATION());
     }
 
     function closeBuyout()
     external payable
     {
+        require(balanceOf(msg.sender) > 0);
         ERC20Buyout._closeBuyout();
     }
 

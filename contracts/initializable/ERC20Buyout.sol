@@ -18,7 +18,6 @@ abstract contract ERC20Buyout is ERC20, WithTimers
     function _openBuyout(uint256 pricePerShare, uint256 duration)
     internal onlyBeforeTimer(_ERC20BUYOUT_TIMER_)
     {
-        require(balanceOf(msg.sender) > 0);
         // prepare
         uint256 ownedshares = ERC20.balanceOf(msg.sender);
         uint256 buyoutprice = ERC20.totalSupply().sub(ownedshares).mul(pricePerShare);
@@ -36,7 +35,6 @@ abstract contract ERC20Buyout is ERC20, WithTimers
     function _closeBuyout()
     internal onlyDuringTimer(_ERC20BUYOUT_TIMER_)
     {
-        require(balanceOf(msg.sender) > 0);
         require(msg.sender != _buyoutProposer);
         // prepare
         address proposer     = _buyoutProposer;
