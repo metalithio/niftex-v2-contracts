@@ -75,13 +75,13 @@ contract PixedPriceCrowdsale
     external
     {
         address token = msg.sender;
-        require(deadlines[token] == 0);
+        require(deadlines[token] < block.timestamp);
+        require(balance[token] == 0);
 
         // solhint-disable-next-line not-rely-on-time
         deadlines[token] = block.timestamp + duration;
         recipients[token] = recipient;
         prices[token] = price;
-        balance[token] = 0;
 
         for (uint256 i = 0; i < premints.length; ++i)
         {
@@ -119,18 +119,19 @@ contract PixedPriceCrowdsale
             ShardedWallet(token).mint(to, premint.add(bought));
             emit SharesRedeemedSuccess(token, msg.sender, to, premint.add(bought));
         } else {
-            Address.sendValue(payable(to), bought.mul(prices[token]));
-            emit SharesRedeemedFaillure(token, msg.sender, to, bought);
+            uint256 value = bought.mul(prices[token]);
+            balance[token] = balance[token].sub(value);
+            Address.sendValue(payable(to), value);
+            emit SharesRedeemedFaillure(token, msg.sender, to, value);
         }
     }
 
     function withdraw(address token, address to)
     external crowdsaleFinished(token) onlyRecipient(token)
     {
-        uint256 value = balance[token];
-        delete balance[token];
-
         if (remainingsShares[token] == 0) { // crowdsaleSuccess
+            uint256 value = balance[token];
+            delete balance[token];
             Address.sendValue(payable(to), value);
             emit Withdraw(token, msg.sender, to, value);
         } else {
