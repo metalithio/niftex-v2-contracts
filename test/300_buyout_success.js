@@ -321,9 +321,8 @@ contract('Workflow', function (accounts) {
 	describe('Execute (get NFT)', function () {
 		it('perform', async function () {
 			await instance.execute(
-				this.nft.address,
-				0,
-				this.nft.contract.methods.safeTransferFrom(instance.address, user1, 1).encodeABI(),
+				[ this.nft.address ],
+				[ this.nft.contract.methods.safeTransferFrom(instance.address, user1, 1).encodeABI() ],
 				{ from: user1 }
 			);
 		});

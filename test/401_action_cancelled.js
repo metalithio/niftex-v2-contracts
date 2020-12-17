@@ -217,13 +217,12 @@ contract('Workflow', function (accounts) {
 
 	describe('Schedule action', function () {
 		it('perform', async function () {
-			const actiontype = '0';
 			const to         = this.nft.address;
 			const data       = this.nft.contract.methods.safeTransferFrom(instance.address, user1, 1).encodeABI();
 
-			const { receipt } = await instance.scheduleAction(actiontype, to, data, { from: user1 });
+			const { receipt } = await instance.scheduleAction([ to ], [ data ], { from: user1 });
 			expectEvent(receipt, 'TimerStarted');
-			expectEvent(receipt, 'ActionScheduled', { actiontype, to, value: '0', data });
+			expectEvent(receipt, 'ActionScheduled', { i: '0', to, data });
 			deadline = receipt.logs.find(({ event }) => event == 'TimerStarted').args.deadline;
 			id       = receipt.logs.find(({ event }) => event == 'ActionScheduled').args.id;
 		});
@@ -299,12 +298,11 @@ contract('Workflow', function (accounts) {
 
 	describe('Execute action', function () {
 		it('perform', async function () {
-			const actiontype = '0';
 			const to         = this.nft.address;
 			const data       = this.nft.contract.methods.safeTransferFrom(instance.address, user1, 1).encodeABI();
 
 			await expectRevert(
-				instance.executeAction(actiontype, to, data, { from: user1 }),
+				instance.executeAction([ to ], [ data ], { from: user1 }),
 				'WithTimers: onlyAfterTimer'
 			);
 		});

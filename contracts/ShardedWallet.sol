@@ -71,35 +71,31 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     /*************************************************************************
      *                        Calls / Delegate calls                         *
      *************************************************************************/
-    function execute(address to, uint256 value, bytes calldata data)
+    function execute(address[] calldata to, bytes[] calldata data)
     external restricted()
     {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = to.call{value: value}(data);
-        require(success, string(returndata));
-    }
-
-    function delegate(address to, bytes calldata data)
-    external restricted()
-    {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = to.delegatecall(data);
-        require(success, string(returndata));
+        require(to.length == data.length);
+        for (uint i = 0; i < to.length; ++i)
+        {
+            // solhint-disable-next-line avoid-low-level-calls
+            (bool success, bytes memory returndata) = to[i].call(data[i]);
+            require(success, string(returndata));
+        }
     }
 
     /*************************************************************************
      *                       Holders actions with veto                       *
      *************************************************************************/
-    function scheduleAction(ActionType actiontype, address to, bytes memory data)
+    function scheduleAction(address[] calldata to, bytes[] memory data)
     external balanceFractionRequired(governance.ACTION_REQUIRED(), 1) returns (bytes32)
     {
-        return DelayedAction._schedule(actiontype, to, 0, data, governance.ACTION_DURATION());
+        return DelayedAction._schedule(to, data, governance.ACTION_DURATION());
     }
 
-    function executeAction(ActionType actiontype, address to, bytes memory data)
+    function executeAction(address[] calldata to, bytes[] memory data)
     external balanceFractionRequired(governance.ACTION_REQUIRED(), 1) onlyBeforeTimer(_ERC20BUYOUT_TIMER_) returns (bool)
     {
-        return DelayedAction._execute(actiontype, to, 0, data);
+        return DelayedAction._execute(to, data);
     }
 
     function cancelAction(bytes32 id)
