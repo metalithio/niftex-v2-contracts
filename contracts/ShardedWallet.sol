@@ -3,23 +3,17 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
+import "./governance/IGovernance.sol";
 import "./initializable/Ownable.sol";
 import "./initializable/ERC20.sol";
 import "./initializable/ERC20Buyout.sol";
 import "./initializable/DelayedAction.sol";
 
-struct Allocation
-{
-    address receiver;
-    uint256 amount;
-}
-
 contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
 {
     using SafeMath for uint256;
 
-    uint256 internal constant ACTION_DURATION = 2 weeks;
-    uint256 internal constant BUYOUT_DURATION = 2 weeks;
+    IGovernance public governance;
 
     modifier restricted()
     {
@@ -41,6 +35,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
      *************************************************************************/
     function initialize(
         address         minter_,
+        address         governance_,
         string calldata name_,
         string calldata symbol_)
     external
@@ -48,29 +43,24 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         require(Ownable.owner() == address(0));
         Ownable._setOwner(minter_);
         ERC20._initialize(name_, symbol_);
+        governance = IGovernance(governance_);
     }
 
-    function startCrowdsale(
-        address               crowdsaleManager_,
-        uint256               totalSupply_,
-        Allocation[] calldata mints_,
-        bytes        calldata setupdata_)
+    function startCrowdsale(address crowdsaleManager_, bytes calldata setupdata_)
     external onlyOwner()
     {
         require(totalSupply() == 0);
-        for (uint256 i = 0; i < mints_.length; ++i)
-        {
-            Allocation memory allocation = mints_[i];
-            ERC20._mint(allocation.receiver, allocation.amount);
-            totalSupply_ = totalSupply_.sub(allocation.amount);
-        }
-        ERC20._mint(address(this), totalSupply_);
-        ERC20._approve(address(this), crowdsaleManager_, totalSupply_);
-        Ownable._setOwner(crowdsaleManager_);
-
+        Ownable.transferOwnership(crowdsaleManager_);
         (bool success, bytes memory returndata) = crowdsaleManager_.call(setupdata_);
         require(success, string(returndata));
     }
+
+    function mint(address to, uint256 value)
+    external onlyOwner() // only by crowdsalemanager
+    {
+        ERC20._mint(to, value);
+    }
+
     /*************************************************************************
      *                        Calls / Delegate calls                         *
      *************************************************************************/
@@ -97,7 +87,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     external returns (bytes32)
     {
         require(balanceOf(msg.sender) > 0);
-        return DelayedAction._schedule(actiontype, to, 0, data, ACTION_DURATION);
+        return DelayedAction._schedule(actiontype, to, 0, data, governance.ACTION_DURATION());
     }
 
     function executeAction(ActionType actiontype, address to, bytes memory data)
@@ -120,7 +110,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     function openBuyout(uint256 pricePerShare)
     external payable
     {
-        ERC20Buyout._openBuyout(pricePerShare, BUYOUT_DURATION);
+        ERC20Buyout._openBuyout(pricePerShare, governance.BUYOUT_DURATION());
     }
 
     function closeBuyout()

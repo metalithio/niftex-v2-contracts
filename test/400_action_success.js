@@ -1,6 +1,7 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 
 const CrowdsaleManager     = artifacts.require('CrowdsaleManager');
+const Governance           = artifacts.require('BasicGovernance');
 const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 const ShardedWallet        = artifacts.require('ShardedWallet');
 const ERC721Mock           = artifacts.require('ERC721Mock');
@@ -11,9 +12,10 @@ contract('Workflow', function (accounts) {
 	let instance;
 
 	before(async function () {
-		this.crowdsale = await CrowdsaleManager.new();
-		this.nft       = await ERC721Mock.new('NFTMock', 'NFTMock');
-		this.factory   = await ShardedWalletFactory.new();
+		this.crowdsale  = await CrowdsaleManager.new();
+		this.governance = await Governance.new(50400, 50400); // 2 weeks, 2 weeks
+		this.nft        = await ERC721Mock.new('NFTMock', 'NFTMock');
+		this.factory    = await ShardedWalletFactory.new();
 
 		const { gasUsed } = await web3.eth.getTransactionReceipt(this.factory.transactionHash);
 		console.log('factory deployment:', gasUsed);
@@ -24,6 +26,7 @@ contract('Workflow', function (accounts) {
 
 			const { receipt } = await this.factory.mintWallet(
 				user1,                        // owner_
+				this.governance.address,      // governance_
 				'Tokenized NFT',              // name_
 				'TNFT',                       // symbol_
 			);
@@ -76,10 +79,14 @@ contract('Workflow', function (accounts) {
 	describe('Setup crowdsale', function () {
 		it('perform', async function () {
 			const { receipt } = await instance.startCrowdsale(
-				this.crowdsale.address,       // crowdsale manager
-				20,                           // totalSupply_
-				[[ user1, 8 ], [ user2, 2 ]], // mints_
-				this.crowdsale.contract.methods.setup(user1, web3.utils.toWei('0.01'), 3600).encodeABI(),
+				this.crowdsale.address,         // crowdsale
+				this.crowdsale.contract.methods.setup(
+					user1,                        // recipient
+					web3.utils.toWei('0.01'),     // price
+					3600,                         // duration
+					20,                           // totalSupply
+					[[ user1, 8 ], [ user2, 2 ]], // premint
+				).encodeABI(),
 				{ from: user1 }
 			);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
@@ -90,10 +97,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                             'Tokenized NFT');
 			assert.equal(await instance.symbol(),                           'TNFT');
 			assert.equal(await instance.decimals(),                         '18');
-			assert.equal(await instance.totalSupply(),                      '20');
-			assert.equal(await instance.balanceOf(instance.address),        '10');
-			assert.equal(await instance.balanceOf(user1),                   '8');
-			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.totalSupply(),                      '0');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '0');
+			assert.equal(await instance.balanceOf(user2),                   '0');
 			assert.equal(await instance.balanceOf(user3),                   '0');
 			assert.equal(await instance.balanceOf(other1),                  '0');
 			assert.equal(await instance.balanceOf(other2),                  '0');
@@ -115,10 +122,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                             'Tokenized NFT');
 			assert.equal(await instance.symbol(),                           'TNFT');
 			assert.equal(await instance.decimals(),                         '18');
-			assert.equal(await instance.totalSupply(),                      '20');
-			assert.equal(await instance.balanceOf(instance.address),        '10');
-			assert.equal(await instance.balanceOf(user1),                   '8');
-			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.totalSupply(),                      '0');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '0');
+			assert.equal(await instance.balanceOf(user2),                   '0');
 			assert.equal(await instance.balanceOf(user3),                   '0');
 			assert.equal(await instance.balanceOf(other1),                  '0');
 			assert.equal(await instance.balanceOf(other2),                  '0');
@@ -140,10 +147,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                             'Tokenized NFT');
 			assert.equal(await instance.symbol(),                           'TNFT');
 			assert.equal(await instance.decimals(),                         '18');
-			assert.equal(await instance.totalSupply(),                      '20');
-			assert.equal(await instance.balanceOf(instance.address),        '10');
-			assert.equal(await instance.balanceOf(user1),                   '8');
-			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.totalSupply(),                      '0');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '0');
+			assert.equal(await instance.balanceOf(user2),                   '0');
 			assert.equal(await instance.balanceOf(user3),                   '0');
 			assert.equal(await instance.balanceOf(other1),                  '0');
 			assert.equal(await instance.balanceOf(other2),                  '0');
@@ -165,10 +172,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                             'Tokenized NFT');
 			assert.equal(await instance.symbol(),                           'TNFT');
 			assert.equal(await instance.decimals(),                         '18');
-			assert.equal(await instance.totalSupply(),                      '20');
-			assert.equal(await instance.balanceOf(instance.address),        '10');
-			assert.equal(await instance.balanceOf(user1),                   '8');
-			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.totalSupply(),                      '0');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '0');
+			assert.equal(await instance.balanceOf(user2),                   '0');
 			assert.equal(await instance.balanceOf(user3),                   '0');
 			assert.equal(await instance.balanceOf(other1),                  '0');
 			assert.equal(await instance.balanceOf(other2),                  '0');
@@ -180,16 +187,13 @@ contract('Workflow', function (accounts) {
 	});
 
 	describe('redeem', function () {
-		it('perform #1', async function () {
-			const { receipt } = await this.crowdsale.redeem(instance.address, other1, { from: other1 });
-			expectEvent(receipt, 'SharesRedeemedSuccess', { token: instance.address, from: other1, to: other1, count: '1' });
-			// expectEvent(receipt, 'Transfer', { from: instance.address, to: other1, value: '1' });
-		});
-
-		it('perform #2', async function () {
-			const { receipt } = await this.crowdsale.redeem(instance.address, other2, { from: other2 });
-			expectEvent(receipt, 'SharesRedeemedSuccess', { token: instance.address, from: other2, to: other2, count: '9' });
-			// expectEvent(receipt, 'Transfer', { from: instance.address, to: other2, value: '9' });
+		it('perform', async function () {
+			for ([ account, value ] of [[ user1, '8' ], [ user2, '2' ], [ other1, '1' ], [ other2, '9' ]])
+			{
+				const { receipt } = await this.crowdsale.redeem(instance.address, account, { from: account });
+				expectEvent(receipt, 'SharesRedeemedSuccess', { token: instance.address, from: account, to: account, count: value });
+				// expectEvent(receipt, 'Transfer', { from: constants.ZERO_ADDRESS, to: account, value: value });
+			}
 		});
 
 		after(async function () {

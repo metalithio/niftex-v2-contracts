@@ -9,47 +9,54 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./ShardedWallet.sol";
 
+struct Allocation
+{
+    address receiver;
+    uint256 amount;
+}
+
 contract CrowdsaleManager
 {
     using SafeMath for uint256;
 
-    mapping(address => address)                     public recipients;
     mapping(address => uint256)                     public deadlines;
+    mapping(address => address)                     public recipients;
     mapping(address => uint256)                     public prices;
-    mapping(address => uint256)                     public remainings;
     mapping(address => uint256)                     public balance;
-    mapping(address => mapping(address => uint256)) public shares;
+    mapping(address => uint256)                     public remainingsShares;
+    mapping(address => mapping(address => uint256)) public premintShares;
+    mapping(address => mapping(address => uint256)) public boughtShares;
 
     event SharesBought(address indexed token, address indexed from, address to, uint256 count);
     event SharesRedeemedSuccess(address indexed token, address indexed from, address to, uint256 count);
     event SharesRedeemedFaillure(address indexed token, address indexed from, address to, uint256 count);
-    event SharesClaimed(address indexed token, address indexed from, address to, uint256 count);
+    event OwnershipReclaimed(address indexed token, address indexed from, address to);
     event Withdraw(address indexed token, address indexed from, address to, uint256 value);
 
     modifier crowdsaleActive(address token)
     {
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp < deadlines[token] && remainings[token] > 0);
+        require(block.timestamp < deadlines[token] && remainingsShares[token] > 0);
         _;
     }
 
     modifier crowdsaleFinished(address token)
     {
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp >= deadlines[token] || remainings[token] == 0);
+        require(block.timestamp >= deadlines[token] || remainingsShares[token] == 0);
         _;
     }
 
     modifier crowdsaleFailled(address token)
     {
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp >= deadlines[token] && remainings[token] > 0);
+        require(block.timestamp >= deadlines[token] && remainingsShares[token] > 0);
         _;
     }
 
     modifier crowdsaleSuccess(address token)
     {
-        require(remainings[token] == 0);
+        require(remainingsShares[token] == 0);
         _;
     }
 
@@ -59,7 +66,12 @@ contract CrowdsaleManager
         _;
     }
 
-    function setup(address recipient, uint256 price, uint256 duration)
+    function setup(
+        address               recipient,
+        uint256               price,
+        uint256               duration,
+        uint256               totalSupply,
+        Allocation[] calldata premints)
     external
     {
         address token = msg.sender;
@@ -69,19 +81,27 @@ contract CrowdsaleManager
         deadlines[token] = block.timestamp + duration;
         recipients[token] = recipient;
         prices[token] = price;
-        remainings[token] = IERC20(token).allowance(token, address(this));
+        balance[token] = 0;
+
+        for (uint256 i = 0; i < premints.length; ++i)
+        {
+            Allocation memory premint = premints[i];
+            premintShares[token][premint.receiver] = premint.amount;
+            totalSupply = totalSupply.sub(premint.amount);
+        }
+        remainingsShares[token] = totalSupply;
     }
 
     function buy(address token, address to)
     external payable crowdsaleActive(token)
     {
         uint256 price = prices[token];
-        uint256 count = Math.min(msg.value.div(price), remainings[token]);
+        uint256 count = Math.min(msg.value.div(price), remainingsShares[token]);
         uint256 value = count.mul(price);
 
         balance[token] = balance[token].add(value);
-        shares[token][to] = shares[token][to].add(count);
-        remainings[token] = remainings[token].sub(count);
+        boughtShares[token][to] = boughtShares[token][to].add(count);
+        remainingsShares[token] = remainingsShares[token].sub(count);
 
         Address.sendValue(msg.sender, msg.value.sub(value));
         emit SharesBought(token, msg.sender, to, count);
@@ -90,33 +110,32 @@ contract CrowdsaleManager
     function redeem(address token, address to)
     external crowdsaleFinished(token)
     {
-        uint256 count = shares[token][to];
-        delete shares[token][to];
+        uint256 premint = premintShares[token][to];
+        uint256 bought  = boughtShares[token][to];
+        delete premintShares[token][to];
+        delete boughtShares[token][to];
 
-        if (remainings[token] == 0) { // crowdsaleSuccess
-            IERC20(token).transferFrom(token, to, count);
-            emit SharesRedeemedSuccess(token, msg.sender, to, count);
+        if (remainingsShares[token] == 0) { // crowdsaleSuccess
+            ShardedWallet(token).mint(to, premint.add(bought));
+            emit SharesRedeemedSuccess(token, msg.sender, to, premint.add(bought));
         } else {
-            Address.sendValue(payable(to), count.mul(prices[token]));
-            emit SharesRedeemedFaillure(token, msg.sender, to, count);
+            Address.sendValue(payable(to), bought.mul(prices[token]));
+            emit SharesRedeemedFaillure(token, msg.sender, to, bought);
         }
     }
 
-    function claim(address token, address to)
-    external crowdsaleFailled(token) onlyRecipient(token)
-    {
-        uint256 count = IERC20(token).allowance(token, address(this));
-        IERC20(token).transferFrom(token, to, count);
-        emit SharesClaimed(token, msg.sender, to, count);
-    }
-
     function withdraw(address token, address to)
-    external crowdsaleSuccess(token) onlyRecipient(token)
+    external crowdsaleFinished(token) onlyRecipient(token)
     {
         uint256 value = balance[token];
         delete balance[token];
 
-        Address.sendValue(payable(to), value);
-        emit Withdraw(token, msg.sender, to, value);
+        if (remainingsShares[token] == 0) { // crowdsaleSuccess
+            Address.sendValue(payable(to), value);
+            emit Withdraw(token, msg.sender, to, value);
+        } else {
+            ShardedWallet(token).transferOwnership(to);
+            emit OwnershipReclaimed(token, msg.sender, to);
+        }
     }
 }
