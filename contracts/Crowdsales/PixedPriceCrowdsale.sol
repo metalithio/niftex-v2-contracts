@@ -75,6 +75,8 @@ contract PixedPriceCrowdsale
     external
     {
         address token = msg.sender;
+
+        require(ShardedWallet(token).owner() == address(this));
         require(deadlines[token] < block.timestamp);
         require(balance[token] == 0);
 
@@ -122,7 +124,7 @@ contract PixedPriceCrowdsale
             uint256 value = bought.mul(prices[token]);
             balance[token] = balance[token].sub(value);
             Address.sendValue(payable(to), value);
-            emit SharesRedeemedFaillure(token, msg.sender, to, value);
+            emit SharesRedeemedFaillure(token, msg.sender, to, bought);
         }
     }
 
