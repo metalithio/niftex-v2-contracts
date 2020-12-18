@@ -21,7 +21,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         require(
             Ownable.owner() == msg.sender
             ||
-            (ERC20.totalSupply() > 0 && ERC20.balanceOf(msg.sender) == ERC20.totalSupply()),
+            ERC20.balanceOf(msg.sender) == Math.max(ERC20.totalSupply(), 1),
             "Sender must be owner or own all the shares");
         _;
     }
@@ -126,7 +126,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     }
 
     function postBuyout() // cleans state: necessary to run a crowdsale after a buyout
-    external
+    external restricted()
     {
         ERC20Buyout._resetBuyout();
     }

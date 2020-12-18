@@ -68,8 +68,6 @@ abstract contract ERC20Buyout is ERC20, WithTimers
     function _resetBuyout()
     internal onlyAfterTimer(_ERC20BUYOUT_TIMER_)
     {
-        require(msg.sender == _buyoutProposer);
-
         uint256 lockedshares = ERC20.balanceOf(address(this));
         require(lockedshares == ERC20.totalSupply()); // all other shares have been claimed
         ERC20._burn(address(this), lockedshares); // burn last shares
