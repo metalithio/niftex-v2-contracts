@@ -63,7 +63,7 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
     }
 
     function mint(address to, uint256 value)
-    external onlyOwner() // only by crowdsalemanager
+    external onlyBeforeTimer(_ERC20BUYOUT_TIMER_) onlyOwner()
     {
         ERC20._mint(to, value);
     }
@@ -125,10 +125,16 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
         ERC20Buyout._claimBuyout(to);
     }
 
-    function claimOwnership(address to)
+    function postBuyout() // cleans state: necessary to run a crowdsale after a buyout
     external
     {
         ERC20Buyout._resetBuyout();
+    }
+
+    function claimOwnership(address to)
+    external onlyAfterTimer(_ERC20BUYOUT_TIMER_)
+    {
+        require(msg.sender == ERC20Buyout.buyoutProposer());
         Ownable._setOwner(to);
     }
 
