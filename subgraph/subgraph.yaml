@@ -1,0 +1,70 @@
+specVersion: 0.0.2
+description: Niftex-V2
+repository: https://github.com/metalithio/niftex-v2-contracts
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: ShardedWalletFactory
+    network: mainnet
+    source:
+      # address: '0x'
+      # startBlock: 0
+      abi: ShardedWalletFactory
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: ShardedWallet
+          file: ../artifacts/contracts/ShardedWallet.sol/ShardedWallet.json
+        - name: ShardedWalletFactory
+          file: ../artifacts/contracts/ShardedWalletFactory.sol/ShardedWalletFactory.json
+      eventHandlers:
+        - event: NewInstance(address)
+          handler: handleNewInstance
+      file: ./src/shardedwalletfactory/index.ts
+
+templates:
+  - name: ShardedWallet
+    kind: ethereum/contract
+    network: mainnet
+    source:
+      abi: ShardedWallet
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: ShardedWallet
+          file: ../artifacts/contracts/ShardedWallet.sol/ShardedWallet.json
+      eventHandlers:
+        - event: ActionCancelled(indexed bytes32)
+          handler: handleActionCancelled
+        - event: ActionExecuted(indexed bytes32,uint256,address,bytes)
+          handler: handleActionExecuted
+        - event: ActionScheduled(indexed bytes32,uint256,address,bytes)
+          handler: handleActionScheduled
+        - event: Approval(indexed address,indexed address,uint256)
+          handler: handleApproval
+        - event: ERC1155Received(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleERC1155Received
+        - event: ERC721Received(indexed address,indexed address,indexed address,uint256)
+          handler: handleERC721Received
+        - event: ERC777Received(indexed address,indexed address,indexed address,uint256)
+          handler: handleERC777Received
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: TimerReset(indexed bytes32)
+          handler: handleTimerReset
+        - event: TimerStarted(indexed bytes32,uint256)
+          handler: handleTimerStarted
+        - event: TimerStopped(indexed bytes32)
+          handler: handleTimerStopped
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/shardedwallet/index.ts
