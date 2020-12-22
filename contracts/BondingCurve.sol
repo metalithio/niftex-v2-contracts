@@ -268,8 +268,9 @@ contract BondingCurve {
 		uint256 shardsToSell;
 
 		uint256 curveBalance = _shardRegistry.balanceOf(address(this));
-		if (curveBalance < shardAmount) {
-			shardsToSell = shardAmount.sub(curveBalance);
+		uint256 maxActualShardsToWithdraw = curveBalance.div(_shardSuppliers._totalShardLPTokens).mul(_shardSuppliers._mappingShardLPTokens[msg.sender]);
+		if (maxActualShardsToWithdraw < shardAmount) {
+			shardsToSell = shardAmount.sub(maxActualShardsToWithdraw);
 		}
 
 		uint256 ethPayout = calcEthPayoutForShardLP(shardsToSell);
@@ -311,9 +312,10 @@ contract BondingCurve {
 		);
 
 		uint256 ethToSellOnMarket;
+		uint256 maxActualEthToWithdraw = address(this).balance.mul(_ethSuppliers._mappingEthLPTokens[msg.sender]).div(_ethSuppliers._totalEthLPTokens);
 
-		if (address(this).balance < ethAmount) {
-			ethToSellOnMarket = ethAmount.sub(address(this).balance);
+		if (maxActualEthToWithdraw < ethAmount) {
+			ethToSellOnMarket = ethAmount.sub(maxActualEthToWithdraw);
 		}
 
 		uint256 shardPayout = calcShardPayoutForEthLP(ethToSellOnMarket);
