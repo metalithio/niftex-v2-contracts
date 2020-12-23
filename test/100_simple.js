@@ -1,18 +1,20 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 
-const ShardedWallet        = artifacts.require('ShardedWallet');
-const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
-const Governance           = artifacts.require('BasicGovernance');
-const Modules = {
-	Crowdsale: { artifact: artifacts.require('CrowdsaleBasicModule') },
-	Action:    { artifact: artifacts.require('ActionModule')         },
-};
-const Mocks = {
-	ERC721:    { artifact: artifacts.require('ERC721Mock'), args: ['NFTMock', 'NFTMock'] },
-};
-
 contract('Workflow', function (accounts) {
 	const [ admin, user1, user2, user3, other1, other2, other3 ] = accounts;
+
+	const ShardedWallet        = artifacts.require('ShardedWallet');
+	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
+	const Governance           = artifacts.require('BasicGovernance');
+	const Modules = {
+		Crowdsale: { artifact: artifacts.require('CrowdsaleBasicModule') },
+		Action:    { artifact: artifacts.require('ActionModule')         },
+	};
+	const Mocks = {
+		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
+		// ERC777:    { artifact: artifacts.require('ERC777Mock'),  args: [ admin, web3.utils.toWei('1'), 'ERC777Mock', '777', [] ] }, // needs erc1820registry
+		ERC1155:   { artifact: artifacts.require('ERC1155Mock'), args: [ '' ]                                                    },
+	};
 
 	let instance;
 
@@ -67,6 +69,7 @@ contract('Workflow', function (accounts) {
 	describe('Prepare tokens', function () {
 		it('perform', async function () {
 			await this.mocks.erc721.mint(instance.address, 1);
+			await this.mocks.erc1155.mint(instance.address, 1, 1, '0x');
 		});
 
 		after(async function () {
