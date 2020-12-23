@@ -8,13 +8,13 @@ abstract contract ModuleBase
 {
     modifier onlyAuthorized(address wallet, address user)
     {
-        require(ShardedWallet(wallet).governance().isAuthorized(wallet, user));
+        require(ShardedWallet(payable(wallet)).governance().isAuthorized(wallet, user));
         _;
     }
 
     modifier onlyOwner(address wallet, address user)
     {
-        require(ShardedWallet(wallet).owner() == user);
+        require(ShardedWallet(payable(wallet)).owner() == user);
         _;
     }
 }

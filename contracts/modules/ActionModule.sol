@@ -20,7 +20,7 @@ contract ActionModule is ModuleBase, Timers
         bytes32 id  = keccak256(abi.encode(to, value, data));
         bytes32 uid = keccak256(abi.encode(wallet, id));
 
-        Timers._startTimer(uid, ShardedWallet(wallet).governance().ACTION_DURATION());
+        Timers._startTimer(uid, ShardedWallet(payable(wallet)).governance().ACTION_DURATION());
 
         for (uint256 i = 0; i < to.length; ++i) {
             emit ActionScheduled(wallet, id, i, to[i], value[i], data[i]);
@@ -40,7 +40,7 @@ contract ActionModule is ModuleBase, Timers
         Timers._resetTimer(uid);
 
         for (uint256 i = 0; i < to.length; ++i) {
-            ShardedWallet(wallet).moduleExecute(to[i], value[i], data[i]);
+            ShardedWallet(payable(wallet)).moduleExecute(to[i], value[i], data[i]);
             emit ActionExecuted(wallet, id, i, to[i], value[i], data[i]);
         }
 

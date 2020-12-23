@@ -20,6 +20,6 @@ contract ShardedWalletFactory is CloneFactory
     external returns (address instance)
     {
         instance = _clone();
-        ShardedWallet(instance).initialize(governance_, owner_, name_, symbol_);
+        ShardedWallet(payable(instance)).initialize(governance_, owner_, name_, symbol_);
     }
 }

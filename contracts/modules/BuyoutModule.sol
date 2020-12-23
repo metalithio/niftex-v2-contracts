@@ -23,14 +23,14 @@ contract BuyoutModule is ModuleBase, Timers
     function openBuyout(address wallet, uint256 pricePerShare)
     external payable onlyAuthorized(wallet, msg.sender) onlyBeforeTimer(bytes32(uint256(wallet)))
     {
-        uint256 ownedshares = ShardedWallet(wallet).balanceOf(msg.sender);
-        uint256 buyoutprice = ShardedWallet(wallet).totalSupply().sub(ownedshares).mul(pricePerShare);
+        uint256 ownedshares = ShardedWallet(payable(wallet)).balanceOf(msg.sender);
+        uint256 buyoutprice = ShardedWallet(payable(wallet)).totalSupply().sub(ownedshares).mul(pricePerShare);
 
-        Timers._startTimer(bytes32(uint256(wallet)), ShardedWallet(wallet).governance().BUYOUT_DURATION());
+        Timers._startTimer(bytes32(uint256(wallet)), ShardedWallet(payable(wallet)).governance().BUYOUT_DURATION());
         _proposers[wallet] = msg.sender;
         _prices[wallet]    = pricePerShare;
 
-        ShardedWallet(wallet).moduleTransfer(msg.sender, address(this), ownedshares);
+        ShardedWallet(payable(wallet)).moduleTransfer(msg.sender, address(this), ownedshares);
         Address.sendValue(msg.sender, msg.value.sub(buyoutprice));
 
         emit BuyoutOpened(wallet, msg.sender, pricePerShare);
@@ -41,15 +41,15 @@ contract BuyoutModule is ModuleBase, Timers
     {
         address proposer      = _proposers[wallet];
         uint256 pricepershare = _prices[wallet];
-        uint256 lockedshares  = ShardedWallet(wallet).balanceOf(address(this));
-        uint256 buyoutprice   = ShardedWallet(wallet).totalSupply().sub(lockedshares).mul(pricepershare);
+        uint256 lockedshares  = ShardedWallet(payable(wallet)).balanceOf(address(this));
+        uint256 buyoutprice   = ShardedWallet(payable(wallet)).totalSupply().sub(lockedshares).mul(pricepershare);
         uint256 stopprice     = lockedshares.mul(pricepershare);
 
         Timers._stopTimer(bytes32(uint256(wallet)));
         delete _proposers[wallet];
         delete _prices[wallet];
 
-        ShardedWallet(wallet).moduleTransfer(address(this), msg.sender, lockedshares);
+        ShardedWallet(payable(wallet)).moduleTransfer(address(this), msg.sender, lockedshares);
         Address.sendValue(payable(proposer), buyoutprice.add(stopprice));
         Address.sendValue(msg.sender, msg.value.sub(stopprice));
 
@@ -59,8 +59,8 @@ contract BuyoutModule is ModuleBase, Timers
     function claimBuyout(address wallet, address user)
     external onlyAfterTimer(bytes32(uint256(wallet)))
     {
-        uint256 shares = ShardedWallet(wallet).balanceOf(user);
-        ShardedWallet(wallet).moduleBurn(user, shares);
+        uint256 shares = ShardedWallet(payable(wallet)).balanceOf(user);
+        ShardedWallet(payable(wallet)).moduleBurn(user, shares);
         Address.sendValue(payable(user), shares.mul(_prices[wallet]));
 
         emit BuyoutClaimed(wallet, user);
@@ -69,7 +69,7 @@ contract BuyoutModule is ModuleBase, Timers
     function finalizeBuyout(address wallet)
     external onlyAfterTimer(bytes32(uint256(wallet)))
     {
-        ShardedWallet(wallet).moduleTransferOwnership(_proposers[wallet]);
+        ShardedWallet(payable(wallet)).moduleTransferOwnership(_proposers[wallet]);
         delete _proposers[wallet];
 
         emit BuyoutFinalized(wallet);
@@ -80,9 +80,9 @@ contract BuyoutModule is ModuleBase, Timers
     {
         require(_proposers[wallet] == address(0)); // only reset after finalize
 
-        uint256 lockedshares = ShardedWallet(wallet).balanceOf(address(this));
-        require(lockedshares == ShardedWallet(wallet).totalSupply()); // all other shares have been claimed
-        ShardedWallet(wallet).moduleBurn(address(this), lockedshares); // burn last shares
+        uint256 lockedshares = ShardedWallet(payable(wallet)).balanceOf(address(this));
+        require(lockedshares == ShardedWallet(payable(wallet)).totalSupply()); // all other shares have been claimed
+        ShardedWallet(payable(wallet)).moduleBurn(address(this), lockedshares); // burn last shares
 
         Timers._resetTimer(bytes32(uint256(wallet)));
         delete _prices[wallet];

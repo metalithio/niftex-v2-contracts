@@ -15,6 +15,8 @@ contract ShardedWallet is Ownable, ERC20, TokenReceiver
 
     IGovernance public governance;
 
+    event Received(address indexed sender, uint256 value);
+
     modifier onlyModule()
     {
         require(isModule(msg.sender), "Access restricted to modules");
@@ -24,6 +26,11 @@ contract ShardedWallet is Ownable, ERC20, TokenReceiver
     constructor()
     {
         Ownable._setOwner(address(0xdead));
+    }
+
+    receive() external payable
+    {
+        emit Received(msg.sender, msg.value);
     }
 
     /*************************************************************************

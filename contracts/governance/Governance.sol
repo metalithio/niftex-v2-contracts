@@ -39,7 +39,7 @@ contract BasicGovernance is IGovernance, AccessControl
     function isAuthorized(address wallet, address user)
     external view override returns (bool)
     {
-        return ShardedWallet(wallet).balanceOf(user) >= Math.max(ShardedWallet(wallet).totalSupply().mul(ACTION_REQUIRED).div(10**18), 1);
+        return ShardedWallet(payable(wallet)).balanceOf(user) >= Math.max(ShardedWallet(payable(wallet)).totalSupply().mul(ACTION_REQUIRED).div(10**18), 1);
     }
 
 
