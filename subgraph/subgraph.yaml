@@ -49,6 +49,14 @@ templates:
           handler: handleActionScheduled
         - event: Approval(indexed address,indexed address,uint256)
           handler: handleApproval
+        - event: BuyoutClaimed(indexed address)
+          handler: handleBuyoutClaimed
+        - event: BuyoutClosed(address)
+          handler: handleBuyoutClosed
+        - event: BuyoutOpened(address,uint256,uint256)
+          handler: handleBuyoutOpened
+        - event: BuyoutResetted()
+          handler: handleBuyoutResetted
         - event: ERC1155Received(indexed address,indexed address,indexed address,uint256,uint256)
           handler: handleERC1155Received
         - event: ERC721Received(indexed address,indexed address,indexed address,uint256)

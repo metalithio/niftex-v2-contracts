@@ -24,8 +24,10 @@ type ShardedWallet @entity {
 	symbol:                       String!
 	decimals:                     Int!
 	totalSupply:                  DecimalValue!
+	activeBuyout:                 Buyout
 	balances:                     [Balance!]! @derivedFrom(field: "wallet")
 	actions:                      [Action!]! @derivedFrom(field: "wallet")
+	buyouts:                      [Buyout!]! @derivedFrom(field: "wallet")
 }
 
 type Balance @entity {
@@ -61,6 +63,27 @@ type ActionCall @entity {
 	index:                        BigInt!
 	to:                           Account!
 	data:                         Bytes!
+}
+
+# ================================== Buyout ===================================
+enum BuyoutStatus {
+	RUNNING,
+	CANCELLED,
+	SUCCESSFULL,
+	RESETTED,
+}
+
+type Buyout @entity {
+	id:                           ID!
+	status:                       BuyoutStatus!
+	wallet:                       ShardedWallet!
+	proposer:                     Account!
+	pricePerShare:                BigInt!
+	timer:                        Timer!
+	openEvents:                   [BuyoutOpened!]! @derivedFrom(field: "buyout")
+	closeEvents:                  [BuyoutClosed!]! @derivedFrom(field: "buyout")
+	claimEvents:                  [BuyoutClaimed!]! @derivedFrom(field: "buyout")
+	resetEvents:                  [BuyoutResetted!]! @derivedFrom(field: "buyout")
 }
 
 # ================================== Timers ===================================
@@ -131,6 +154,37 @@ type ActionCancelled implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	action:                       Action!
+}
+
+type BuyoutOpened implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
+	proposer:                     Account!
+}
+
+type BuyoutClosed implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
+	closer:                       Account!
+}
+
+type BuyoutClaimed implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
+	user:                         Account!
+}
+
+type BuyoutResetted implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
 }
 
 type TimerStarted implements Event @entity {

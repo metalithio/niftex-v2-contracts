@@ -15,6 +15,11 @@ abstract contract ERC20Buyout is ERC20, WithTimers
     address private _buyoutProposer;
     uint256 private _buyoutPrice;
 
+    event BuyoutOpened(address proposer, uint256 pricePerShare, uint256 duration);
+    event BuyoutClosed(address closer);
+    event BuyoutClaimed(address indexed user);
+    event BuyoutResetted();
+
     function _openBuyout(uint256 pricePerShare, uint256 duration)
     internal onlyBeforeTimer(_ERC20BUYOUT_TIMER_)
     {
@@ -29,7 +34,8 @@ abstract contract ERC20Buyout is ERC20, WithTimers
         ERC20._transfer(msg.sender, address(this), ownedshares);
         // refund
         Address.sendValue(msg.sender, msg.value.sub(buyoutprice));
-        // TODO: emit Event
+
+        emit BuyoutOpened(msg.sender, pricePerShare, duration);
     }
 
     function _closeBuyout()
@@ -50,7 +56,8 @@ abstract contract ERC20Buyout is ERC20, WithTimers
         // refund
         Address.sendValue(payable(proposer), buyoutprice.add(stopprice)); // send deposit back + buy shares
         Address.sendValue(msg.sender, msg.value.sub(stopprice)); // refund extra
-        // TODO: emit Event
+
+        emit BuyoutClosed(msg.sender);
     }
 
     function _claimBuyout(address to)
@@ -62,7 +69,8 @@ abstract contract ERC20Buyout is ERC20, WithTimers
         ERC20._burn(to, shares);
         // refund
         Address.sendValue(payable(to), shares.mul(_buyoutPrice));
-        // TODO: emit Event
+
+        emit BuyoutClaimed(to);
     }
 
     function _resetBuyout()
@@ -76,6 +84,8 @@ abstract contract ERC20Buyout is ERC20, WithTimers
 
         delete _buyoutProposer;
         delete _buyoutPrice;
+
+        emit BuyoutResetted();
     }
 
     function buyoutProposer()

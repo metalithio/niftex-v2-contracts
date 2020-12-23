@@ -9,6 +9,10 @@ import {
 	ActionExecuted       as ActionExecutedEvent,
 	ActionScheduled      as ActionScheduledEvent,
 	Approval             as ApprovalEvent,
+	BuyoutClaimed        as BuyoutClaimedEvent,
+	BuyoutClosed         as BuyoutClosedEvent,
+	BuyoutOpened         as BuyoutOpenedEvent,
+	BuyoutResetted       as BuyoutResettedEvent,
 	ERC1155Received      as ERC1155ReceivedEvent,
 	ERC721Received       as ERC721ReceivedEvent,
 	ERC777Received       as ERC777ReceivedEvent,
@@ -19,7 +23,6 @@ import {
 	Transfer             as TransferEvent,
 } from '../../../generated/templates/ShardedWallet/ShardedWallet'
 
-
 import {
 	Account,
 	Governance,
@@ -27,6 +30,7 @@ import {
 	Balance,
 	Action,
 	ActionCall,
+	Buyout,
 	Timer,
 	OwnershipTransferred,
 	Transfer,
@@ -34,6 +38,10 @@ import {
 	ActionScheduled,
 	ActionExecuted,
 	ActionCancelled,
+	BuyoutClaimed,
+	BuyoutClosed,
+	BuyoutOpened,
+	BuyoutResetted,
 	TimerStarted,
 	TimerStopped,
 	TimerReset,
@@ -51,15 +59,15 @@ function fetchShardedWallet(address: Address): ShardedWallet {
 	let id = address.toHex()
 	let wallet = ShardedWallet.load(id)
 	if (wallet == null) {
-		let contract       = ShardedWalletContract.bind(address)
-		let governance     = new Governance(contract.governance().toHex())
-		wallet             = new ShardedWallet(id)
-		wallet.name        = contract.name()
-		wallet.symbol      = contract.symbol()
-		wallet.decimals    = contract.decimals()
-		wallet.governance  = governance.id
-		let walletsupply   = new decimals.Value(id.concat('-totalSupply'), wallet.decimals)
-		wallet.totalSupply = walletsupply.id;
+		let contract        = ShardedWalletContract.bind(address)
+		let governance      = new Governance(contract.governance().toHex())
+		wallet              = new ShardedWallet(id)
+		wallet.governance   = governance.id
+		wallet.name         = contract.name()
+		wallet.symbol       = contract.symbol()
+		wallet.decimals     = contract.decimals()
+		let walletsupply    = new decimals.Value(id.concat('-totalSupply'), wallet.decimals)
+		wallet.totalSupply  = walletsupply.id;
 		governance.save()
 	}
 	return wallet as ShardedWallet
@@ -110,6 +118,8 @@ export function handleTransfer(event: TransferEvent): void {
 	let to           = new Account(event.params.to.toHex())
 	let amount       = new decimals.Value(events.id(event))
 	amount.set(event.params.value)
+	from.save()
+	to.save()
 
 	let ev = new Transfer(events.id(event))
 	ev.transaction = transactions.log(event).id
@@ -144,6 +154,8 @@ export function handleApproval(event: ApprovalEvent): void {
 	let spender      = new Account(event.params.spender.toHex())
 	let amount       = new decimals.Value(events.id(event))
 	amount.set(event.params.value)
+	owner.save()
+	spender.save()
 
 	let ev = new Approval(events.id(event))
 	ev.transaction = transactions.log(event).id
@@ -162,7 +174,7 @@ export function handleActionScheduled(event: ActionScheduledEvent): void {
 	let actioncall    = new ActionCall(action.id.concat('-').concat(event.params.i.toHex()))
 	action.status     = 'SCHEDULED'
 	action.wallet     = wallet.id
-	action.timer      = action.id
+	action.timer      = wallet.id.concat('-').concat(action.id)
 	actioncall.action = action.id
 	actioncall.index  = event.params.i
 	actioncall.to     = to.id
@@ -203,7 +215,7 @@ export function handleActionCancelled(event: ActionCancelledEvent): void {
 }
 
 export function handleTimerStarted(event: TimerStartedEvent): void {
-	let timer    = new Timer(event.params.timer.toHex())
+	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
 	timer.status = 'SCHEDULED'
 	timer.start  = event.block.timestamp
 	timer.stop   = event.params.deadline
@@ -217,7 +229,7 @@ export function handleTimerStarted(event: TimerStartedEvent): void {
 }
 
 export function handleTimerStopped(event: TimerStoppedEvent): void {
-	let timer    = new Timer(event.params.timer.toHex())
+	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
 	timer.status = 'EXECUTED'
 	timer.save()
 
@@ -229,7 +241,7 @@ export function handleTimerStopped(event: TimerStoppedEvent): void {
 }
 
 export function handleTimerReset(event: TimerResetEvent): void {
-	let timer    = new Timer(event.params.timer.toHex())
+	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
 	timer.status = 'CANCELLED'
 	timer.save()
 
@@ -240,8 +252,70 @@ export function handleTimerReset(event: TimerResetEvent): void {
 	ev.save()
 }
 
+export function handleBuyoutOpened(event: BuyoutOpenedEvent): void {
+	let wallet            = fetchShardedWallet(event.address)
+	let buyout            = new Buyout(events.id(event))
+	let proposer          = new Account(event.params.proposer.toHex())
+	let ev                = new BuyoutOpened(events.id(event))
 
+	wallet.activeBuyout   = buyout.id
+	buyout.status         = 'RUNNING'
+	buyout.wallet         = wallet.id
+	buyout.proposer       = proposer.id
+	buyout.pricePerShare  = event.params.pricePerShare
+	buyout.timer          = wallet.id.concat('-0x5570cd7375d5aef065d84fd2bc70103c74d8b0d806f74aecfa9829fdfad24720')
+	ev.transaction        = transactions.log(event).id
+	ev.timestamp          = event.block.timestamp
+	ev.proposer           = proposer.id
 
+	wallet.save()
+	buyout.save()
+	proposer.save()
+	ev.save()
+}
+
+export function handleBuyoutClosed(event: BuyoutClosedEvent): void {
+	let wallet            = fetchShardedWallet(event.address)
+	let buyout            = new Buyout(wallet.activeBuyout)
+	let closer            = new Account(event.params.closer.toHex())
+	let ev                = new BuyoutClosed(events.id(event))
+	wallet.activeBuyout   = null
+	buyout.status         = 'CANCELLED'
+	ev.transaction        = transactions.log(event).id
+	ev.timestamp          = event.block.timestamp
+	ev.closer             = closer.id
+	wallet.save()
+	buyout.save()
+	closer.save()
+	ev.save()
+}
+
+export function handleBuyoutClaimed(event: BuyoutClaimedEvent): void {
+	let wallet            = fetchShardedWallet(event.address)
+	let buyout            = new Buyout(wallet.activeBuyout)
+	let user              = new Account(event.params.user.toHex())
+	let ev                = new BuyoutClaimed(events.id(event))
+	buyout.status         = 'SUCCESSFULL'
+	ev.transaction        = transactions.log(event).id
+	ev.timestamp          = event.block.timestamp
+	ev.user               = user.id
+	buyout.save()
+	user.save()
+	ev.save()
+}
+
+export function handleBuyoutResetted(event: BuyoutResettedEvent): void {
+	let wallet            = fetchShardedWallet(event.address)
+	let buyout            = new Buyout(wallet.activeBuyout)
+	let ev                = new BuyoutResetted(events.id(event))
+	wallet.activeBuyout   = null
+	buyout.status         = 'RESETTED'
+	ev.transaction        = transactions.log(event).id
+	ev.timestamp          = event.block.timestamp
+	wallet.save()
+	buyout.save()
+	ev.save()
+}
 
 export function handleERC721Received(event: ERC721ReceivedEvent): void {
 	// event.params.token
