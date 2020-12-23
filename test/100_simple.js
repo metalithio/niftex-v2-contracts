@@ -7,8 +7,9 @@ contract('Workflow', function (accounts) {
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 	const Governance           = artifacts.require('BasicGovernance');
 	const Modules = {
-		Crowdsale: { artifact: artifacts.require('CrowdsaleBasicModule') },
 		Action:    { artifact: artifacts.require('ActionModule')         },
+		Buyout:    { artifact: artifacts.require('BuyoutModule')         },
+		Crowdsale: { artifact: artifacts.require('CrowdsaleBasicModule') },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -38,7 +39,6 @@ contract('Workflow', function (accounts) {
 
 	describe('Initialize', function () {
 		it('perform', async function () {
-
 			const { receipt } = await this.factory.mintWallet(
 				this.governance.address,      // governance_
 				user1,                        // owner_

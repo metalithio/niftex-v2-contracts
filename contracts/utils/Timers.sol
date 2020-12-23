@@ -4,7 +4,7 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-contract WithTimers
+contract Timers
 {
     using SafeMath for uint256;
 
