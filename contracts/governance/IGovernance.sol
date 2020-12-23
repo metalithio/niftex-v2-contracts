@@ -4,8 +4,11 @@ pragma solidity ^0.7.0;
 
 interface IGovernance
 {
-    function ACTION_DURATION() external returns (uint256);
-    function ACTION_REQUIRED() external returns (uint256);
-    function BUYOUT_DURATION() external returns (uint256);
-    function BUYOUT_REQUIRED() external returns (uint256);
+    function isModule(address) external view returns (bool);
+    function isAuthorized(address, address) external view returns (bool);
+
+    function ACTION_DURATION() external view returns (uint256);
+    function ACTION_REQUIRED() external view returns (uint256);
+    function BUYOUT_DURATION() external view returns (uint256);
+    function BUYOUT_REQUIRED() external view returns (uint256);
 }

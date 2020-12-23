@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "./utils/CloneFactory.sol";
 import "./ShardedWallet.sol";
@@ -13,13 +13,13 @@ contract ShardedWalletFactory is CloneFactory
     {}
 
     function mintWallet(
-            address               owner_,
-            address               governance_,
-            string       calldata name_,
-            string       calldata symbol_)
+        address               governance_,
+        address               owner_,
+        string       calldata name_,
+        string       calldata symbol_)
     external returns (address instance)
     {
         instance = _clone();
-        ShardedWallet(instance).initialize(owner_, governance_, name_, symbol_);
+        ShardedWallet(instance).initialize(governance_, owner_, name_, symbol_);
     }
 }

@@ -1,38 +1,22 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/Math.sol";
 import "./governance/IGovernance.sol";
 import "./initializable/Ownable.sol";
 import "./initializable/ERC20.sol";
-import "./initializable/ERC20Buyout.sol";
-import "./initializable/DelayedAction.sol";
 
-contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
+contract ShardedWallet is Ownable, ERC20
 {
     using SafeMath for uint256;
 
     IGovernance public governance;
 
-    event ERC721Received(address indexed token, address indexed operator, address indexed from, uint256 tokenId);
-    event ERC777Received(address indexed token, address indexed operator, address indexed from, uint256 amount);
-    event ERC1155Received(address indexed token, address indexed operator, address indexed from, uint256 id, uint256 value);
-
-    modifier restricted()
+    modifier onlyModule()
     {
-        require(
-            Ownable.owner() == msg.sender
-            ||
-            ERC20.balanceOf(msg.sender) == Math.max(ERC20.totalSupply(), 1),
-            "Sender must be owner or own all the shares");
-        _;
-    }
-
-    modifier balanceFractionRequired(uint256 fraction, uint256 minimum)
-    {
-        require(ERC20.balanceOf(msg.sender) >= Math.max(ERC20.totalSupply().mul(fraction).div(10**18), minimum), "Sender does not control enough shares");
+        require(isModule(msg.sender), "Access restricted to modules");
         _;
     }
 
@@ -45,135 +29,95 @@ contract ShardedWallet is Ownable, ERC20, ERC20Buyout, DelayedAction
      *                 Initialization and crowdsale trigger                  *
      *************************************************************************/
     function initialize(
-        address         minter_,
         address         governance_,
+        address         minter_,
         string calldata name_,
         string calldata symbol_)
     external
     {
-        require(Ownable.owner() == address(0));
+        require(address(governance) == address(0));
+        governance = IGovernance(governance_);
         Ownable._setOwner(minter_);
         ERC20._initialize(name_, symbol_);
-        governance = IGovernance(governance_);
     }
 
-    function startCrowdsale(address crowdsaleManager_, bytes calldata setupdata_)
-    external onlyOwner()
+    function isModule(address module)
+    public view returns (bool)
     {
-        require(totalSupply() == 0);
-        Ownable.transferOwnership(crowdsaleManager_);
-        (bool success, bytes memory returndata) = crowdsaleManager_.call(setupdata_);
-        require(success, string(returndata));
+        return governance.isModule(module);
     }
 
-    function mint(address to, uint256 value)
-    external onlyBeforeTimer(_ERC20BUYOUT_TIMER_) onlyOwner()
+    function moduleMint(address to, uint256 value)
+    external onlyModule()
     {
         ERC20._mint(to, value);
     }
 
-    /*************************************************************************
-     *                        Calls / Delegate calls                         *
-     *************************************************************************/
-    function execute(address[] calldata to, bytes[] calldata data)
-    external restricted()
+    function moduleBurn(address from, uint256 value)
+    external onlyModule()
     {
-        require(to.length == data.length);
-        for (uint i = 0; i < to.length; ++i)
-        {
-            // solhint-disable-next-line avoid-low-level-calls
-            (bool success, bytes memory returndata) = to[i].call(data[i]);
-            require(success, string(returndata));
-        }
+        ERC20._burn(from, value);
     }
 
-    /*************************************************************************
-     *                       Holders actions with veto                       *
-     *************************************************************************/
-    function scheduleAction(address[] calldata to, bytes[] memory data)
-    external balanceFractionRequired(governance.ACTION_REQUIRED(), 1) returns (bytes32)
+    function moduleTransfer(address from, address to, uint256 value)
+    external onlyModule()
     {
-        return DelayedAction._schedule(to, data, governance.ACTION_DURATION());
+        ERC20._transfer(from, to, value);
     }
 
-    function executeAction(address[] calldata to, bytes[] memory data)
-    external balanceFractionRequired(governance.ACTION_REQUIRED(), 1) onlyBeforeTimer(_ERC20BUYOUT_TIMER_) returns (bool)
+    function moduleTransferOwnership(address to)
+    external onlyModule()
     {
-        return DelayedAction._execute(to, data);
-    }
-
-    function cancelAction(bytes32 id)
-    external balanceFractionRequired(governance.ACTION_REQUIRED(), 1) returns (bool)
-    {
-        return DelayedAction._cancel(id);
-    }
-
-    /*************************************************************************
-     *                            Buyout support                             *
-     *************************************************************************/
-    function openBuyout(uint256 pricePerShare)
-    external balanceFractionRequired(governance.BUYOUT_REQUIRED(), 1) payable
-    {
-        ERC20Buyout._openBuyout(pricePerShare, governance.BUYOUT_DURATION());
-    }
-
-    function closeBuyout()
-    external balanceFractionRequired(governance.BUYOUT_REQUIRED(), 1) payable
-    {
-        ERC20Buyout._closeBuyout();
-    }
-
-    function claimBuyout(address to)
-    external
-    {
-        ERC20Buyout._claimBuyout(to);
-    }
-
-    function postBuyout() // cleans state: necessary to run a crowdsale after a buyout
-    external restricted()
-    {
-        ERC20Buyout._resetBuyout();
-    }
-
-    function claimOwnership(address to)
-    external onlyAfterTimer(_ERC20BUYOUT_TIMER_)
-    {
-        require(msg.sender == ERC20Buyout.buyoutProposer());
         Ownable._setOwner(to);
     }
 
-    /*************************************************************************
-     *                           Standard receiver                           *
-     *************************************************************************/
-    // ERC721
-    function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata)
-    external returns (bytes4)
+    function moduleExecute(address to, uint256 value, bytes calldata data)
+    external onlyModule()
     {
-        emit ERC721Received(msg.sender, operator, from, tokenId);
-        return this.onERC721Received.selector;
+        _call(to, value, data);
     }
 
-    // ERC777
-    function tokensReceived(address operator, address from, address, uint256 amount, bytes calldata, bytes calldata)
-    external
+    function moduleExecuteBatch(address[] calldata to, uint256[] calldata value, bytes[] calldata data)
+    external onlyModule()
     {
-        emit ERC777Received(msg.sender, operator, from, amount);
-    }
-
-    // ERC1155
-    function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata)
-    external returns(bytes4)
-    {
-        emit ERC1155Received(msg.sender, operator, from, id, value);
-        return this.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(address operator, address from, uint256[] calldata ids, uint256[] calldata values, bytes calldata)
-    external returns(bytes4)
-    {
-        for (uint256 i = 0; i < ids.length; ++i) {
-            emit ERC1155Received(msg.sender, operator, from, ids[i], values[i]);
+        require(to.length == value.length);
+        require(to.length == data.length);
+        for (uint256 i = 0; i < to.length; ++i)
+        {
+            _call(to[i], value[i], data[i]);
         }
-        return this.onERC1155BatchReceived.selector;
     }
+
+    function execute(address to, uint256 value, bytes calldata data)
+    external onlyOwner()
+    {
+        _call(to, value, data);
+    }
+
+    function executeBatch(address[] calldata to, uint256[] calldata value, bytes[] calldata data)
+    external onlyOwner()
+    {
+        require(to.length == value.length);
+        require(to.length == data.length);
+        for (uint256 i = 0; i < to.length; ++i)
+        {
+            _call(to[i], value[i], data[i]);
+        }
+    }
+
+    function _call(address to, uint256 value, bytes memory data)
+    internal
+    {
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = to.call{value: value}(data);
+        require(success, string(returndata));
+    }
+
+    // function _delegate(address to, bytes memory data)
+    // internal
+    // {
+    //     // solhint-disable-next-line avoid-low-level-calls
+    //     (bool success, bytes memory returndata) = to.delegate(data);
+    //     require(success, string(returndata));
+    // }
 }
