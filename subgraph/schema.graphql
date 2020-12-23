@@ -1,35 +1,157 @@
-type Governance @entity {
-	id:                           ID!
-	shardedwallets:               [ShardedWallet!]! @derivedFrom(field: "governance")
-}
-
+# ================================= Ethereum ==================================
 type Account @entity {
 	id:                           ID!
+	wallets:                      [ShardedWallet!]! @derivedFrom(field: "owner")
 	balances:                     [Balance!]! @derivedFrom(field: "account")
-	# transfersOperator:            [Transfer!]! @derivedFrom(field: "operator")
-	# transfersFrom:                [Transfer!]! @derivedFrom(field: "from")
-	# transfersTo:                  [Transfer!]! @derivedFrom(field: "to")
-	# approvalsOwner:               [Approval!]! @derivedFrom(field: "owner")
-	# approvalsSpender:             [Approval!]! @derivedFrom(field: "spender")
+	transfersFrom:                [Transfer!]! @derivedFrom(field: "from")
+	transfersTo:                  [Transfer!]! @derivedFrom(field: "to")
+	approvalsOwner:               [Approval!]! @derivedFrom(field: "owner")
+	approvalsSpender:             [Approval!]! @derivedFrom(field: "spender")
+	calls:                        [ActionCall!]! @derivedFrom(field: "to")
+}
+
+# =============================== ShardedWallet ===============================
+type Governance @entity {
+	id:                           ID!
+	wallets:                      [ShardedWallet!]! @derivedFrom(field: "governance")
 }
 
 type ShardedWallet @entity {
 	id:                           ID!
+	owner:                        Account!
 	governance:                   Governance!
 	name:                         String!
 	symbol:                       String!
 	decimals:                     Int!
 	totalSupply:                  DecimalValue!
-	# balances
+	balances:                     [Balance!]! @derivedFrom(field: "wallet")
+	actions:                      [Action!]! @derivedFrom(field: "wallet")
 }
 
 type Balance @entity {
 	id:                           ID!
-	token:                        ShardedWallet!
+	wallet:                       ShardedWallet!
 	account:                      Account!
 	amount:                       DecimalValue!
-	# transfersFrom:                [Transfer!]! @derivedFrom(field: "fromBalance")
-	# transfersTo:                  [Transfer!]! @derivedFrom(field: "toBalance")
+	transfersFrom:                [Transfer!]! @derivedFrom(field: "fromBalance")
+	transfersTo:                  [Transfer!]! @derivedFrom(field: "toBalance")
+}
+
+# ================================== Actions ==================================
+enum ActionStatus {
+	SCHEDULED,
+	EXECUTED,
+	CANCELLED,
+}
+
+type Action @entity {
+	id:                           ID!
+	status:                       ActionStatus!
+	wallet:                       ShardedWallet!
+	timer:                        Timer!
+	calls:                        [ActionCall!]! @derivedFrom(field: "action")
+	scheduledEvents:              [ActionScheduled!]! @derivedFrom(field: "action")
+	executedEvents:               [ActionExecuted!]! @derivedFrom(field: "action")
+	cancelledEvents:              [ActionCancelled!]! @derivedFrom(field: "action")
+}
+
+type ActionCall @entity {
+	id:                           ID!
+	action:                       Action!
+	index:                        BigInt!
+	to:                           Account!
+	data:                         Bytes!
+}
+
+# ================================== Timers ===================================
+enum TimerStatus {
+	STARTED,
+	STOPPED,
+	RESETTED,
+}
+
+type Timer @entity {
+	id:                           ID!
+	status:                       TimerStatus!
+	start:                        BigInt!
+	stop:                         BigInt!
+	startEvents:                  [TimerStarted!]! @derivedFrom(field: "timer")
+	stopEvents:                   [TimerStopped!]! @derivedFrom(field: "timer")
+	resetEvents:                  [TimerReset!]! @derivedFrom(field: "timer")
+}
+
+# ================================== Events ===================================
+type OwnershipTransferred implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	from:                         Account!
+	to:                           Account!
+}
+
+type Transfer implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	from:                         Account!
+	fromBalance:                  Balance!
+	to:                           Account!
+	toBalance:                    Balance!
+	amount:                       DecimalValue!
+}
+
+type Approval implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	owner:                        Account!
+	spender:                      Account!
+	amount:                       DecimalValue!
+}
+
+type ActionScheduled implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	action:                       Action!
+}
+
+type ActionExecuted implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	action:                       Action!
+}
+
+type ActionCancelled implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	action:                       Action!
+}
+
+type TimerStarted implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	timer:                        Timer!
+}
+
+type TimerStopped implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	timer:                        Timer!
+}
+
+type TimerReset implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	timer:                        Timer!
 }
 
 type DecimalValue @entity {

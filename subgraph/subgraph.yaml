@@ -18,8 +18,6 @@ dataSources:
       entities:
         - Transaction
       abis:
-        - name: ShardedWallet
-          file: ../artifacts/contracts/ShardedWallet.sol/ShardedWallet.json
         - name: ShardedWalletFactory
           file: ../artifacts/contracts/ShardedWalletFactory.sol/ShardedWalletFactory.json
       eventHandlers:
