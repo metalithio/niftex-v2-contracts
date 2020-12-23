@@ -3,9 +3,13 @@ const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test
 const ShardedWallet        = artifacts.require('ShardedWallet');
 const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 const Governance           = artifacts.require('BasicGovernance');
-const CrowdsaleModule      = artifacts.require('CrowdsaleBasicModule');
-const ActionModule         = artifacts.require('ActionModule');
-const ERC721Mock           = artifacts.require('ERC721Mock');
+const Modules = {
+	Crowdsale: { artifact: artifacts.require('CrowdsaleBasicModule') },
+	Action:    { artifact: artifacts.require('ActionModule')         },
+};
+const Mocks = {
+	ERC721:    { artifact: artifacts.require('ERC721Mock'), args: ['NFTMock', 'NFTMock'] },
+};
 
 contract('Workflow', function (accounts) {
 	const [ admin, user1, user2, user3, other1, other2, other3 ] = accounts;
@@ -18,18 +22,16 @@ contract('Workflow', function (accounts) {
 		// Deploy governance (2 weeks, 1%, 2 weeks, 1%)
 		this.governance = await Governance.new(50400, web3.utils.toWei('0.01'), 50400, web3.utils.toWei('0.01'));
 		// Deploy & whitelist modules
-		this.modules = {
-			crowdsale: await CrowdsaleModule.new(),
-			action:    await ActionModule.new(),
-		};
+		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		for ({ address } of Object.values(this.modules))
 		{
 			await this.governance.grantRole(await this.governance.MODULE_ROLE(), address);
 		}
 		// Deploy Mocks
-		this.nft = await ERC721Mock.new('NFTMock', 'NFTMock');
-		// const { gasUsed } = await web3.eth.getTransactionReceipt(this.factory.transactionHash);
-		// console.log('factory deployment:', gasUsed);
+		this.mocks = await Object.entries(Mocks).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
+		// Verbose
+		const { gasUsed } = await web3.eth.getTransactionReceipt(this.factory.transactionHash);
+		console.log('factory deployment:', gasUsed);
 	});
 
 	describe('Initialize', function () {
@@ -64,7 +66,7 @@ contract('Workflow', function (accounts) {
 
 	describe('Prepare tokens', function () {
 		it('perform', async function () {
-			await this.nft.mint(instance.address, 1);
+			await this.mocks.erc721.mint(instance.address, 1);
 		});
 
 		after(async function () {
@@ -80,7 +82,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(other1),                  '0');
 			assert.equal(await instance.balanceOf(other2),                  '0');
 			assert.equal(await instance.balanceOf(other3),                  '0');
-			assert.equal(await this.nft.ownerOf(1),                         instance.address);
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
 		});
 	});
@@ -108,7 +110,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(other1),                  '0');
 			assert.equal(await instance.balanceOf(other2),                  '0');
 			assert.equal(await instance.balanceOf(other3),                  '0');
-			assert.equal(await this.nft.ownerOf(1),                         instance.address);
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
 		});
 	});
@@ -134,7 +136,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(other1),                  '10');
 			assert.equal(await instance.balanceOf(other2),                  '0');
 			assert.equal(await instance.balanceOf(other3),                  '0');
-			assert.equal(await this.nft.ownerOf(1),                         instance.address);
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
 		});
 	});
@@ -157,7 +159,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(other1),                  '0');
 			assert.equal(await instance.balanceOf(other2),                  '0');
 			assert.equal(await instance.balanceOf(other3),                  '0');
-			assert.equal(await this.nft.ownerOf(1),                         instance.address);
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
 		});
 	});
@@ -165,9 +167,9 @@ contract('Workflow', function (accounts) {
 	describe('Execute (get NFT)', function () {
 		it('perform', async function () {
 			await instance.execute(
-				this.nft.address,
+				this.mocks.erc721.address,
 				"0",
-				this.nft.contract.methods.safeTransferFrom(instance.address, other1, 1).encodeABI(),
+				this.mocks.erc721.contract.methods.safeTransferFrom(instance.address, other1, 1).encodeABI(),
 				{ from: other1 }
 			);
 		});
@@ -185,7 +187,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(other1),                  '0');
 			assert.equal(await instance.balanceOf(other2),                  '0');
 			assert.equal(await instance.balanceOf(other3),                  '0');
-			assert.equal(await this.nft.ownerOf(1),                         other1);
+			assert.equal(await this.mocks.erc721.ownerOf(1),                other1);
 			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
 		});
 	});
