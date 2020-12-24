@@ -30,6 +30,7 @@ contract BuyoutModule is ModuleBase, Timers
         _proposers[wallet] = msg.sender;
         _prices[wallet]    = pricePerShare;
 
+        ShardedWallet(payable(wallet)).moduleTransferOwnership(address(this));
         ShardedWallet(payable(wallet)).moduleTransfer(msg.sender, address(this), ownedshares);
         Address.sendValue(msg.sender, msg.value.sub(buyoutprice));
 
@@ -49,6 +50,7 @@ contract BuyoutModule is ModuleBase, Timers
         delete _proposers[wallet];
         delete _prices[wallet];
 
+        ShardedWallet(payable(wallet)).renounceOwnership();
         ShardedWallet(payable(wallet)).moduleTransfer(address(this), msg.sender, lockedshares);
         Address.sendValue(payable(proposer), buyoutprice.add(stopprice));
         Address.sendValue(msg.sender, msg.value.sub(stopprice));
@@ -69,7 +71,7 @@ contract BuyoutModule is ModuleBase, Timers
     function finalizeBuyout(address wallet)
     external onlyAfterTimer(bytes32(uint256(wallet)))
     {
-        ShardedWallet(payable(wallet)).moduleTransferOwnership(_proposers[wallet]);
+        ShardedWallet(payable(wallet)).transferOwnership(_proposers[wallet]);
         delete _proposers[wallet];
 
         emit BuyoutFinalized(wallet);

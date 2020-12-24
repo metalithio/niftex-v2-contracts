@@ -32,6 +32,7 @@ contract ActionModule is ModuleBase, Timers
     function execute(address wallet, address[] memory to, uint256[] memory value, bytes[] memory data)
     public onlyAuthorized(wallet, msg.sender) returns (bool)
     {
+        require(ShardedWallet(payable(wallet)).owner() == address(0)); // buyout takes over ownership
         require(to.length == value.length);
         require(to.length == data.length);
         bytes32 id  = keccak256(abi.encode(to, value, data));
