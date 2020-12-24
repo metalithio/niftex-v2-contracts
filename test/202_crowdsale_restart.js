@@ -7,9 +7,9 @@ contract('Workflow', function (accounts) {
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 	const Governance           = artifacts.require('BasicGovernance');
 	const Modules = {
-		Action:    { artifact: artifacts.require('ActionModule')              },
-		Buyout:    { artifact: artifacts.require('BuyoutModule')              },
-		Crowdsale: { artifact: artifacts.require('CrowdsaleFixedPriceModule') },
+		Action:    { artifact: artifacts.require('ActionModule')         },
+		Buyout:    { artifact: artifacts.require('BuyoutModule')         },
+		Crowdsale: { artifact: artifacts.require('CrowdsaleBasicModule') },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -22,14 +22,17 @@ contract('Workflow', function (accounts) {
 	before(async function () {
 		// Deploy factory
 		this.factory = await ShardedWalletFactory.new();
-		// Deploy governance (2 weeks, 1%, 2 weeks, 1%)
-		this.governance = await Governance.new(50400, web3.utils.toWei('0.01'), 50400, web3.utils.toWei('0.01'));
 		// Deploy & whitelist modules
+		this.governance = await Governance.new();
 		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		for ({ address } of Object.values(this.modules))
 		{
 			await this.governance.grantRole(await this.governance.MODULE_ROLE(), address);
 		}
+		// write config
+		await this.governance.writeConfig(await this.governance.AUTHORIZATION_RATIO(), web3.utils.toWei('0.01'));
+		await this.governance.writeConfig(await this.modules.action.ACTION_DURATION(), 50400);
+		await this.governance.writeConfig(await this.modules.buyout.BUYOUT_DURATION(), 50400);
 		// Deploy Mocks
 		this.mocks = await Object.entries(Mocks).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		// Verbose

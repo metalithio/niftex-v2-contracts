@@ -11,6 +11,8 @@ contract BuyoutModule is ModuleBase, Timers
 {
     using SafeMath for uint256;
 
+    bytes32 public constant BUYOUT_DURATION = bytes32(uint256(keccak256("BUYOUT_DURATION")) - 1);
+
     mapping(address => address) internal _proposers;
     mapping(address => uint256) internal _prices;
 
@@ -26,7 +28,7 @@ contract BuyoutModule is ModuleBase, Timers
         uint256 ownedshares = ShardedWallet(payable(wallet)).balanceOf(msg.sender);
         uint256 buyoutprice = ShardedWallet(payable(wallet)).totalSupply().sub(ownedshares).mul(pricePerShare);
 
-        Timers._startTimer(bytes32(uint256(wallet)), ShardedWallet(payable(wallet)).governance().BUYOUT_DURATION());
+        Timers._startTimer(bytes32(uint256(wallet)), ShardedWallet(payable(wallet)).governance().readConfig(wallet, BUYOUT_DURATION));
         _proposers[wallet] = msg.sender;
         _prices[wallet]    = pricePerShare;
 

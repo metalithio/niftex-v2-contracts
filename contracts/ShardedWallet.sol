@@ -25,7 +25,7 @@ contract ShardedWallet is Ownable, ERC20, TokenReceiver
 
     constructor()
     {
-        Ownable._setOwner(address(0xdead));
+        governance = IGovernance(0xdead);
     }
 
     receive() external payable
@@ -75,7 +75,7 @@ contract ShardedWallet is Ownable, ERC20, TokenReceiver
     function isModule(address module)
     public view returns (bool)
     {
-        return governance.isModule(module);
+        return governance.isModule(address(this), module);
     }
 
     function moduleMint(address to, uint256 value)
