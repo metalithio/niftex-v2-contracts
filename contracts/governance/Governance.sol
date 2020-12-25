@@ -40,7 +40,7 @@ contract BasicGovernance is IGovernance, AccessControl
         return _staticcalls[sig];
     }
 
-    function writeModule(bytes4 sig, address value)
+    function setModule(bytes4 sig, address value)
     public
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
@@ -54,7 +54,7 @@ contract BasicGovernance is IGovernance, AccessControl
         return _config[key];
     }
 
-    function writeConfig(bytes32 key, uint256 value)
+    function setConfig(bytes32 key, uint256 value)
     public
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));

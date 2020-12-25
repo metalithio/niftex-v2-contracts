@@ -30,13 +30,13 @@ contract('Workflow', function (accounts) {
 		{
 			await this.governance.grantRole(await this.governance.MODULE_ROLE(), address);
 		}
-		// write config
-		await this.governance.writeConfig(await this.governance.AUTHORIZATION_RATIO(), web3.utils.toWei('0.01'));
-		await this.governance.writeConfig(await this.modules.action.ACTION_DURATION(), 50400);
-		await this.governance.writeConfig(await this.modules.buyout.BUYOUT_DURATION(), 50400);
+		// set config
+		await this.governance.setConfig(await this.governance.AUTHORIZATION_RATIO(), web3.utils.toWei('0.01'));
+		await this.governance.setConfig(await this.modules.action.ACTION_DURATION(), 50400);
+		await this.governance.setConfig(await this.modules.buyout.BUYOUT_DURATION(), 50400);
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
-			await this.governance.writeModule(funcSig, this.modules.tokenreceiver.address);
+			await this.governance.setModule(funcSig, this.modules.tokenreceiver.address);
 		}
 		// Deploy Mocks
 		this.mocks = await Object.entries(Mocks).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
