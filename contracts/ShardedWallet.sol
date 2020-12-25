@@ -18,7 +18,7 @@ contract ShardedWallet is Ownable, ERC20
 
     modifier onlyModule()
     {
-        require(governance.isModule(address(this), msg.sender), "Access restricted to modules");
+        require(_isModule(msg.sender), "Access restricted to modules");
         _;
     }
 
@@ -40,6 +40,7 @@ contract ShardedWallet is Ownable, ERC20
     external payable
     {
         address module = governance.getModule(address(this), msg.sig);
+        require(_isModule(module));
         if (module == address(0))
         {
             emit Received(msg.sender, msg.value, msg.data);
@@ -72,6 +73,12 @@ contract ShardedWallet is Ownable, ERC20
         governance = IGovernance(governance_);
         Ownable._setOwner(minter_);
         ERC20._initialize(name_, symbol_);
+    }
+
+    function _isModule(address module)
+    internal view returns (bool)
+    {
+        return governance.isModule(address(this), module);
     }
 
     /*************************************************************************

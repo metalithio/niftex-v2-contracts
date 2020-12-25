@@ -34,11 +34,10 @@ contract BasicGovernance is IGovernance, AccessControl
         return ShardedWallet(payable(wallet)).balanceOf(user) >= Math.max(ShardedWallet(payable(wallet)).totalSupply().mul(getConfig(wallet, AUTHORIZATION_RATIO)).div(10**18), 1);
     }
 
-    function getModule(address wallet, bytes4 sig)
+    function getModule(address /*wallet*/, bytes4 sig)
     public view override returns (address)
     {
-        address module = _staticcalls[sig];
-        return isModule(wallet, module) ? module : address(0);
+        return _staticcalls[sig];
     }
 
     function writeModule(bytes4 sig, address value)
