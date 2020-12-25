@@ -152,7 +152,13 @@ contract ShardedWallet is Ownable, ERC20
     internal
     {
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = to.call{value: value}(data);
-        require(success, string(returndata));
+        (bool success, /*bytes memory returndata*/) = to.call{value: value}(data);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            returndatacopy(0, 0, returndatasize())
+            switch success
+            case 0 { revert(0, returndatasize()) }
+            default { return (0, returndatasize()) }
+        }
     }
 }
