@@ -18,10 +18,13 @@ contract ShardedWallet is Ownable, ERC20
 
     modifier onlyModule()
     {
-        require(isModule(msg.sender), "Access restricted to modules");
+        require(governance.isModule(address(this), msg.sender), "Access restricted to modules");
         _;
     }
 
+    /*************************************************************************
+     *                       Contructor and fallbacks                        *
+     *************************************************************************/
     constructor()
     {
         governance = IGovernance(0xdead);
@@ -43,12 +46,12 @@ contract ShardedWallet is Ownable, ERC20
         }
         else
         {
+            (bool success, /*bytes memory returndata*/) = module.staticcall(msg.data);
+            // returning bytes in fallback is not supported until solidity 0.8.0
             // solhint-disable-next-line no-inline-assembly
             assembly {
-                calldatacopy(0, 0, calldatasize())
-                let result := staticcall(gas(), module, 0, calldatasize(), 0, 0)
                 returndatacopy(0, 0, returndatasize())
-                switch result
+                switch success
                 case 0 { revert(0, returndatasize()) }
                 default { return (0, returndatasize()) }
             }
@@ -94,12 +97,6 @@ contract ShardedWallet is Ownable, ERC20
     /*************************************************************************
      *                          Module interactions                          *
      *************************************************************************/
-    function isModule(address module)
-    public view returns (bool)
-    {
-        return governance.isModule(address(this), module);
-    }
-
     function moduleMint(address to, uint256 value)
     external onlyModule()
     {
