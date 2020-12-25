@@ -8,7 +8,7 @@ import "./ModuleBase.sol";
 
 contract ActionModule is ModuleBase, Timers
 {
-    bytes32 public constant ACTION_DURATION = bytes32(uint256(keccak256("ACTION_DURATION")) - 1);
+    bytes32 public constant ACTION_DURATION_KEY = bytes32(uint256(keccak256("ACTION_DURATION_KEY")) - 1);
 
     event ActionScheduled(address indexed wallet, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
     event ActionExecuted(address indexed wallet, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
@@ -22,7 +22,7 @@ contract ActionModule is ModuleBase, Timers
         bytes32 id  = keccak256(abi.encode(to, value, data));
         bytes32 uid = keccak256(abi.encode(wallet, id));
 
-        Timers._startTimer(uid, ShardedWallet(payable(wallet)).governance().getConfig(wallet, ACTION_DURATION));
+        Timers._startTimer(uid, ShardedWallet(payable(wallet)).governance().getConfig(wallet, ACTION_DURATION_KEY));
 
         for (uint256 i = 0; i < to.length; ++i) {
             emit ActionScheduled(wallet, id, i, to[i], value[i], data[i]);
