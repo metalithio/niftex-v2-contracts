@@ -7,9 +7,10 @@ contract('Workflow', function (accounts) {
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 	const Governance           = artifacts.require('BasicGovernance');
 	const Modules = {
-		Action:    { artifact: artifacts.require('ActionModule')         },
-		Buyout:    { artifact: artifacts.require('BuyoutModule')         },
-		Crowdsale: { artifact: artifacts.require('CrowdsaleBasicModule') },
+		Action:        { artifact: artifacts.require('ActionModule')         },
+		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
+		Crowdsale:     { artifact: artifacts.require('CrowdsaleBasicModule') },
+		TokenReceiver: { artifact: artifacts.require('TokenReceiverModuke')  },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -33,6 +34,10 @@ contract('Workflow', function (accounts) {
 		await this.governance.writeConfig(await this.governance.AUTHORIZATION_RATIO(), web3.utils.toWei('0.01'));
 		await this.governance.writeConfig(await this.modules.action.ACTION_DURATION(), 50400);
 		await this.governance.writeConfig(await this.modules.buyout.BUYOUT_DURATION(), 50400);
+		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
+		{
+			await this.governance.writeModule(funcSig, this.modules.tokenreceiver.address);
+		}
 		// Deploy Mocks
 		this.mocks = await Object.entries(Mocks).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		// Verbose

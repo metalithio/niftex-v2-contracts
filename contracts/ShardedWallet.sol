@@ -7,15 +7,14 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "./governance/IGovernance.sol";
 import "./initializable/Ownable.sol";
 import "./initializable/ERC20.sol";
-import "./utils/TokenReceiver.sol";
 
-contract ShardedWallet is Ownable, ERC20, TokenReceiver
+contract ShardedWallet is Ownable, ERC20
 {
     using SafeMath for uint256;
 
     IGovernance public governance;
 
-    event Received(address indexed sender, uint256 value);
+    event Received(address indexed sender, uint256 value, bytes data);
 
     modifier onlyModule()
     {
@@ -28,9 +27,32 @@ contract ShardedWallet is Ownable, ERC20, TokenReceiver
         governance = IGovernance(0xdead);
     }
 
-    receive() external payable
+    receive()
+    external payable
     {
-        emit Received(msg.sender, msg.value);
+        emit Received(msg.sender, msg.value, msg.data);
+    }
+
+    fallback()
+    external payable
+    {
+        address module = governance.getModule(address(this), msg.sig);
+        if (module == address(0))
+        {
+            emit Received(msg.sender, msg.value, msg.data);
+        }
+        else
+        {
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                calldatacopy(0, 0, calldatasize())
+                let result := staticcall(gas(), module, 0, calldatasize(), 0, 0)
+                returndatacopy(0, 0, returndatasize())
+                switch result
+                case 0 { revert(0, returndatasize()) }
+                default { return (0, returndatasize()) }
+            }
+        }
     }
 
     /*************************************************************************

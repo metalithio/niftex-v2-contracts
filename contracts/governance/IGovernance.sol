@@ -6,5 +6,6 @@ interface IGovernance
 {
     function isModule(address,address) external view returns (bool);
     function isAuthorized(address,address) external view returns (bool);
-    function readConfig(address,bytes32) external view returns (uint256);
+    function getModule(address,bytes4) external view returns (address);
+    function getConfig(address,bytes32) external view returns (uint256);
 }

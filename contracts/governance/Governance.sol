@@ -15,6 +15,7 @@ contract BasicGovernance is IGovernance, AccessControl
     bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
 
     mapping(bytes32 => uint256) internal _config;
+    mapping(bytes4  => address) internal _staticcalls;
 
     constructor()
     {
@@ -22,25 +23,40 @@ contract BasicGovernance is IGovernance, AccessControl
     }
 
     function isModule(address /*wallet*/, address module)
-    external view override returns (bool)
+    public view override returns (bool)
     {
         return AccessControl.hasRole(MODULE_ROLE, module);
     }
 
     function isAuthorized(address wallet, address user)
-    external view override returns (bool)
+    public view override returns (bool)
     {
-        return ShardedWallet(payable(wallet)).balanceOf(user) >= Math.max(ShardedWallet(payable(wallet)).totalSupply().mul(readConfig(wallet, AUTHORIZATION_RATIO)).div(10**18), 1);
+        return ShardedWallet(payable(wallet)).balanceOf(user) >= Math.max(ShardedWallet(payable(wallet)).totalSupply().mul(getConfig(wallet, AUTHORIZATION_RATIO)).div(10**18), 1);
     }
 
-    function readConfig(address /*wallet*/, bytes32 key)
+    function getModule(address wallet, bytes4 sig)
+    public view override returns (address)
+    {
+        address module = _staticcalls[sig];
+        return isModule(wallet, module) ? module : address(0);
+    }
+
+    function writeModule(bytes4 sig, address value)
+    public
+    {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _staticcalls[sig] = value;
+        // TODO: emit
+    }
+
+    function getConfig(address /*wallet*/, bytes32 key)
     public view override returns (uint256)
     {
         return _config[key];
     }
 
     function writeConfig(bytes32 key, uint256 value)
-    external
+    public
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
         _config[key] = value;
