@@ -90,20 +90,15 @@ contract ShardedWallet is Ownable, ERC20
         _call(to, value, data);
     }
 
-    function executeBatch(address[] calldata to, uint256[] calldata value, bytes[] calldata data)
-    external onlyOwner()
-    {
-        require(to.length == value.length);
-        require(to.length == data.length);
-        for (uint256 i = 0; i < to.length; ++i)
-        {
-            _call(to[i], value[i], data[i]);
-        }
-    }
-
     /*************************************************************************
      *                          Module interactions                          *
      *************************************************************************/
+    function moduleExecute(address to, uint256 value, bytes calldata data)
+    external onlyModule()
+    {
+        _call(to, value, data);
+    }
+
     function moduleMint(address to, uint256 value)
     external onlyModule()
     {
@@ -126,23 +121,6 @@ contract ShardedWallet is Ownable, ERC20
     external onlyModule()
     {
         Ownable._setOwner(to);
-    }
-
-    function moduleExecute(address to, uint256 value, bytes calldata data)
-    external onlyModule()
-    {
-        _call(to, value, data);
-    }
-
-    function moduleExecuteBatch(address[] calldata to, uint256[] calldata value, bytes[] calldata data)
-    external onlyModule()
-    {
-        require(to.length == value.length);
-        require(to.length == data.length);
-        for (uint256 i = 0; i < to.length; ++i)
-        {
-            _call(to[i], value[i], data[i]);
-        }
     }
 
     /*************************************************************************

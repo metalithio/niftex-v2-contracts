@@ -10,6 +10,7 @@ contract('Workflow', function (accounts) {
 		Action:        { artifact: artifacts.require('ActionModule')         },
 		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
 		Crowdsale:     { artifact: artifacts.require('CrowdsaleBasicModule') },
+		Multicall:     { artifact: artifacts.require('MulticallModule')      },
 		TokenReceiver: { artifact: artifacts.require('TokenReceiverModuke')  },
 	};
 	const Mocks = {
