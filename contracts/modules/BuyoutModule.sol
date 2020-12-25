@@ -30,7 +30,7 @@ contract BuyoutModule is ModuleBase, Timers
 
         Timers._startTimer(bytes32(uint256(wallet)), ShardedWallet(payable(wallet)).governance().getConfig(wallet, BUYOUT_DURATION));
         _proposers[wallet] = msg.sender;
-        _prices[wallet]    = pricePerShare;
+        _prices[wallet] = pricePerShare;
 
         ShardedWallet(payable(wallet)).moduleTransferOwnership(address(this));
         ShardedWallet(payable(wallet)).moduleTransfer(msg.sender, address(this), ownedshares);

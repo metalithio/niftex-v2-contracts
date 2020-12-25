@@ -17,24 +17,24 @@ contract TokenReceiverModuke is ERC165, IERC721Receiver, IERC777Recipient, IERC1
         _registerInterface(IERC1155Receiver.onERC1155Received.selector ^ IERC1155Receiver.onERC1155BatchReceived.selector);
     }
 
-    function onERC721Received(address,address,uint256,bytes calldata)
+    function onERC721Received(address, address, uint256, bytes calldata)
     external override pure returns (bytes4)
     {
         return this.onERC721Received.selector;
     }
 
-    function tokensReceived(address,address,address,uint256,bytes calldata,bytes calldata)
+    function tokensReceived(address, address, address, uint256, bytes calldata, bytes calldata)
     external override pure
     {
     }
 
-    function onERC1155Received(address,address,uint256,uint256,bytes calldata)
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata)
     external override pure returns(bytes4)
     {
         return this.onERC1155Received.selector;
     }
 
-    function onERC1155BatchReceived(address,address,uint256[] calldata,uint256[] calldata,bytes calldata)
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
     external override pure returns(bytes4)
     {
         return this.onERC1155BatchReceived.selector;
