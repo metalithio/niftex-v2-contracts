@@ -3,7 +3,7 @@
 pragma solidity ^0.7.0;
 pragma abicoder v2;
 
-import "./ModuleBase.sol";
+import "../ModuleBase.sol";
 
 struct Allocation
 {
@@ -11,8 +11,10 @@ struct Allocation
     uint256 amount;
 }
 
-contract CrowdsaleBasicModule is ModuleBase
+contract CrowdsaleBasicModule is IModule, ModuleBase
 {
+    string constant public override name = type(CrowdsaleBasicModule).name;
+
     function setup(address wallet, Allocation[] calldata mints)
     external onlyOwner(wallet, msg.sender)
     {

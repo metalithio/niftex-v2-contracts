@@ -46,6 +46,13 @@ contract('Workflow', function (accounts) {
 		console.log('factory deployment:', gasUsed);
 	});
 
+	it('Modules metadata', async function () {
+		for ([ name, module ] of Object.entries(this.modules))
+		{
+			console.log(">>", name, await module.name());
+		}
+	});
+
 	describe('Initialize', function () {
 		it('perform', async function () {
 			const { receipt } = await this.factory.mintWallet(

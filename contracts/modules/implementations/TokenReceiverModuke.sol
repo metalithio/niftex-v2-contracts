@@ -7,9 +7,12 @@ import "@openzeppelin/contracts/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "../IModule.sol";
 
-contract TokenReceiverModuke is ERC165, IERC721Receiver, IERC777Recipient, IERC1155Receiver
+contract TokenReceiverModuke is IModule, ERC165, IERC721Receiver, IERC777Recipient, IERC1155Receiver
 {
+    string constant public override name = type(TokenReceiverModuke).name;
+
     constructor()
     {
         _registerInterface(IERC721Receiver.onERC721Received.selector);

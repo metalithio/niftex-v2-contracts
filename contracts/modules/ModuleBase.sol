@@ -3,8 +3,9 @@
 pragma solidity ^0.7.0;
 
 import "../ShardedWallet.sol";
+import "./IModule.sol";
 
-abstract contract ModuleBase
+abstract contract ModuleBase is IModule
 {
     modifier onlyAuthorized(address wallet, address user)
     {

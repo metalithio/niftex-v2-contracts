@@ -4,12 +4,14 @@ pragma solidity ^0.7.0;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/utils/Address.sol";
-import "../utils/Timers.sol";
-import "./ModuleBase.sol";
+import "../../utils/Timers.sol";
+import "../ModuleBase.sol";
 
-contract BuyoutModule is ModuleBase, Timers
+contract BuyoutModule is IModule, ModuleBase, Timers
 {
     using SafeMath for uint256;
+
+    string constant public override name = type(BuyoutModule).name;
 
     bytes32 public constant BUYOUT_DURATION_KEY = bytes32(uint256(keccak256("BUYOUT_DURATION_KEY")) - 1);
 

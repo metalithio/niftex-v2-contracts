@@ -3,11 +3,13 @@
 pragma solidity ^0.7.0;
 pragma abicoder v2;
 
-import "../utils/Timers.sol";
-import "./ModuleBase.sol";
+import "../../utils/Timers.sol";
+import "../ModuleBase.sol";
 
-contract ActionModule is ModuleBase, Timers
+contract ActionModule is IModule, ModuleBase, Timers
 {
+    string constant public override name = type(ActionModule).name;
+
     bytes32 public constant ACTION_DURATION_KEY = bytes32(uint256(keccak256("ACTION_DURATION_KEY")) - 1);
 
     event ActionScheduled(address indexed wallet, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);

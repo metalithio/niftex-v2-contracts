@@ -3,10 +3,12 @@
 pragma solidity ^0.7.0;
 pragma abicoder v2;
 
-import "./ModuleBase.sol";
+import "../ModuleBase.sol";
 
-contract MulticallModule is ModuleBase
+contract MulticallModule is IModule, ModuleBase
 {
+    string constant public override name = type(MulticallModule).name;
+
     function batch(address wallet, address[] calldata to, uint256[] calldata value, bytes[] calldata data)
     external onlyOwner(wallet, msg.sender)
     {
