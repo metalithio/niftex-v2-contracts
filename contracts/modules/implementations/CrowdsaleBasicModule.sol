@@ -13,7 +13,7 @@ struct Allocation
 
 contract CrowdsaleBasicModule is IModule, ModuleBase
 {
-    string constant public override name = type(CrowdsaleBasicModule).name;
+    string public constant override name = type(CrowdsaleBasicModule).name;
 
     function setup(address wallet, Allocation[] calldata mints)
     external onlyOwner(wallet, msg.sender)

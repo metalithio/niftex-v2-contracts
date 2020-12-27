@@ -13,5 +13,5 @@ struct Allocation
 
 contract CrowdsaleFixedPriceModule is IModule, ModuleBase
 {
-    string constant public override name = type(CrowdsaleFixedPriceModule).name;
+    string public constant override name = type(CrowdsaleFixedPriceModule).name;
 }

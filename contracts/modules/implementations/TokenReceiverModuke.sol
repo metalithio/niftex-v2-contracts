@@ -11,7 +11,7 @@ import "../IModule.sol";
 
 contract TokenReceiverModuke is IModule, ERC165, IERC721Receiver, IERC777Recipient, IERC1155Receiver
 {
-    string constant public override name = type(TokenReceiverModuke).name;
+    string public constant override name = type(TokenReceiverModuke).name;
 
     constructor()
     {

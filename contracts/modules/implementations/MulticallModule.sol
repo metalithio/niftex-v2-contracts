@@ -7,7 +7,7 @@ import "../ModuleBase.sol";
 
 contract MulticallModule is IModule, ModuleBase
 {
-    string constant public override name = type(MulticallModule).name;
+    string public constant override name = type(MulticallModule).name;
 
     function batch(address wallet, address[] calldata to, uint256[] calldata value, bytes[] calldata data)
     external onlyOwner(wallet, msg.sender)

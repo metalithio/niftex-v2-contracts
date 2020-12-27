@@ -8,7 +8,7 @@ import "../ModuleBase.sol";
 
 contract ActionModule is IModule, ModuleBase, Timers
 {
-    string constant public override name = type(ActionModule).name;
+    string public override constant name = type(ActionModule).name;
 
     bytes32 public constant ACTION_DURATION_KEY = bytes32(uint256(keccak256("ACTION_DURATION_KEY")) - 1);
 
