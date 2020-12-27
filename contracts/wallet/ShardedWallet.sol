@@ -4,7 +4,8 @@ pragma solidity ^0.7.0;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/Math.sol";
-import "./governance/IGovernance.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "../governance/IGovernance.sol";
 import "./initializable/Ownable.sol";
 import "./initializable/ERC20.sol";
 
@@ -87,7 +88,7 @@ contract ShardedWallet is Ownable, ERC20
     function execute(address to, uint256 value, bytes calldata data)
     external onlyOwner()
     {
-        _call(to, value, data);
+        Address.functionCallWithValue(to, data, value);
     }
 
     /*************************************************************************
@@ -96,7 +97,7 @@ contract ShardedWallet is Ownable, ERC20
     function moduleExecute(address to, uint256 value, bytes calldata data)
     external onlyModule()
     {
-        _call(to, value, data);
+        Address.functionCallWithValue(to, data, value);
     }
 
     function moduleMint(address to, uint256 value)
@@ -121,22 +122,5 @@ contract ShardedWallet is Ownable, ERC20
     external onlyModule()
     {
         Ownable._setOwner(to);
-    }
-
-    /*************************************************************************
-     *                               Internal                                *
-     *************************************************************************/
-    function _call(address to, uint256 value, bytes memory data)
-    internal
-    {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, /*bytes memory returndata*/) = to.call{value: value}(data);
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            returndatacopy(0, 0, returndatasize())
-            switch success
-            case 0 { revert(0, returndatasize()) }
-            default { return (0, returndatasize()) }
-        }
     }
 }

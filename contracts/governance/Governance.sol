@@ -4,8 +4,8 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/Math.sol";
+import "../wallet/ShardedWallet.sol";
 import "./IGovernance.sol";
-import "../ShardedWallet.sol";
 
 contract BasicGovernance is IGovernance, AccessControl
 {

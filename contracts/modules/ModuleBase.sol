@@ -2,7 +2,7 @@
 
 pragma solidity ^0.7.0;
 
-import "../ShardedWallet.sol";
+import "../wallet/ShardedWallet.sol";
 import "./IModule.sol";
 
 abstract contract ModuleBase is IModule
