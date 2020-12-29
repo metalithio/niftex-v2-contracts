@@ -12,9 +12,9 @@ contract ActionModule is IModule, ModuleBase, Timers
 
     bytes32 public constant ACTION_DURATION_KEY = bytes32(uint256(keccak256("ACTION_DURATION_KEY")) - 1);
 
-    event ActionScheduled(address indexed wallet, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
-    event ActionExecuted(address indexed wallet, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
-    event ActionCancelled(address indexed wallet, bytes32 indexed id);
+    event ActionScheduled(address indexed wallet, bytes32 indexed uid, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
+    event ActionExecuted(address indexed wallet, bytes32 indexed uid, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
+    event ActionCancelled(address indexed wallet, bytes32 indexed uid, bytes32 indexed id);
 
     function schedule(address wallet, address[] memory to, uint256[] memory value, bytes[] memory data)
     public onlyAuthorized(wallet, msg.sender) returns (bytes32)
@@ -27,7 +27,7 @@ contract ActionModule is IModule, ModuleBase, Timers
         Timers._startTimer(uid, ShardedWallet(payable(wallet)).governance().getConfig(wallet, ACTION_DURATION_KEY));
 
         for (uint256 i = 0; i < to.length; ++i) {
-            emit ActionScheduled(wallet, id, i, to[i], value[i], data[i]);
+            emit ActionScheduled(wallet, uid, id, i, to[i], value[i], data[i]);
         }
 
         return id;
@@ -46,7 +46,7 @@ contract ActionModule is IModule, ModuleBase, Timers
 
         for (uint256 i = 0; i < to.length; ++i) {
             ShardedWallet(payable(wallet)).moduleExecute(to[i], value[i], data[i]);
-            emit ActionExecuted(wallet, id, i, to[i], value[i], data[i]);
+            emit ActionExecuted(wallet, uid, id, i, to[i], value[i], data[i]);
         }
 
         return true;
@@ -59,7 +59,7 @@ contract ActionModule is IModule, ModuleBase, Timers
 
         Timers._stopTimer(uid);
 
-        emit ActionCancelled(wallet, id);
+        emit ActionCancelled(wallet, uid, id);
 
         return true;
     }

@@ -16,6 +16,8 @@ contract ShardedWallet is Ownable, ERC20
     IGovernance public governance;
 
     event Received(address indexed sender, uint256 value, bytes data);
+    event Execute(address indexed to, uint256 value, bytes data);
+    event ModuleExecute(address indexed module, address indexed to, uint256 value, bytes data);
 
     modifier onlyModule()
     {
@@ -41,12 +43,7 @@ contract ShardedWallet is Ownable, ERC20
     external payable
     {
         address module = governance.getModule(address(this), msg.sig);
-        require(_isModule(module));
-        if (module == address(0))
-        {
-            emit Received(msg.sender, msg.value, msg.data);
-        }
-        else
+        if (module != address(0) && _isModule(module))
         {
             (bool success, /*bytes memory returndata*/) = module.staticcall(msg.data);
             // returning bytes in fallback is not supported until solidity 0.8.0
@@ -57,6 +54,10 @@ contract ShardedWallet is Ownable, ERC20
                 case 0 { revert(0, returndatasize()) }
                 default { return (0, returndatasize()) }
             }
+        }
+        else
+        {
+            emit Received(msg.sender, msg.value, msg.data);
         }
     }
 
@@ -89,6 +90,7 @@ contract ShardedWallet is Ownable, ERC20
     external onlyOwner()
     {
         Address.functionCallWithValue(to, data, value);
+        emit Execute(to, value, data);
     }
 
     /*************************************************************************
@@ -98,6 +100,7 @@ contract ShardedWallet is Ownable, ERC20
     external onlyModule()
     {
         Address.functionCallWithValue(to, data, value);
+        emit ModuleExecute(msg.sender, to, value, data);
     }
 
     function moduleMint(address to, uint256 value)
