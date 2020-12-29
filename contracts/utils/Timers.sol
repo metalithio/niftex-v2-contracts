@@ -76,4 +76,10 @@ contract Timers
         delete _deadlines[id];
         emit TimerReset(id);
     }
+
+    function _getDeadline(bytes32 id)
+    internal view returns (uint256)
+    {
+        return _deadlines[id];
+    }
 }
