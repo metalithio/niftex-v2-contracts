@@ -71,7 +71,6 @@ export function handleBuyoutClosed(event: BuyoutClosedEvent): void {
 	ev.save()
 }
 
-
 export function handleBuyoutClaimed(event: BuyoutClaimedEvent): void {
 	let wallet            = fetchShardedWallet(event.params.wallet)
 	let buyout            = new Buyout(wallet.activeBuyout)
