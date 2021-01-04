@@ -234,15 +234,15 @@ contract BondingCurve {
 			return 0;
 		} 
 
-		return _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.sub(_shardRegistry.balanceOf(address(this)));
+		return _shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers);
 	}
 
-	function calcETHForShardSuppliers() public view returns (uint256) {
+	function calcEthForShardSuppliers() public view returns (uint256) {
 		if (address(this).balance < _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
 			return 0;
 		}
 
-		return _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.sub(address(this).balance);
+		return address(this).balance.sub(_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers);
 	}
 
 	function supplyShards(uint256 shardAmount) external {
@@ -288,7 +288,7 @@ contract BondingCurve {
 			shardsToWithdraw = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 		}
 
-		uint256 ethPayout = calcETHForShardSuppliers().mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
+		uint256 ethPayout = calcEthForShardSuppliers().mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].sub(shardLPTokensAmount);
 		_shardSuppliers._totalShardLPTokens = _shardSuppliers._totalShardLPTokens.sub(shardLPTokensAmount);
@@ -298,26 +298,51 @@ contract BondingCurve {
 		//!TODO I am unsure if shard0 should sub actualShardsToWithdraw (based on current balance of bonding curve) or maxShardsToWithdraw (based on _totalSuppliedShardsPlusFeesToSuppliers)
 		_x = _x.sub(shardsToWithdraw);
 
-
 		require(
 			_shardRegistry.transferFrom(address(this), msg.sender, shardsToWithdraw)
 		);
-		
-		(bool success, ) = msg.sender.call{
-			value: ethPayout
-		}("");
-		require(success, "[withdrawSuppliedShards] ETH transfer failed.");
+
+		if (ethPayout > 0) {
+			(bool success, ) = msg.sender.call{
+				value: ethPayout
+			}("");
+			require(success, "[withdrawSuppliedShards] ETH transfer failed.");
+		}
 
 		emit ShardsWithdrawn(shardsToWithdraw, ethPayout, msg.sender);
 	}
 
 	function withdrawSuppliedEther(uint256 ethLPTokensAmount) external {
+		require(
+			_shardSuppliers._mappingEthLPTokens[msg.sender] >= ethLPTokensAmount,
+			"[withdrawSuppliedEther] Cannot withdraw more than your amount of ethLPTokens"
+			);
+
+		uint256 ethToWithdraw;
+		if (address(this).balance <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
+			ethToWithdraw = address(this).balance.mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
+		} else {
+			ethToWithdraw = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
+		}
+
+		uint256 shardPayout = calcShardsForEthSuppliers().mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
+
+		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].sub(ethLPTokensAmount);
+		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.sub(ethLPTokensAmount);
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.sub(ethToWithdraw);
+
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
-			value: ethToSend
+			value: ethToWithdraw
 		}("");
 		require(success, "[sell] ETH transfer failed.");
 
+		if (shardPayout > 0) {
+			require(
+				_shardRegistry.transferFrom(address(this), msg.sender, shardPayout);
+				);
+		}
+		
 		emit EtherWithdrawn(ethToSend, shardPayout, msg.sender);
 	}
 
