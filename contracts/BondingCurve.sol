@@ -343,7 +343,7 @@ contract BondingCurve {
 				);
 		}
 		
-		emit EtherWithdrawn(ethToSend, shardPayout, msg.sender);
+		emit EtherWithdrawn(ethToWithdraw, shardPayout, msg.sender);
 	}
 
 	function getCurrentPrice() external view returns (uint256) {
