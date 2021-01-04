@@ -14,7 +14,6 @@ contract BondingCurve {
 
 	using SafeMath for uint256;
 
-	uint256 internal _y;
 	uint256 internal _x;
 	uint256 internal _p; // last price per shard
 
@@ -188,18 +187,20 @@ contract BondingCurve {
 	}
 
 	function calcEthRequiredForShardBuy(uint256 shardAmount) public view returns (uint256) {
-		uint256 k = _x.mul(_p).div(1e18);
+		uint256 y = _x.mul(_p).div(1e18);
+		uint256 k = y.mul(_x);
 		uint256 newX = _x.sub(shardAmount);
 		uint256 newY = k.div(newX);
 		assert(newY > 0);
 		assert(newX > 0);
-		uint256 ethRequired = newY.sub(_y);
+		uint256 ethRequired = newY.sub(y);
 
 		return ethRequired;
 	}
 
 	function calcShardRequiredForEthSale(uint256 ethAmount) public view returns (uint256) {
-		uint256 k = _x.mul(_p).div(1e18);
+		uint256 y = _x.mul(_p).div(1e18);
+		uint256 k = y.mul(_x);
 		uint256 newY = _y.sub(ethAmount);
 		uint256 newX = k.div(newY);
 		assert(newY > 0);
