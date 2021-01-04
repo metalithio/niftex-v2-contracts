@@ -6,7 +6,8 @@
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-pragma solidity ^0.6.0;
+pragma solidity ^0.7.0;
+pragma experimental ABIEncoderV2;
 
 
 contract BondingCurve {
@@ -15,7 +16,7 @@ contract BondingCurve {
 
 	uint256 internal _y;
 	uint256 internal _x;
-	uint256 internal _k;
+	uint256 internal _p; // last price per shard
 
 	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
 	uint256 internal _feePctToSuppliers = 75; // 1 -> 1000 (1% is 100)
@@ -71,16 +72,20 @@ contract BondingCurve {
 		// can also be used for WETH
 		// wrap in require?
 		_shardRegistry = IERC20(shardRegistryAddress);
-		require(
-			_shardRegistry.transferFrom(owner, address(this), suppliedShards),
-			"[initialize] initialization token transfer failed"
-		);
+		// can create the bonding curve without transferring shards.
+		if (suppliedShards > 0) {
+			require(
+				_shardRegistry.transferFrom(owner, address(this), suppliedShards),
+				"[initialize] initialization token transfer failed"
+			);
+		}
+		
 		_x = unsoldShards;
 		// !TODO should get 1e18 based on current IERC20 decimals instead of hardcoding here...
 		_y = unsoldShards.mul(initialPriceInWei).div(1e18);
 		assert(_x > 0);
 		assert(_y > 0);
-		_k = _x.mul(_y);
+		_p = initialPriceInWei;
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = suppliedShards;
 
@@ -92,6 +97,9 @@ contract BondingCurve {
 
 		emit Initialized(shardRegistryAddress, address(this));
 	}
+
+	// no need to add default fallback non-payable function in Solidity 0.7.0
+	// address(this).balance will only be updated via specified function in this contract
 
 	function buyShards(
 		uint256 shardAmount
@@ -180,8 +188,9 @@ contract BondingCurve {
 	}
 
 	function calcEthRequiredForShardBuy(uint256 shardAmount) public view returns (uint256) {
+		uint256 k = _x.mul(_p).div(1e18);
 		uint256 newX = _x.sub(shardAmount);
-		uint256 newY = _k.div(newX);
+		uint256 newY = k.div(newX);
 		assert(newY > 0);
 		assert(newX > 0);
 		uint256 ethRequired = newY.sub(_y);
@@ -190,8 +199,9 @@ contract BondingCurve {
 	}
 
 	function calcShardRequiredForEthSale(uint256 ethAmount) public view returns (uint256) {
+		uint256 k = _x.mul(_p).div(1e18);
 		uint256 newY = _y.sub(ethAmount);
-		uint256 newX = _k.div(newY);
+		uint256 newX = k.div(newY);
 		assert(newY > 0);
 		assert(newX > 0);
 		uint256 shardsRequired = newX.sub(_x);
@@ -199,28 +209,11 @@ contract BondingCurve {
 		return shardsRequired;
 	}
 
-	function calcEthPayoutForShardLP(uint256 shardAmount) public view returns (uint256) {
-		uint256 newX = _x.add(shardAmount);
-		uint256 newY = _k.div(newX);
-		assert(newY > 0);
-		assert(newX > 0);
-		uint256 weiPayout = _y.sub(newY);
-
-		return weiPayout;
-	}
-
-	function calcShardPayoutForEthLP(uint256 ethAmount) public view returns (uint256) {
-		uint256 newY = _y.add(ethAmount);
-		uint256 newX = _k.div(newY);
-		assert(newY > 0);
-		assert(newX > 0);
-		uint256 shardPayout = _x.sub(newX);
-
-		return shardPayout;
-	}
-
 	function calcNewShardLPTokensToIssue(uint256 addedAmount) public view returns (uint256) {
 		uint256 existingShardPool = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers;
+		if (existingShardPool == 0) {
+			return addedAmount;
+		}
 		uint256 proportion = addedAmount.mul(1000).div(existingShardPool.add(addedAmount));
 		uint256 newShardLPTokensToIssue = proportion.div(uint256(1000).sub(proportion)).mul(existingShardPool);
 		return newShardLPTokensToIssue;
@@ -228,18 +221,26 @@ contract BondingCurve {
 
 	function calcNewEthLPTokensToIssue(uint256 addedAmount) public view returns (uint256) {
 		uint256 existingEthPool = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers;
+		if (existingEthPool == 0) {
+			return addedAmount;
+		}
 		uint256 proportion = addedAmount.mul(1000).div(existingEthPool.add(addedAmount));
 		uint256 newEthLPTokensToIssue = proportion.div(uint256(1000).sub(proportion)).mul(existingEthPool);
 		return newEthLPTokensToIssue;
 	}
 
 	function supplyShards(uint256 shardAmount) external {
-		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
+		require(
+			_shardRegistry.transferFrom(msg.sender, address(this), shardAmount),
+			"[supplyShards] Suppliers has not approved this contract or do not have enough shards"
+		);
 
 		uint256 newShardLPTokensToIssue = calcNewShardLPTokensToIssue(shardAmount);
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].add(newShardLPTokensToIssue);
 		_shardSuppliers._totalShardLPTokens = _shardSuppliers._totalShardLPTokens.add(newShardLPTokensToIssue);
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount);
+
+		_x = _x.add(shardAmount);
 
 		emit ShardsSupplied(shardAmount, msg.sender);
 	}
@@ -262,7 +263,7 @@ contract BondingCurve {
 		uint256 maxShardsToWithdraw = _shardSuppliers._mappingShardLPTokens[msg.sender].div(_shardSuppliers._totalShardLPTokens).mul(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers);
 		require(
 			shardAmount <= maxShardsToWithdraw,
-			"Cannot withdraw more than your current amount of shards in the pool"
+			"[withdrawSuppliedShards] Cannot withdraw more than your current amount of shards in the pool"
 		);
 
 		uint256 shardsToSell;
