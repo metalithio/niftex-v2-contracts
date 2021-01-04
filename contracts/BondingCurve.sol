@@ -101,39 +101,41 @@ contract BondingCurve {
 	// address(this).balance will only be updated via specified function in this contract
 
 	function buyShards(
-		uint256 shardAmount
+		uint256 shardAmount,
+		uint256 maxEthForShardAmount
 	) public payable {
-		uint256 newX = _x.sub(shardAmount);
-		uint256 newY = _k.div(newX);
+		uint256 y = _x.mul(_p).div(1e18);
+		uint256 k = y.mul(_x);
+
+		uint256 shardAmountBeforeNiftexFee = shardAmount.mul(uint256(1000).add(_feePctToSuppliers)).div(1000);
+		uint256 shardAmountAfterFee = shardAmount.mul(uint256(1000).add(_feePctToSuppliers).add(_feePctToNiftex)).div(1000);
+		uint256 newXAfterFee = _x.sub(shardAmountAfterFee);
+		uint256 newYAfterFee = k.div(newXAfterFee);
 		assert(newY > 0);
 		assert(newX > 0);
 
-		uint256 weiRequired = newY.sub(_y);
-		uint256 weiRequiredBeforeNiftex = weiRequired.div(1000).mul(uint256(1000).add(_feePctToSuppliers));
-		uint256 weiRequiredAfterNiftex = weiRequired.div(1000).mul(uint256(1000).add(_feePctToSuppliers).add(_feePctToNiftex));
-
-		uint256 actualShardsBeforeNiftex = _x.sub(_k.div(_y.add(weiRequiredBeforeNiftex)));
-		uint256 actualShardsAfterNiftex = _x.sub(_k.div(_y.add(weiRequiredAfterNiftex)));
-
-		weiRequired = weiRequiredAfterNiftex;
+		uint256 weiRequired = newYAfterFee.sub(y);
 
 		require(
-			_shardRegistry.balanceOf(address(this)) >= actualShardsAfterNiftex,
+			maxEthForShardAmount >= weiRequired,
+			"[buyShards] maxEthForShardAmount is not enough to get desired amount of shards"
+			);
+
+		require(
+			_shardRegistry.balanceOf(address(this)) >= shardAmountAfterFee,
 			"[buyShards] not having enough shards in the curve"
 		);
+
 		require(
 			weiRequired <= msg.value,
 			"[buyShards] user not putting enough eth to buy shards"
 		);
 
-		newX = _x.sub(actualShardsAfterNiftex);
-		newY = _k.div(newX);
+		uint256 newP = newXAfterFee.div(newYAfterFee);
+		_p = newP;
 
-		_y = newY;
-		_x = newX;
-
-		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(actualShardsBeforeNiftex.sub(shardAmount));
-		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(actualShardsAfterNiftex.sub(actualShardsBeforeNiftex));
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmountBeforeNiftexFee.sub(shardAmount));
+		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmountAfterFee.sub(shardAmountBeforeNiftexFee));
 
 		_shardRegistry.transfer(msg.sender, shardAmount);
 
