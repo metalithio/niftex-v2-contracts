@@ -18,8 +18,11 @@ contract BondingCurve {
 	uint256 internal _p; // last price per shard
 
 	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
-	uint256 internal _feePctToSuppliers = 75; // 1 -> 1000 (1% is 100)
-	uint256 internal _feePctToNiftex = 25; // 1 -> 1000 (0.25% is 25)
+	uint256 internal _feePctToSuppliers = 30; // 1 -> 1000 (1% is 100)
+	uint256 internal _feePctToNiftex = 0; // 1 -> 1000 (0.25% is 25)
+	uint256 internal _feePctToArtist = 0;
+	address internal _artistWallet;
+	address internal _niftexWallet;
 
 	// are these needed? all we do is add subtract
 	// needed for fees?
@@ -27,6 +30,7 @@ contract BondingCurve {
 	struct ethSuppliers {
 		uint256 _totalSuppliedEthPlusFeesToSuppliers;
 		uint256 _ethFeesToNiftex;
+		uint256 _ethFeesToArtist;
 		mapping(address => uint256) _mappingEthLPTokens;
 		uint256 _totalEthLPTokens;
 	}
@@ -34,6 +38,7 @@ contract BondingCurve {
 	struct shardSuppliers {
 		uint256 _totalSuppliedShardsPlusFeesToSuppliers;
 		uint256 _shardFeesToNiftex;
+		uint256 _shardFeesToArtist;
 		mapping(address => uint256) _mappingShardLPTokens;
 		uint256 _totalShardLPTokens;
 	}
@@ -57,6 +62,8 @@ contract BondingCurve {
 		uint256 suppliedShards,
 		address shardRegistryAddress,
 		address owner,
+		address artistWallet,
+		address niftexWallet,
 		uint256 initialPriceInWei,
 		uint256 minShard0,
 	) public payable {
@@ -92,6 +99,12 @@ contract BondingCurve {
 
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = suppliedShards;
 		_shardSuppliers._totalShardLPTokens = suppliedShards;
+		_artistWallet = artistWallet;
+		_niftexWallet = niftexWallet;
+
+		if (artistWallet != address(0x0000000000000000000000000000000000000000)) {
+			_feePctToArtist = 10;
+		}
 
 		emit Initialized(shardRegistryAddress, address(this));
 	}
@@ -106,8 +119,7 @@ contract BondingCurve {
 		uint256 y = _x.mul(_p).div(1e18);
 		uint256 k = y.mul(_x);
 
-		uint256 shardAmountBeforeNiftexFee = shardAmount.mul(uint256(1000).add(_feePctToSuppliers)).div(1000);
-		uint256 shardAmountAfterFee = shardAmount.mul(uint256(1000).add(_feePctToSuppliers).add(_feePctToNiftex)).div(1000);
+		uint256 shardAmountAfterFee = shardAmount.mul(uint256(1000).add(_feePctToSuppliers).add(_feePctToNiftex).add(_feePctToArtist)).div(1000);
 		uint256 newXAfterFee = _x.sub(shardAmountAfterFee);
 		uint256 newYAfterFee = k.div(newXAfterFee);
 		assert(newY > 0);
@@ -121,7 +133,7 @@ contract BondingCurve {
 			);
 
 		require(
-			_shardRegistry.balanceOf(address(this)) >= shardAmountAfterFee,
+			_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) >= shardAmountAfterFee,
 			"[buyShards] not having enough shards in the curve"
 		);
 
@@ -133,8 +145,9 @@ contract BondingCurve {
 		uint256 newP = newXAfterFee.div(newYAfterFee);
 		_p = newP;
 
-		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmountBeforeNiftexFee.sub(shardAmount));
-		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmountAfterFee.sub(shardAmountBeforeNiftexFee));
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(_feePctToSuppliers).div(1000));
+		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(_feePctToNiftex).div(1000));
+		_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(_feePctToArtist).div(1000));
 
 		_shardRegistry.transfer(msg.sender, shardAmount);
 
@@ -173,17 +186,18 @@ contract BondingCurve {
 			"[sellShards] minEthForShardAmount is bigger than actual weiPayout"
 		);
 
-		require(weiPayout <= address(this).balance);
+		require(weiPayout <= address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist));
 
 		_x = newX;
 		_p = newX.div(newY);
 
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(1000));
 		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(1000));
+		_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(_feePctToArtist).div(1000));
 
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
 
-		weiPayout = weiPayout.mul(uint256(1000).sub(_feePctToNiftex).sub(_feePctToSuppliers)).div(1000);
+		weiPayout = weiPayout.mul(uint256(1000).sub(_feePctToNiftex).sub(_feePctToSuppliers).sub(_feePctToArtist)).div(1000);
 
 		// !TODO guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
@@ -380,6 +394,38 @@ contract BondingCurve {
 		_ethSuppliers._mappingEthLPTokens[recipient] = _ethSuppliers._mappingEthLPTokens[recipient].add(ethLPTokensAmount);
 
 		emit TransferEthLPTokens(msg.sender, recipient, ethLPTokensAmount);
+	}
+
+	function withdrawNiftexFees(address recipient) public view {
+		require(msg.sender == _niftexWallet);
+		uint256 shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex;
+		uint256 ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex;
+
+		_shardSuppliers._shardFeesToNiftex = 0;
+		_ethSuppliers._ethFeesToNiftex = 0;
+
+		(bool success, ) = address(recipient).call{
+			value: ethFeesToNiftex
+		}("");
+		require(success, "[sell] ETH transfer failed.");
+
+		_shardRegistry.transferFrom(address(this), recipient, shardFeesToNiftex);
+	}
+
+	function withdrawArtistFees(address recipient) public view {
+		require(msg.sender == _artistWallet);
+		uint256 shardFeesToArtist = _shardSuppliers._shardFeesToArtist;
+		uint256 ethFeesToArtist = _ethSuppliers._ethFeesToArtist;
+
+		_shardSuppliers._shardFeesToArtist = 0;
+		_ethSuppliers._ethFeesToArtist = 0;
+
+		(bool success, ) = address(recipient).call{
+			value: ethFeesToArtist
+		}("");
+		require(success, "[sell] ETH transfer failed.");
+
+		_shardRegistry.transferFrom(address(this), recipient, shardFeesToArtist);
 	}
 
 	function getCurrentPrice() external view returns (uint256) {
