@@ -54,11 +54,11 @@ contract BondingCurve {
 	event TransferShardLPTokens(address, address, uint256);
 
 	function initialize(
-		uint256 unsoldShards,
 		uint256 suppliedShards,
 		address shardRegistryAddress,
 		address owner,
-		uint256 initialPriceInWei
+		uint256 initialPriceInWei,
+		uint256 minShard0,
 	) public payable {
 		require(
 			msg.sender == owner,
@@ -81,11 +81,8 @@ contract BondingCurve {
 			);
 		}
 		
-		_x = unsoldShards;
-		// !TODO should get 1e18 based on current IERC20 decimals instead of hardcoding here...
-		_y = unsoldShards.mul(initialPriceInWei).div(1e18);
+		_x = minShard0;
 		assert(_x > 0);
-		assert(_y > 0);
 		_p = initialPriceInWei;
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = suppliedShards;
