@@ -50,6 +50,8 @@ contract BondingCurve {
 	event EtherSupplied(uint256, address);
 	event ShardsWithdrawn(uint256, uint256, address);
 	event EtherWithdrawn(uint256, uint256, address);
+	event TransferEthLPTokens(address, address, uint256);
+	event TransferShardLPTokens(address, address, uint256);
 
 	function initialize(
 		uint256 unsoldShards,
@@ -359,6 +361,30 @@ contract BondingCurve {
 		emit EtherWithdrawn(ethToWithdraw, shardPayout, msg.sender);
 	}
 
+	function transferShardLPTokens(uint256 shardLPTokensAmount, address recipient) public view {
+		require(
+			_shardSuppliers._mappingShardLPTokens[msg.sender] >= shardLPTokensAmount,
+			"[transferShardLPTokens] user does not own this many shardLPTokensAmount"
+			);
+
+		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].sub(shardLPTokensAmount);
+		_shardSuppliers._mappingShardLPTokens[recipient] = _shardSuppliers._mappingShardLPTokens[recipient].add(shardLPTokensAmount);
+
+		emit TransferShardLPTokens(msg.sender, recipient, shardLPTokensAmount);
+	}
+
+	function transferEthLPTokens(uint256 ethLPTokensAmount, address recipient) public view {
+		require(
+			_ethSuppliers._mappingEthLPTokens[msg.sender] >= ethLPTokensAmount,
+			"[transferEthLPTokens] user does not own this many ethLPTokensAmount"
+			);
+
+		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].sub(ethLPTokensAmount);
+		_ethSuppliers._mappingEthLPTokens[recipient] = _ethSuppliers._mappingEthLPTokens[recipient].add(ethLPTokensAmount);
+
+		emit TransferEthLPTokens(msg.sender, recipient, ethLPTokensAmount);
+	}
+
 	function getCurrentPrice() external view returns (uint256) {
 		return _p;
 	}
@@ -374,4 +400,12 @@ contract BondingCurve {
 	function getShardSuppliers() external view returns (uint256, uint256, uint256) {
 		return (_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers, _shardSuppliers._totalShardLPTokens, _shardSuppliers._shardFeesToNiftex);
 	}
-}
+
+	function getEthLPTokens(address owner) public view returns (uint256) {
+		return _ethSuppliers._mappingEthLPTokens[owner];
+	}
+
+	function getShardLPTokens(address owner) public view returns (uint256) {
+		return _shardSuppliers._mappingShardLPTokens[owner];
+	}
+ }
