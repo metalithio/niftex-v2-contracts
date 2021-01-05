@@ -341,6 +341,9 @@ contract BondingCurve {
 		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.sub(ethLPTokensAmount);
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.sub(ethToWithdraw);
 
+		if (shardPayout > 0) {
+			_x = _x.sub(shardPayout);
+		}
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
 			value: ethToWithdraw
@@ -357,11 +360,10 @@ contract BondingCurve {
 	}
 
 	function getCurrentPrice() external view returns (uint256) {
-		// !TODO get 1e18 based on ERC20 decimals - not all ERC20 have 18 decimals
 		return _p;
 	}
 
-	function getCurveCoordinates() external view returns (uint256, uint256, uint256) {
+	function getCurveCoordinates() external view returns (uint256, uint256) {
 		return (_x, _p);
 	}
 
