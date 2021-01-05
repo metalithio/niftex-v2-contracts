@@ -44,8 +44,8 @@ contract BondingCurve {
 	IERC20 internal _shardRegistry;
 
 	event Initialized(address, address);
-	event ShardsBought(uint256, address);
-	event ShardsSold(uint256, address);
+	event ShardsBought(uint256, uint256, address);
+	event ShardsSold(uint256, uint256, address);
 	event ShardsSupplied(uint256, address);
 	event EtherSupplied(uint256, address);
 	event ShardsWithdrawn(uint256, uint256, address);
@@ -147,35 +147,42 @@ contract BondingCurve {
 			require(success, "[buy] ETH transfer failed.");
 		}
 
-		emit ShardsBought(shardAmount, msg.sender);
+		emit ShardsBought(shardAmount, weiRequired, msg.sender);
 	}
 
 	function sellShards(
 		uint256 shardAmount,
 		uint256 minEthForShardAmount
 	) public {
-		require(_shardRegistry.balanceOf(msg.sender) >= shardAmount);
+		require(
+			_shardRegistry.balanceOf(msg.sender) >= shardAmount,
+			"[sellShards] user does not have enough balance to execute this trade"
+		);
+
+		uint256 y = _x.mul(_p).div(1e18);
+		uint256 k = y.mul(_x);
 
 		uint256 newX = _x.add(shardAmount);
-		uint256 newY = _k.div(newX);
+		uint256 newY = k.div(newX);
 		assert(newY > 0);
 		assert(newX > 0);
 
 		uint256 weiPayout = _y.sub(newY);
 
-		if (minEthForShardAmount > 0) {
-			require(weiPayout >= minEthForShardAmount);
-		}
+		require(
+			weiPayout >= minEthForShardAmount,
+			"[sellShards] minEthForShardAmount is bigger than actual weiPayout"
+		);
 
 		require(weiPayout <= address(this).balance);
 
-		_y = newY;
 		_x = newX;
-
-		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
+		_p = newX.div(newY);
 
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(1000));
 		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(1000));
+
+		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
 
 		weiPayout = weiPayout.mul(uint256(1000).sub(_feePctToNiftex).sub(_feePctToSuppliers)).div(1000);
 
@@ -185,7 +192,7 @@ contract BondingCurve {
 		}("");
 		require(success, "[sell] ETH transfer failed.");
 
-		emit ShardsSold(shardAmount, msg.sender);
+		emit ShardsSold(shardAmount, weiPayout, msg.sender);
 	}
 
 	function calcEthRequiredForShardBuy(uint256 shardAmount) public view returns (uint256) {
