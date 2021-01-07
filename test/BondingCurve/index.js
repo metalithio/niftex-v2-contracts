@@ -18,7 +18,7 @@ const SHARD_SUBSCRIBER_2_PCT = new BigNumber(600).div(1000);
 
 contract("BondingCurve.sol stand-alone test", async accounts => {
 
-	it("registry should return a shard balance of 1000", async () => {
+	it("mint tokens to accounts 0,1,2", async () => {
 		registryInstance = await ShardRegistry.new(
 			'PEPECASH',
 			'PEPECASH',
@@ -30,16 +30,21 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const subscriberOneShards = SHARD_SUBSCRIBER_1_PCT.times(SHARD_SOLD_IN_CROWDSALE);
 		const subscriberTwoShards = SHARD_SUBSCRIBER_2_PCT.times(SHARD_SOLD_IN_CROWDSALE);
 
+		const ethBalance = await web3.eth.getBalance(accounts[0]);
+		console.log(ethBalance, 'ethBalance');
+
 		await registryInstance.mint(accounts[0], ownerRemainingShards);
 		await registryInstance.mint(accounts[1], subscriberOneShards);
 		await registryInstance.mint(accounts[2], subscriberTwoShards);
-
-		const balance = await registryInstance.balanceOf(accounts[0]);
-		console.log(await registryInstance.balanceOf(accounts[0]));
-		console.log(await registryInstance.balanceOf(accounts[0]));
-		console.log(await registryInstance.balanceOf(accounts[0]));
-		assert.equal(balance.valueOf(), SHARD_SUPPLY.valueOf());
 	});
+
+	it("Construct and initialize the bonding curve", async () => {
+		// const suppliedShards = SHARD_SUPPLY.times() 
+		// const shardRegistryAddress = registryInstance._address;
+		// curveInstance = await BondingCurve.new(
+
+		// 	)
+	})
 
 	// buy scenario with too much ether sent
 });

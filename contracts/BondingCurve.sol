@@ -66,15 +66,6 @@ contract BondingCurve {
 		uint256 initialPriceInWei,
 		uint256 minShard0
 	) public payable {
-		require(
-			msg.sender == owner,
-			"[initialize] only owner can initialize"
-		);
-
-		require(
-			msg.value > 0,
-			"[initialize] requires ETH to bootstrap this bonding curve"
-			);
 		// assumes ERC20.approve
 		// can also be used for WETH
 		// wrap in require?
