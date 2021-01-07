@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/metalithio/niftex-v2-contracts#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^3.2.0",
+    "@openzeppelin/contracts": "^3.3.0",
     "bignumber.js": "^9.0.1",
     "truffle": "^5.1.54"
   }

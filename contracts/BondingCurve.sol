@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
-
 contract BondingCurve {
 
 	using SafeMath for uint256;
@@ -65,7 +64,7 @@ contract BondingCurve {
 		address artistWallet,
 		address niftexWallet,
 		uint256 initialPriceInWei,
-		uint256 minShard0,
+		uint256 minShard0
 	) public payable {
 		require(
 			msg.sender == owner,
@@ -82,10 +81,7 @@ contract BondingCurve {
 		_shardRegistry = IERC20(shardRegistryAddress);
 		// can create the bonding curve without transferring shards.
 		if (suppliedShards > 0) {
-			require(
-				_shardRegistry.transferFrom(owner, address(this), suppliedShards),
-				"[initialize] initialization token transfer failed"
-			);
+			_shardRegistry.transferFrom(owner, address(this), suppliedShards);
 		}
 		
 		_x = minShard0;
@@ -122,8 +118,8 @@ contract BondingCurve {
 		uint256 shardAmountAfterFee = shardAmount.mul(uint256(1000).add(_feePctToSuppliers).add(_feePctToNiftex).add(_feePctToArtist)).div(1000);
 		uint256 newXAfterFee = _x.sub(shardAmountAfterFee);
 		uint256 newYAfterFee = k.div(newXAfterFee);
-		assert(newY > 0);
-		assert(newX > 0);
+		assert(newXAfterFee > 0);
+		assert(newYAfterFee > 0);
 
 		uint256 weiRequired = newYAfterFee.sub(y);
 
@@ -179,7 +175,7 @@ contract BondingCurve {
 		assert(newY > 0);
 		assert(newX > 0);
 
-		uint256 weiPayout = _y.sub(newY);
+		uint256 weiPayout = y.sub(newY);
 
 		require(
 			weiPayout >= minEthForShardAmount,
@@ -223,7 +219,7 @@ contract BondingCurve {
 	function calcShardRequiredForEthSale(uint256 ethAmount) public view returns (uint256) {
 		uint256 y = _x.mul(_p).div(1e18);
 		uint256 k = y.mul(_x);
-		uint256 newY = _y.sub(ethAmount);
+		uint256 newY = y.sub(ethAmount);
 		uint256 newX = k.div(newY);
 		assert(newY > 0);
 		assert(newX > 0);
@@ -252,7 +248,7 @@ contract BondingCurve {
 		return newEthLPTokensToIssue;
 	}
 
-	function calcShardsForETHSuppliers() public view returns (uint256) {
+	function calcShardsForEthSuppliers() public view returns (uint256) {
 		if (_shardRegistry.balanceOf(address(this)) < _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
 			return 0;
 		} 
@@ -337,7 +333,7 @@ contract BondingCurve {
 
 	function withdrawSuppliedEther(uint256 ethLPTokensAmount) external {
 		require(
-			_shardSuppliers._mappingEthLPTokens[msg.sender] >= ethLPTokensAmount,
+			_ethSuppliers._mappingEthLPTokens[msg.sender] >= ethLPTokensAmount,
 			"[withdrawSuppliedEther] Cannot withdraw more than your amount of ethLPTokens"
 			);
 
@@ -365,14 +361,14 @@ contract BondingCurve {
 
 		if (shardPayout > 0) {
 			require(
-				_shardRegistry.transferFrom(address(this), msg.sender, shardPayout);
+				_shardRegistry.transferFrom(address(this), msg.sender, shardPayout)
 				);
 		}
 		
 		emit EtherWithdrawn(ethToWithdraw, shardPayout, msg.sender);
 	}
 
-	function transferShardLPTokens(uint256 shardLPTokensAmount, address recipient) public view {
+	function transferShardLPTokens(uint256 shardLPTokensAmount, address recipient) public {
 		require(
 			_shardSuppliers._mappingShardLPTokens[msg.sender] >= shardLPTokensAmount,
 			"[transferShardLPTokens] user does not own this many shardLPTokensAmount"
@@ -384,7 +380,7 @@ contract BondingCurve {
 		emit TransferShardLPTokens(msg.sender, recipient, shardLPTokensAmount);
 	}
 
-	function transferEthLPTokens(uint256 ethLPTokensAmount, address recipient) public view {
+	function transferEthLPTokens(uint256 ethLPTokensAmount, address recipient) public {
 		require(
 			_ethSuppliers._mappingEthLPTokens[msg.sender] >= ethLPTokensAmount,
 			"[transferEthLPTokens] user does not own this many ethLPTokensAmount"
@@ -396,7 +392,7 @@ contract BondingCurve {
 		emit TransferEthLPTokens(msg.sender, recipient, ethLPTokensAmount);
 	}
 
-	function withdrawNiftexFees(address recipient) public view {
+	function withdrawNiftexFees(address recipient) public {
 		require(msg.sender == _niftexWallet);
 		uint256 shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex;
 		uint256 ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex;
@@ -412,7 +408,7 @@ contract BondingCurve {
 		_shardRegistry.transferFrom(address(this), recipient, shardFeesToNiftex);
 	}
 
-	function withdrawArtistFees(address recipient) public view {
+	function withdrawArtistFees(address recipient) public {
 		require(msg.sender == _artistWallet);
 		uint256 shardFeesToArtist = _shardSuppliers._shardFeesToArtist;
 		uint256 ethFeesToArtist = _ethSuppliers._ethFeesToArtist;
@@ -451,4 +447,4 @@ contract BondingCurve {
 	function getShardLPTokens(address owner) public view returns (uint256) {
 		return _shardSuppliers._mappingShardLPTokens[owner];
 	}
- }
+}
