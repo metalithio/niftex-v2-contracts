@@ -75,5 +75,23 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed());
 	})
 
+	it("buy shards", async() => {
+		const shardAmount = new BigNumber(50).times(1e18);
+		const maxEthForShardAmount = new BigNumber(10).times(1e18);
+		await curveInstance.buyShards(
+			shardAmount,
+			maxEthForShardAmount,
+			{
+				from: accounts[1],
+				value: maxEthForShardAmount
+			}
+			);
+		assert.equal(1,1);
+
+		const curveCoordinates = await curveInstance.getCurveCoordinates();
+
+		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed());
+	})
+
 	// buy scenario with too much ether sent
 });

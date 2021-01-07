@@ -128,7 +128,7 @@ contract BondingCurve {
 			"[buyShards] user not putting enough eth to buy shards"
 		);
 
-		uint256 newP = newXAfterFee.div(newYAfterFee);
+		uint256 newP = newXAfterFee.div(newYAfterFee).times(1e18);
 		_p = newP;
 
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(_feePctToSuppliers).div(1000));
@@ -175,7 +175,7 @@ contract BondingCurve {
 		require(weiPayout <= address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist));
 
 		_x = newX;
-		_p = newX.div(newY);
+		_p = newX.div(newY).times(1e18);
 
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(1000));
 		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(1000));
