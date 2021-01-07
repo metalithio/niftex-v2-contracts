@@ -17,8 +17,8 @@ contract BondingCurve {
 	uint256 internal _p; // last price per shard
 
 	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
-	uint256 internal _feePctToSuppliers = 30; // 1 -> 1000 (1% is 100)
-	uint256 internal _feePctToNiftex = 0; // 1 -> 1000 (0.25% is 25)
+	uint256 internal _feePctToSuppliers = 30; // 1 -> 100000 (1% is 100)
+	uint256 internal _feePctToNiftex = 0; // 1 -> 100000 (0.25% is 25)
 	uint256 internal _feePctToArtist = 0;
 	address internal _artistWallet;
 	address internal _niftexWallet;
@@ -105,7 +105,7 @@ contract BondingCurve {
 		uint256 y = _x.mul(_p).div(1e18);
 		uint256 k = y.mul(_x);
 
-		uint256 shardAmountAfterFee = shardAmount.mul(uint256(1000).add(_feePctToSuppliers).add(_feePctToNiftex).add(_feePctToArtist)).div(1000);
+		uint256 shardAmountAfterFee = shardAmount.mul(uint256(10000).add(_feePctToSuppliers).add(_feePctToNiftex).add(_feePctToArtist)).div(10000);
 		uint256 newXAfterFee = _x.sub(shardAmountAfterFee);
 		uint256 newYAfterFee = k.div(newXAfterFee);
 		assert(newXAfterFee > 0);
@@ -132,9 +132,9 @@ contract BondingCurve {
 		_p = newP;
 		_x = newXAfterFee;
 
-		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(_feePctToSuppliers).div(1000));
-		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(_feePctToNiftex).div(1000));
-		_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(_feePctToArtist).div(1000));
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(_feePctToSuppliers).div(10000));
+		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(_feePctToNiftex).div(10000));
+		_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(_feePctToArtist).div(10000));
 
 		_shardRegistry.transfer(msg.sender, shardAmount);
 
@@ -178,13 +178,13 @@ contract BondingCurve {
 		_x = newX;
 		_p = newY.mul(1e18).div(newX);
 
-		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(1000));
-		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(1000));
-		_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(_feePctToArtist).div(1000));
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(10000));
+		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(10000));
+		_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(_feePctToArtist).div(10000));
 
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
 
-		weiPayout = weiPayout.mul(uint256(1000).sub(_feePctToNiftex).sub(_feePctToSuppliers).sub(_feePctToArtist)).div(1000);
+		weiPayout = weiPayout.mul(uint256(10000).sub(_feePctToNiftex).sub(_feePctToSuppliers).sub(_feePctToArtist)).div(10000);
 
 		// !TODO guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
@@ -224,8 +224,8 @@ contract BondingCurve {
 		if (existingShardPool == 0) {
 			return addedAmount;
 		}
-		uint256 proportion = addedAmount.mul(1000).div(existingShardPool.add(addedAmount));
-		uint256 newShardLPTokensToIssue = proportion.div(uint256(1000).sub(proportion)).mul(existingShardPool);
+		uint256 proportion = addedAmount.mul(10000).div(existingShardPool.add(addedAmount));
+		uint256 newShardLPTokensToIssue = proportion.div(uint256(10000).sub(proportion)).mul(existingShardPool);
 		return newShardLPTokensToIssue;
 	}
 
@@ -234,8 +234,8 @@ contract BondingCurve {
 		if (existingEthPool == 0) {
 			return addedAmount;
 		}
-		uint256 proportion = addedAmount.mul(1000).div(existingEthPool.add(addedAmount));
-		uint256 newEthLPTokensToIssue = proportion.div(uint256(1000).sub(proportion)).mul(existingEthPool);
+		uint256 proportion = addedAmount.mul(10000).div(existingEthPool.add(addedAmount));
+		uint256 newEthLPTokensToIssue = proportion.div(uint256(10000).sub(proportion)).mul(existingEthPool);
 		return newEthLPTokensToIssue;
 	}
 
