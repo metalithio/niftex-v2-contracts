@@ -15,6 +15,7 @@ const PCT_SHARDS_TO_BONDING_CURVE = new BigNumber(100).div(1000);
 
 const SHARD_SUBSCRIBER_1_PCT = new BigNumber(400).div(1000);
 const SHARD_SUBSCRIBER_2_PCT = new BigNumber(600).div(1000);
+const MAX_UINT = new BigNumber(2).pow(256).minus(1);
 
 contract("BondingCurve.sol stand-alone test", async accounts => {
 
@@ -30,8 +31,6 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const subscriberOneShards = SHARD_SUBSCRIBER_1_PCT.times(SHARD_SOLD_IN_CROWDSALE);
 		const subscriberTwoShards = SHARD_SUBSCRIBER_2_PCT.times(SHARD_SOLD_IN_CROWDSALE);
 
-		const ethBalance = await web3.eth.getBalance(accounts[0]);
-		console.log(ethBalance, 'ethBalance');
 
 		await registryInstance.mint(accounts[0], ownerRemainingShards);
 		await registryInstance.mint(accounts[1], subscriberOneShards);
@@ -39,11 +38,41 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 	});
 
 	it("Construct and initialize the bonding curve", async () => {
-		// const suppliedShards = SHARD_SUPPLY.times() 
-		// const shardRegistryAddress = registryInstance._address;
-		// curveInstance = await BondingCurve.new(
+		const nftOwnerShardBalance = await registryInstance.balanceOf(accounts[0]);
+		const suppliedShards = new BigNumber(nftOwnerShardBalance).times(PCT_SHARDS_TO_BONDING_CURVE);
+		const shardRegistryAddress = registryInstance.address;
+		const owner = accounts[0];
+		const artistWallet = "0x0000000000000000000000000000000000000000";
+		const niftexWallet = accounts[3];
+		const initialPriceInWei = INITIAL_VALUATION.div(SHARD_SUPPLY).times(1e18);
+		const minShard0 = new BigNumber(300).times(1e18);
 
-		// 	)
+		const ethToBondingCurve = SHARD_SOLD_IN_CROWDSALE.div(SHARD_SUPPLY).times(INITIAL_VALUATION).times(PCT_ETH_TO_BONDING_CURVE);
+		curveInstance = await BondingCurve.new({ from: accounts[0] });
+
+		await registryInstance.approve(
+			curveInstance.address,
+			MAX_UINT,
+			{ from: accounts[0]}
+		);
+
+		await curveInstance.initialize(
+			suppliedShards,
+			shardRegistryAddress,
+			owner,
+			artistWallet,
+			niftexWallet,
+			initialPriceInWei,
+			minShard0,
+			{ 
+				from: accounts[0],
+				value: ethToBondingCurve
+			}
+		);
+
+		const curveCoordinates = await curveInstance.getCurveCoordinates();
+
+		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed());
 	})
 
 	// buy scenario with too much ether sent

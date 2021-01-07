@@ -75,7 +75,7 @@ contract BondingCurve {
 			_shardRegistry.transferFrom(owner, address(this), suppliedShards);
 		}
 		
-		_x = minShard0;
+		_x = minShard0.add(suppliedShards);
 		_p = initialPriceInWei;
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = suppliedShards;
