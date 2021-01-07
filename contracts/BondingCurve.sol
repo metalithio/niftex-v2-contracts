@@ -76,7 +76,6 @@ contract BondingCurve {
 		}
 		
 		_x = minShard0;
-		assert(_x > 0);
 		_p = initialPriceInWei;
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = suppliedShards;
