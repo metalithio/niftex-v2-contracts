@@ -71,13 +71,17 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		);
 
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-
-		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed());
+		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
+		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 	})
 
-	it("buy shards", async() => {
+	it("accounts[1] buy 50 shards", async() => {
 		const shardAmount = new BigNumber(50).times(1e18);
 		const maxEthForShardAmount = new BigNumber(10).times(1e18);
+
+
 		await curveInstance.buyShards(
 			shardAmount,
 			maxEthForShardAmount,
@@ -86,12 +90,96 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 				value: maxEthForShardAmount
 			}
 			);
-		assert.equal(1,1);
 
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
+		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
-		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed());
+		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 	})
 
-	// buy scenario with too much ether sent
+	it("accounts[2] sell 80 shards", async() => {
+		const shardAmount = new BigNumber(80).times(1e18);
+		const minEthForShardAmount = new BigNumber(10).times(1e18);
+
+		await registryInstance.approve(
+			curveInstance.address,
+			MAX_UINT,
+			{ from: accounts[2]}
+		);
+
+		await curveInstance.sellShards(
+			shardAmount,
+			minEthForShardAmount,
+			{
+				from: accounts[2],
+			}
+		);
+
+		const curveCoordinates = await curveInstance.getCurveCoordinates();
+		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
+
+		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
+	})
+
+	it("accounts[1] provides 3 ETH liquidity", async() => {
+		await curveInstance.supplyEther(
+			{ 
+				from: accounts[1],
+				value: new BigNumber(3).times(1e18)
+			}
+		);
+		
+		const curveCoordinates = await curveInstance.getCurveCoordinates();
+		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
+
+		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
+	});
+
+	it("accounts[2] provides 100 Shards liquidity", async() => {
+		await curveInstance.supplyShards(
+			new BigNumber(100).times(1e18),
+			{ 
+				from: accounts[2],
+			}
+		);
+		
+		const curveCoordinates = await curveInstance.getCurveCoordinates();
+		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
+
+		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
+	});
+
+	it("ETH LP tokens of accounts[0], accounts[1], accounts[2]", async() => {
+		const accountZero = await curveInstance.getEthLPTokens(accounts[0]);
+		const accountOne = await curveInstance.getEthLPTokens(accounts[1]);
+		const accountTwo = await curveInstance.getEthLPTokens(accounts[2]);
+
+		const ethSuppliers = await curveInstance.getEthSuppliers();
+
+		const newEthLPTokens = await curveInstance.calcNewEthLPTokensToIssue(new BigNumber(3).times(1e18));
+		console.log('newEthLPTokens: ',newEthLPTokens.toString(10))
+		console.log('ethSuppliers: ', ethSuppliers[0].toString(10), ethSuppliers[1].toString(10), ethSuppliers[2].toString(10))
+		console.log('ethLPTokens accounts[0]', new BigNumber(accountZero).div(1e18).toFixed());
+		console.log('ethLPTokens accounts[1]', new BigNumber(accountOne).div(1e18).toFixed());
+		console.log('ethLPTokens accounts[2]', new BigNumber(accountTwo).div(1e18).toFixed());
+	});
+
+	it("Shard LP tokens of accounts[0], accounts[1], accounts[2]", async() => {
+		const accountZero = await curveInstance.getShardLPTokens(accounts[0]);
+		const accountOne = await curveInstance.getShardLPTokens(accounts[1]);
+		const accountTwo = await curveInstance.getShardLPTokens(accounts[2]);
+
+
+		console.log('getShardLPTokens accounts[0]', new BigNumber(accountZero).div(1e18).toFixed());
+		console.log('getShardLPTokens accounts[1]', new BigNumber(accountOne).div(1e18).toFixed());
+		console.log('getShardLPTokens accounts[2]', new BigNumber(accountTwo).div(1e18).toFixed());
+	});
 });

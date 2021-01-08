@@ -17,8 +17,8 @@ contract BondingCurve {
 	uint256 internal _p; // last price per shard
 
 	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
-	uint256 internal _feePctToSuppliers = 30; // 1 -> 100000 (1% is 100)
-	uint256 internal _feePctToNiftex = 0; // 1 -> 100000 (0.25% is 25)
+	uint256 internal _feePctToSuppliers = 30; // 1 -> 10000 (1% is 100)
+	uint256 internal _feePctToNiftex = 0; // 1 -> 10000 (0.25% is 25)
 	uint256 internal _feePctToArtist = 0;
 	address internal _artistWallet;
 	address internal _niftexWallet;
@@ -169,7 +169,7 @@ contract BondingCurve {
 		uint256 weiPayout = y.sub(newY);
 
 		require(
-			weiPayout >= minEthForShardAmount,
+			weiPayout <= minEthForShardAmount,
 			"[sellShards] minEthForShardAmount is bigger than actual weiPayout"
 		);
 
@@ -225,7 +225,7 @@ contract BondingCurve {
 			return addedAmount;
 		}
 		uint256 proportion = addedAmount.mul(10000).div(existingShardPool.add(addedAmount));
-		uint256 newShardLPTokensToIssue = proportion.div(uint256(10000).sub(proportion)).mul(existingShardPool);
+		uint256 newShardLPTokensToIssue = proportion.mul(existingShardPool).div(uint256(10000).sub(proportion));
 		return newShardLPTokensToIssue;
 	}
 
@@ -235,7 +235,7 @@ contract BondingCurve {
 			return addedAmount;
 		}
 		uint256 proportion = addedAmount.mul(10000).div(existingEthPool.add(addedAmount));
-		uint256 newEthLPTokensToIssue = proportion.div(uint256(10000).sub(proportion)).mul(existingEthPool);
+		uint256 newEthLPTokensToIssue = proportion.mul(existingEthPool).div(uint256(10000).sub(proportion));
 		return newEthLPTokensToIssue;
 	}
 
