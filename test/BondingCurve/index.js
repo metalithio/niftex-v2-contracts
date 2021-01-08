@@ -72,7 +72,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		);
 
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
 		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
@@ -93,7 +93,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 			);
 
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -119,7 +119,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		);
 
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -135,7 +135,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		);
 		
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -151,7 +151,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		);
 		
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -191,7 +191,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		);
 
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -211,7 +211,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		);
 
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -244,7 +244,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 
 	it('check if ethInPool and shardsInPool are both the remaining for artist and NIFTEX', async() => {
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
-		const ethInPool = await web3.eth.getBalance(curveInstance.address);
+		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");

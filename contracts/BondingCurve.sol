@@ -22,6 +22,7 @@ contract BondingCurve {
 	uint256 internal _feePctToArtist = 0; // updated at initialize if artistWallet != address(0)
 	address internal _artistWallet;
 	address internal _niftexWallet;
+	uint256 internal _ethInPool = 0;
 
 	// are these needed? all we do is add subtract
 	// needed for fees?
@@ -82,6 +83,7 @@ contract BondingCurve {
 
 		_ethSuppliers._mappingEthLPTokens[msg.sender] = msg.value;
 		_ethSuppliers._totalEthLPTokens = msg.value;
+		_ethInPool = _ethInPool.add(msg.value);
 
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = suppliedShards;
 		_shardSuppliers._totalShardLPTokens = suppliedShards;
@@ -136,6 +138,8 @@ contract BondingCurve {
 		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(_feePctToNiftex).div(10000));
 		_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(_feePctToArtist).div(10000));
 
+		_ethInPool = _ethInPool.add(weiRequired);
+
 		_shardRegistry.transfer(msg.sender, shardAmount);
 
 		if (msg.value > weiRequired) {
@@ -174,7 +178,7 @@ contract BondingCurve {
 		);
 
 		require(
-			weiPayout <= address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist),
+			weiPayout <= _ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist),
 			"[sellShards] the pool does not have enough ETH for this sell"
 		);
 
@@ -185,6 +189,7 @@ contract BondingCurve {
 		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(10000));
 		_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(_feePctToArtist).div(10000));
 
+		_ethInPool = _ethInPool.sub(weiPayout);
 		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
 
 		weiPayout = weiPayout.mul(uint256(10000).sub(_feePctToNiftex).sub(_feePctToSuppliers).sub(_feePctToArtist)).div(10000);
@@ -251,11 +256,11 @@ contract BondingCurve {
 	}
 
 	function calcEthForShardSuppliers() public view returns (uint256) {
-		if (address(this).balance < _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
+		if (_ethInPool < _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
 			return 0;
 		}
 
-		return address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist).sub(_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers);
+		return _ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist).sub(_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers);
 	}
 
 	function supplyShards(uint256 shardAmount) external {
@@ -284,6 +289,8 @@ contract BondingCurve {
 		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].add(newEthLPTokensToIssue);
 		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.add(newEthLPTokensToIssue);
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(msg.value);
+
+		_ethInPool = _ethInPool.add(msg.value);
 
 		emit EtherSupplied(msg.value, msg.sender);
 	}
@@ -318,6 +325,7 @@ contract BondingCurve {
 		_shardRegistry.transfer(msg.sender, shardsToWithdraw);
 
 		if (ethPayout > 0) {
+			_ethInPool = _ethInPool.sub(ethPayout);
 			(bool success, ) = msg.sender.call{
 				value: ethPayout
 			}("");
@@ -341,8 +349,8 @@ contract BondingCurve {
 			);
 
 		uint256 ethToWithdraw;
-		if (address(this).balance <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
-			ethToWithdraw = (address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)).mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
+		if (_ethInPool <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
+			ethToWithdraw = (_ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)).mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
 		} else {
 			ethToWithdraw = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
 		}
@@ -355,6 +363,8 @@ contract BondingCurve {
 		if (shardPayout > 0) {
 			_x = _x.sub(shardPayout);
 		}
+
+		_ethInPool = _ethInPool.sub(ethToWithdraw);
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
 			value: ethToWithdraw
@@ -402,6 +412,7 @@ contract BondingCurve {
 		_shardSuppliers._shardFeesToNiftex = 0;
 		_ethSuppliers._ethFeesToNiftex = 0;
 
+		_ethInPool = _ethInPool.sub(ethFeesToNiftex);
 		(bool success, ) = address(recipient).call{
 			value: ethFeesToNiftex
 		}("");
@@ -417,6 +428,8 @@ contract BondingCurve {
 
 		_shardSuppliers._shardFeesToArtist = 0;
 		_ethSuppliers._ethFeesToArtist = 0;
+
+		_ethInPool = _ethInPool.sub(ethFeesToArtist);
 
 		(bool success, ) = address(recipient).call{
 			value: ethFeesToArtist
@@ -448,5 +461,9 @@ contract BondingCurve {
 
 	function getShardLPTokens(address owner) public view returns (uint256) {
 		return _shardSuppliers._mappingShardLPTokens[owner];
+	}
+
+	function getEthInPool() public view returns (uint256) {
+		return _ethInPool;
 	}
 }
