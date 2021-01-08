@@ -42,7 +42,8 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const suppliedShards = new BigNumber(nftOwnerShardBalance).times(PCT_SHARDS_TO_BONDING_CURVE);
 		const shardRegistryAddress = registryInstance.address;
 		const owner = accounts[0];
-		const artistWallet = "0x0000000000000000000000000000000000000000";
+		// const artistWallet = "0x0000000000000000000000000000000000000000";
+		const artistWallet = accounts[4];
 		const niftexWallet = accounts[3];
 		const initialPriceInWei = INITIAL_VALUATION.div(SHARD_SUPPLY).times(1e18);
 		const minShard0 = new BigNumber(300).times(1e18);
@@ -253,7 +254,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		console.log('ethSuppliers (suppliedEthPlusFees, ethLPTokens, ethFeesToNiftex, ethFeesToArtist): ', new BigNumber(ethSuppliers[0]).div(1e18).toFixed(), new BigNumber(ethSuppliers[1]).div(1e18).toFixed(), new BigNumber(ethSuppliers[2]).div(1e18).toFixed(), new BigNumber(ethSuppliers[3]).div(1e18).toFixed());
 
 		const shardSuppliers = await curveInstance.getShardSuppliers();
-		console.log('shardSuppliers (suppliedShardPlusFees, shardLPTokens, shardFeesToNiftex, shardFeesToArtist): ', new BigNumber(shardSuppliers[0]).div(1e18).toFixed(), new BigNumber(shardSuppliers[1]).div(1e18).toFixed(), new BigNumber(shardSuppliers[2]).div(1e18).toFixed(), new BigNumber(ethSuppliers[3]).div(1e18).toFixed());
+		console.log('shardSuppliers (suppliedShardPlusFees, shardLPTokens, shardFeesToNiftex, shardFeesToArtist): ', new BigNumber(shardSuppliers[0]).div(1e18).toFixed(), new BigNumber(shardSuppliers[1]).div(1e18).toFixed(), new BigNumber(shardSuppliers[2]).div(1e18).toFixed(), new BigNumber(shardSuppliers[3]).div(1e18).toFixed());
 	})
 
 

@@ -19,7 +19,7 @@ contract BondingCurve {
 	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
 	uint256 internal _feePctToSuppliers = 25; // 1 -> 10000 (1% is 100)
 	uint256 internal _feePctToNiftex = 5; // 1 -> 10000 (0.25% is 25)
-	uint256 internal _feePctToArtist = 10;
+	uint256 internal _feePctToArtist = 0; // updated at initialize if artistWallet != address(0)
 	address internal _artistWallet;
 	address internal _niftexWallet;
 
