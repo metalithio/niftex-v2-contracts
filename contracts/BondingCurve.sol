@@ -17,9 +17,9 @@ contract BondingCurve {
 	uint256 internal _p; // last price per shard
 
 	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
-	uint256 internal _feePctToSuppliers = 30; // 1 -> 10000 (1% is 100)
-	uint256 internal _feePctToNiftex = 0; // 1 -> 10000 (0.25% is 25)
-	uint256 internal _feePctToArtist = 0;
+	uint256 internal _feePctToSuppliers = 25; // 1 -> 10000 (1% is 100)
+	uint256 internal _feePctToNiftex = 5; // 1 -> 10000 (0.25% is 25)
+	uint256 internal _feePctToArtist = 10;
 	address internal _artistWallet;
 	address internal _niftexWallet;
 
@@ -173,7 +173,10 @@ contract BondingCurve {
 			"[sellShards] minEthForShardAmount is bigger than actual weiPayout"
 		);
 
-		require(weiPayout <= address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist));
+		require(
+			weiPayout <= address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist),
+			"[sellShards] the pool does not have enough ETH for this sell"
+		);
 
 		_x = newX;
 		_p = newY.mul(1e18).div(newX);
@@ -285,7 +288,12 @@ contract BondingCurve {
 		emit EtherSupplied(msg.value, msg.sender);
 	}
 
-	function withdrawSuppliedShards(uint256 shardLPTokensAmount) external {
+	function withdrawSuppliedShards(uint256 shardLPTokensAmount) external returns (uint256, uint256) {
+		require(
+			shardLPTokensAmount > 0, 
+			"[withdrawSuppliedShards] shardLPTokensAmount must be > 0"
+		);
+
 		require(
 			_shardSuppliers._mappingShardLPTokens[msg.sender] >= shardLPTokensAmount,
 			"[withdrawSuppliedShards] Cannot withdraw more than your amount of shardLPTokens"
@@ -293,7 +301,7 @@ contract BondingCurve {
 
 		uint256 shardsToWithdraw;
 		if (_shardRegistry.balanceOf(address(this)) <= _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
-			shardsToWithdraw = _shardRegistry.balanceOf(address(this)).mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
+			shardsToWithdraw = (_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist)).mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 		} else {
 			shardsToWithdraw = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 		}
@@ -308,9 +316,7 @@ contract BondingCurve {
 		//!TODO I am unsure if shard0 should sub actualShardsToWithdraw (based on current balance of bonding curve) or maxShardsToWithdraw (based on _totalSuppliedShardsPlusFeesToSuppliers)
 		_x = _x.sub(shardsToWithdraw);
 
-		require(
-			_shardRegistry.transferFrom(address(this), msg.sender, shardsToWithdraw)
-		);
+		_shardRegistry.transfer(msg.sender, shardsToWithdraw);
 
 		if (ethPayout > 0) {
 			(bool success, ) = msg.sender.call{
@@ -319,10 +325,17 @@ contract BondingCurve {
 			require(success, "[withdrawSuppliedShards] ETH transfer failed.");
 		}
 
-		emit ShardsWithdrawn(shardsToWithdraw, ethPayout, msg.sender);
+		emit ShardsWithdrawn(ethPayout, shardsToWithdraw, msg.sender);
+
+		return (ethPayout, shardsToWithdraw);
 	}
 
-	function withdrawSuppliedEther(uint256 ethLPTokensAmount) external {
+	function withdrawSuppliedEther(uint256 ethLPTokensAmount) external returns (uint256, uint256) {
+		require(
+			ethLPTokensAmount > 0, 
+			"[withdrawSuppliedEther] ethLPTokensAmount must be > 0"
+		);
+
 		require(
 			_ethSuppliers._mappingEthLPTokens[msg.sender] >= ethLPTokensAmount,
 			"[withdrawSuppliedEther] Cannot withdraw more than your amount of ethLPTokens"
@@ -330,7 +343,7 @@ contract BondingCurve {
 
 		uint256 ethToWithdraw;
 		if (address(this).balance <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
-			ethToWithdraw = address(this).balance.mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
+			ethToWithdraw = (address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)).mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
 		} else {
 			ethToWithdraw = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
 		}
@@ -351,12 +364,12 @@ contract BondingCurve {
 		require(success, "[sell] ETH transfer failed.");
 
 		if (shardPayout > 0) {
-			require(
-				_shardRegistry.transferFrom(address(this), msg.sender, shardPayout)
-				);
+			_shardRegistry.transfer(msg.sender, shardPayout);
 		}
 		
 		emit EtherWithdrawn(ethToWithdraw, shardPayout, msg.sender);
+
+		return (ethToWithdraw, shardPayout);
 	}
 
 	function transferShardLPTokens(uint256 shardLPTokensAmount, address recipient) public {
@@ -423,12 +436,12 @@ contract BondingCurve {
 		return (_x, _p);
 	}
 
-	function getEthSuppliers() external view returns (uint256, uint256, uint256) {
-		return (_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers, _ethSuppliers._totalEthLPTokens, _ethSuppliers._ethFeesToNiftex);
+	function getEthSuppliers() external view returns (uint256, uint256, uint256, uint256) {
+		return (_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers, _ethSuppliers._totalEthLPTokens, _ethSuppliers._ethFeesToNiftex, _ethSuppliers._ethFeesToArtist);
 	}
 
-	function getShardSuppliers() external view returns (uint256, uint256, uint256) {
-		return (_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers, _shardSuppliers._totalShardLPTokens, _shardSuppliers._shardFeesToNiftex);
+	function getShardSuppliers() external view returns (uint256, uint256, uint256, uint256) {
+		return (_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers, _shardSuppliers._totalShardLPTokens, _shardSuppliers._shardFeesToNiftex, _shardSuppliers._shardFeesToArtist);
 	}
 
 	function getEthLPTokens(address owner) public view returns (uint256) {
