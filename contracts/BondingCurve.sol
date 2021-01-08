@@ -247,7 +247,7 @@ contract BondingCurve {
 			return 0;
 		} 
 
-		return _shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers);
+		return _shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist).sub(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers);
 	}
 
 	function calcEthForShardSuppliers() public view returns (uint256) {
@@ -255,7 +255,7 @@ contract BondingCurve {
 			return 0;
 		}
 
-		return address(this).balance.sub(_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers);
+		return address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist).sub(_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers);
 	}
 
 	function supplyShards(uint256 shardAmount) external {
@@ -309,9 +309,8 @@ contract BondingCurve {
 		uint256 ethPayout = calcEthForShardSuppliers().mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].sub(shardLPTokensAmount);
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.mul(_shardSuppliers._totalShardLPTokens.sub(shardLPTokensAmount)).div(_shardSuppliers._totalShardLPTokens);
 		_shardSuppliers._totalShardLPTokens = _shardSuppliers._totalShardLPTokens.sub(shardLPTokensAmount);
-		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.sub(shardsToWithdraw);
-
 
 		//!TODO I am unsure if shard0 should sub actualShardsToWithdraw (based on current balance of bonding curve) or maxShardsToWithdraw (based on _totalSuppliedShardsPlusFeesToSuppliers)
 		_x = _x.sub(shardsToWithdraw);
@@ -351,9 +350,8 @@ contract BondingCurve {
 		uint256 shardPayout = calcShardsForEthSuppliers().mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
 
 		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].sub(ethLPTokensAmount);
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.mul(_ethSuppliers._totalEthLPTokens.sub(ethLPTokensAmount)).div(_ethSuppliers._totalEthLPTokens);
 		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.sub(ethLPTokensAmount);
-		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.sub(ethToWithdraw);
-
 		if (shardPayout > 0) {
 			_x = _x.sub(shardPayout);
 		}
@@ -409,7 +407,7 @@ contract BondingCurve {
 		}("");
 		require(success, "[sell] ETH transfer failed.");
 
-		_shardRegistry.transferFrom(address(this), recipient, shardFeesToNiftex);
+		_shardRegistry.transfer(recipient, shardFeesToNiftex);
 	}
 
 	function withdrawArtistFees(address recipient) public {
@@ -425,7 +423,7 @@ contract BondingCurve {
 		}("");
 		require(success, "[sell] ETH transfer failed.");
 
-		_shardRegistry.transferFrom(address(this), recipient, shardFeesToArtist);
+		_shardRegistry.transfer(recipient, shardFeesToArtist);
 	}
 
 	function getCurrentPrice() external view returns (uint256) {
