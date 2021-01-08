@@ -1,7 +1,10 @@
 const BigNumber = require('bignumber.js');
 
 const BondingCurve = artifacts.require("BondingCurve");
-const ShardRegistry = artifacts.require("ERC20PresetMinterPauser");
+
+const ShardedWallet        = artifacts.require('ShardedWallet');
+const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
+const Governance           = artifacts.require('BasicGovernance');
 
 let registryInstance;
 let curveInstance;
@@ -20,21 +23,29 @@ const MAX_UINT = new BigNumber(2).pow(256).minus(1);
 contract("BondingCurve.sol stand-alone test", async accounts => {
 
 	it("mint tokens to accounts 0,1,2", async () => {
-		registryInstance = await ShardRegistry.new(
-			'PEPECASH',
-			'PEPECASH',
-			{ from: accounts[0] }
+
+		const governance = await Governance.new();
+		const factory = await ShardedWalletFactory.new();
+		const { receipt } = await factory.mintWallet(
+			governance.address,      // governance_
+			accounts[0],                        // owner_
+			'PEPECASH',              // name_
+			'PEPECASH',                       // symbol_
 		);
-		
+		registryInstance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == "NewInstance").args.instance);
+
+		// !NOTE CHEAT: add EOA wallet as module 
+		governance.grantRole(await governance.MODULE_ROLE(), accounts[0]);
+
 		const ownerRemainingShards = SHARD_SUPPLY.minus(SHARD_SOLD_IN_CROWDSALE);
 		const ethSoldInCrowdsale = SHARD_SOLD_IN_CROWDSALE.div(SHARD_SUPPLY).times(INITIAL_VALUATION);
 		const subscriberOneShards = SHARD_SUBSCRIBER_1_PCT.times(SHARD_SOLD_IN_CROWDSALE);
 		const subscriberTwoShards = SHARD_SUBSCRIBER_2_PCT.times(SHARD_SOLD_IN_CROWDSALE);
 
 
-		await registryInstance.mint(accounts[0], ownerRemainingShards);
-		await registryInstance.mint(accounts[1], subscriberOneShards);
-		await registryInstance.mint(accounts[2], subscriberTwoShards);
+		await registryInstance.moduleMint(accounts[0], ownerRemainingShards);
+		await registryInstance.moduleMint(accounts[1], subscriberOneShards);
+		await registryInstance.moduleMint(accounts[2], subscriberTwoShards);
 	});
 
 	it("Construct and initialize the bonding curve", async () => {
@@ -65,7 +76,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 			niftexWallet,
 			initialPriceInWei,
 			minShard0,
-			{ 
+			{
 				from: accounts[0],
 				value: ethToBondingCurve
 			}
@@ -128,12 +139,12 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 
 	it("accounts[1] provides 3 ETH liquidity", async() => {
 		await curveInstance.supplyEther(
-			{ 
+			{
 				from: accounts[1],
 				value: new BigNumber(3).times(1e18)
 			}
 		);
-		
+
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
 		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
@@ -145,11 +156,11 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 	it("accounts[2] provides 100 Shards liquidity", async() => {
 		await curveInstance.supplyShards(
 			new BigNumber(100).times(1e18),
-			{ 
+			{
 				from: accounts[2],
 			}
 		);
-		
+
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
 		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
@@ -162,7 +173,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const accountZero = await curveInstance.getEthLPTokens(accounts[0]);
 		const accountOne = await curveInstance.getEthLPTokens(accounts[1]);
 		const accountTwo = await curveInstance.getEthLPTokens(accounts[2]);
-		
+
 		console.log('ethLPTokens accounts[0]', new BigNumber(accountZero).div(1e18).toFixed());
 		console.log('ethLPTokens accounts[1]', new BigNumber(accountOne).div(1e18).toFixed());
 		console.log('ethLPTokens accounts[2]', new BigNumber(accountTwo).div(1e18).toFixed());
@@ -260,5 +271,5 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 
 
 
-	
+
 });
