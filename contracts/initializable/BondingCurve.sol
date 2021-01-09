@@ -78,15 +78,18 @@ contract BondingCurve {
 		
 		_x = minShard0.add(suppliedShards);
 		_p = initialPriceInWei;
-		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
+		
+		_shardSuppliers._mappingShardLPTokens[msg.sender] = suppliedShards;
+		_shardSuppliers._totalShardLPTokens = suppliedShards;
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = suppliedShards;
 
 		_ethSuppliers._mappingEthLPTokens[msg.sender] = msg.value;
 		_ethSuppliers._totalEthLPTokens = msg.value;
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
+
+		// in case selfdestruct happens, the ETH from selfdestruct will forever be stuck in the bonding curve
 		_ethInPool = _ethInPool.add(msg.value);
 
-		_shardSuppliers._mappingShardLPTokens[msg.sender] = suppliedShards;
-		_shardSuppliers._totalShardLPTokens = suppliedShards;
 		_artistWallet = artistWallet;
 		_niftexWallet = niftexWallet;
 
@@ -130,8 +133,11 @@ contract BondingCurve {
 			"[buyShards] user not putting enough eth to buy shards"
 		);
 
-		uint256 newP = newYAfterFee.mul(1e18).div(newXAfterFee);
-		_p = newP;
+		shardAmountAfterFee = shardAmount.mul(uint256(10000).add(_feePctToNiftex).add(_feePctToArtist)).div(10000);
+		newXAfterFee = _x.sub(shardAmountAfterFee);
+		newYAfterFee = k.div(newXAfterFee);
+
+		_p = newYAfterFee.mul(1e18).div(newXAfterFee);
 		_x = newXAfterFee;
 
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(_feePctToSuppliers).div(10000));
@@ -315,13 +321,14 @@ contract BondingCurve {
 
 		uint256 ethPayout = calcEthForShardSuppliers().mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 
+		//!TODO I am unsure if shard0 should sub actualShardsToWithdraw (based on current balance of bonding curve) or maxShardsToWithdraw (based on _totalSuppliedShardsPlusFeesToSuppliers)
+		_x = _x.sub(shardsToWithdraw);
+
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].sub(shardLPTokensAmount);
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.mul(_shardSuppliers._totalShardLPTokens.sub(shardLPTokensAmount)).div(_shardSuppliers._totalShardLPTokens);
 		_shardSuppliers._totalShardLPTokens = _shardSuppliers._totalShardLPTokens.sub(shardLPTokensAmount);
 
-		//!TODO I am unsure if shard0 should sub actualShardsToWithdraw (based on current balance of bonding curve) or maxShardsToWithdraw (based on _totalSuppliedShardsPlusFeesToSuppliers)
-		_x = _x.sub(shardsToWithdraw);
-
+	
 		_shardRegistry.transfer(msg.sender, shardsToWithdraw);
 
 		if (ethPayout > 0) {
