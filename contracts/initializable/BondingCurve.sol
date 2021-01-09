@@ -135,7 +135,7 @@ contract BondingCurve {
 
 		shardAmountAfterFee = shardAmount.mul(uint256(10000).add(_feePctToNiftex).add(_feePctToArtist)).div(10000);
 		newXAfterFee = _x.sub(shardAmountAfterFee);
-		newYAfterFee = k.div(newXAfterFee);
+		// newYAfterFee = k.div(newXAfterFee);
 
 		_p = newYAfterFee.mul(1e18).div(newXAfterFee);
 		_x = newXAfterFee;
