@@ -198,7 +198,7 @@ contract BondingCurve {
 		(bool success, ) = msg.sender.call{
 			value: weiPayout
 		}("");
-		require(success, "[sell] ETH transfer failed.");
+		require(success, "[sellShards] ETH transfer failed as msg.sender cannot receive ETH");
 
 		emit ShardsSold(shardAmount, weiPayout, msg.sender);
 	}
@@ -248,7 +248,7 @@ contract BondingCurve {
 	}
 
 	function calcShardsForEthSuppliers() public view returns (uint256) {
-		if (_shardRegistry.balanceOf(address(this)) < _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
+		if (_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) < _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
 			return 0;
 		} 
 
@@ -256,7 +256,7 @@ contract BondingCurve {
 	}
 
 	function calcEthForShardSuppliers() public view returns (uint256) {
-		if (_ethInPool < _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
+		if (_ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist) < _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
 			return 0;
 		}
 
@@ -307,7 +307,7 @@ contract BondingCurve {
 			);
 
 		uint256 shardsToWithdraw;
-		if (_shardRegistry.balanceOf(address(this)) <= _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
+		if (_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) <= _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
 			shardsToWithdraw = (_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist)).mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 		} else {
 			shardsToWithdraw = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
@@ -349,7 +349,7 @@ contract BondingCurve {
 			);
 
 		uint256 ethToWithdraw;
-		if (_ethInPool <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
+		if (_ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist) <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
 			ethToWithdraw = (_ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)).mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
 		} else {
 			ethToWithdraw = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
@@ -416,7 +416,7 @@ contract BondingCurve {
 		(bool success, ) = address(recipient).call{
 			value: ethFeesToNiftex
 		}("");
-		require(success, "[sell] ETH transfer failed.");
+		require(success, "[withdrawNiftexFees] ETH transfer failed as recipient cannot receive ETH");
 
 		_shardRegistry.transfer(recipient, shardFeesToNiftex);
 	}
@@ -434,7 +434,7 @@ contract BondingCurve {
 		(bool success, ) = address(recipient).call{
 			value: ethFeesToArtist
 		}("");
-		require(success, "[sell] ETH transfer failed.");
+		require(success, "[withdrawArtistFees] ETH transfer failed as recipient cannot receive ETH");
 
 		_shardRegistry.transfer(recipient, shardFeesToArtist);
 	}
