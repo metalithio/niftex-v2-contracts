@@ -9,32 +9,34 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 contract BatchTransferHelper
 {
     function batchTransferERC721(
-        address to,
-        address[] calldata registries,
-        uint256[] calldata ids)
+        address[] calldata to,
+        address[] calldata registry,
+        uint256[] calldata id)
     external
     {
-        require(registries.length == ids.length);
-        for (uint256 i = 0; i < registries.length; ++i)
+        require(to.length == registry.length);
+        require(to.length == id.length);
+        for (uint256 i = 0; i < to.length; ++i)
         {
-            IERC721(registries[i]).transferFrom(msg.sender, to, ids[i]);
+            IERC721(registry[i]).transferFrom(msg.sender, to[i], id[i]);
         }
     }
 
     function batchTransferERC1155(
-        address to,
-        address[]   calldata registries,
-        uint256[][] calldata ids,
-        uint256[][] calldata amounts,
+        address[]   calldata to,
+        address[]   calldata registry,
+        uint256[][] calldata id,
+        uint256[][] calldata amount,
         bytes[]     calldata data)
     external
     {
-        require(registries.length == ids.length);
-        require(registries.length == amounts.length);
-        require(registries.length == data.length);
-        for (uint256 i = 0; i < registries.length; ++i)
+        require(to.length == registry.length);
+        require(to.length == id.length);
+        require(to.length == amount.length);
+        require(to.length == data.length);
+        for (uint256 i = 0; i < to.length; ++i)
         {
-            IERC1155(registries[i]).safeBatchTransferFrom(msg.sender, to, ids[i], amounts[i], data[i]);
+            IERC1155(registry[i]).safeBatchTransferFrom(msg.sender, to[i], id[i], amount[i], data[i]);
         }
     }
 
