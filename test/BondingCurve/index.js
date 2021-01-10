@@ -68,7 +68,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 			{ from: accounts[0]}
 		);
 
-		await curveInstance.initialize(
+		const initializeTxn = await curveInstance.initialize(
 			suppliedShards,
 			shardRegistryAddress,
 			owner,
@@ -85,6 +85,8 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
 		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
+		console.log('initializeTxn.gasUsed: ', initializeTxn.receipt.gasUsed);
+		console.log(`accounts[0] put ${suppliedShards.div(1e18).toFixed()} Shards and ${ethToBondingCurve.div(1e18).toFixed()} ETH to the curve`);
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
 		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 	})
@@ -94,7 +96,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const maxEthForShardAmount = new BigNumber(10).times(1e18);
 
 
-		await curveInstance.buyShards(
+		const buyShardsTxn = await curveInstance.buyShards(
 			shardAmount,
 			maxEthForShardAmount,
 			{
@@ -107,6 +109,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
+		console.log('buyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
 		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 	})
@@ -115,13 +118,13 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const shardAmount = new BigNumber(80).times(1e18);
 		const minEthForShardAmount = new BigNumber(10).times(1e18);
 
-		await registryInstance.approve(
+		const approveTxn = await registryInstance.approve(
 			curveInstance.address,
 			MAX_UINT,
 			{ from: accounts[2]}
 		);
 
-		await curveInstance.sellShards(
+		const sellShardsTxn = await curveInstance.sellShards(
 			shardAmount,
 			minEthForShardAmount,
 			{
@@ -133,12 +136,14 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
 
+		console.log('ERC20 approveTxn.gasUsed:', approveTxn.receipt.gasUsed);
+		console.log('sellShardsTxn.gasUsed: ', sellShardsTxn.receipt.gasUsed);
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
 		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 	})
 
 	it("accounts[1] provides 3 ETH liquidity", async() => {
-		await curveInstance.supplyEther(
+		const supplyEtherTxn = await curveInstance.supplyEther(
 			{
 				from: accounts[1],
 				value: new BigNumber(3).times(1e18)
@@ -148,13 +153,13 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
 		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
-
+		console.log('supplyEtherTxn.gasUsed:', supplyEtherTxn.receipt.gasUsed);
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
 		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 	});
 
 	it("accounts[2] provides 100 Shards liquidity", async() => {
-		await curveInstance.supplyShards(
+		const supplyShardsTxn = await curveInstance.supplyShards(
 			new BigNumber(100).times(1e18),
 			{
 				from: accounts[2],
@@ -164,7 +169,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const curveCoordinates = await curveInstance.getCurveCoordinates();
 		const ethInPool = await curveInstance.getEthInPool();
 		const shardsInPool = await registryInstance.balanceOf(curveInstance.address);
-
+		console.log('supplyShardsTxn.gasUsed:', supplyShardsTxn.receipt.gasUsed);
 		console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
 		console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 	});
@@ -235,6 +240,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 			console.log(`accounts[${i}]'s ethLPTokensAmount: ${ethLPTokensAmount.toString(10)}`);
 			const withdrawEth = await curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: accounts[i]});
 			const withdrawEthLiquidity = withdrawEth.logs[0].args;
+			console.log('withdrawEth.gasUsed:', withdrawEth.receipt.gasUsed);
 			console.log(
 				`accounts[${i}] withdraw ${new BigNumber(withdrawEthLiquidity[0]).div(1e18).toFixed()} ETH and ${new BigNumber(withdrawEthLiquidity[1]).div(1e18).toFixed()} Shards`
 				);
@@ -247,6 +253,7 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 			console.log(`accounts[${i}]'s shardLPTokensAmount: ${shardLPTokensAmount.toString(10)}`);
 			const withdrawShard = await curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: accounts[i]});
 			const withdrawShardLiquidity = withdrawShard.logs[0].args;
+			console.log('withdrawShard.gasUsed:', withdrawShard.receipt.gasUsed);
 			console.log(
 				`accounts[${i}] withdraw ${new BigNumber(withdrawShardLiquidity[0]).div(1e18).toFixed()} ETH and ${new BigNumber(withdrawShardLiquidity[1]).div(1e18).toFixed()} Shards`
 				);
@@ -267,9 +274,4 @@ contract("BondingCurve.sol stand-alone test", async accounts => {
 		const shardSuppliers = await curveInstance.getShardSuppliers();
 		console.log('shardSuppliers (suppliedShardPlusFees, shardLPTokens, shardFeesToNiftex, shardFeesToArtist): ', new BigNumber(shardSuppliers[0]).div(1e18).toFixed(), new BigNumber(shardSuppliers[1]).div(1e18).toFixed(), new BigNumber(shardSuppliers[2]).div(1e18).toFixed(), new BigNumber(shardSuppliers[3]).div(1e18).toFixed());
 	})
-
-
-
-
-
 });
