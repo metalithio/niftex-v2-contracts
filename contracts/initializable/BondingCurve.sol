@@ -133,12 +133,11 @@ contract BondingCurve {
 			"[buyShards] user not putting enough eth to buy shards"
 		);
 
-		shardAmountAfterFee = shardAmount.mul(uint256(10000).add(_feePctToNiftex).add(_feePctToArtist)).div(10000);
-		newXAfterFee = _x.sub(shardAmountAfterFee);
+		newXAfterFee = _x.sub(shardAmount);
 		// newYAfterFee = k.div(newXAfterFee);
 
 		_p = newYAfterFee.mul(1e18).div(newXAfterFee);
-		_x = newXAfterFee;
+		_x = _x.sub(shardAmount.mul(uint256(10000).add(_feePctToNiftex).add(_feePctToArtist)).div(10000));
 
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(_feePctToSuppliers).div(10000));
 		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(_feePctToNiftex).div(10000));
