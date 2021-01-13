@@ -131,10 +131,11 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
 						// Liquidity lock: ETH
 						uint256 lockPct = ShardedWallet(payable(wallet)).governance().getConfig(wallet, "lockPct");
-						uint256 lockEth = value.mul(lockPct).div(100);
+						// lockPct = % * 100
+						uint256 lockEth = value.mul(lockPct).div(10000);
 						// Liquidity lock: Shards
 						uint256 price = prices[wallet];
-						uint lockShares = lockEth.div(price);
+						uint lockShares = lockEth.div(price).mul(10**18);
 						// this would call a factory to deploy a market
 						bytes memory returnData = ShardedWallet(payable(wallet)).moduleExecuteReturn(factory, 0, "");
 						// no idea if this would work
