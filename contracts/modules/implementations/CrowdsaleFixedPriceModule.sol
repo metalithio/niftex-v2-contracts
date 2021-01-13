@@ -122,13 +122,40 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         }
     }
 
-    function withdraw(address wallet, address to)
+    function withdraw(address wallet, address to, address factory, bytes calldata data)
     external onlyCrowdsaleFinished(wallet) onlyRecipient(wallet)
     {
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256 value = balance[wallet];
             delete balance[wallet];
-            Address.sendValue(payable(to), value);
+
+						// Liquidity lock: ETH
+						uint256 lockPct = ShardedWallet(payable(wallet)).governance().getConfig(wallet, "lockPct");
+						uint256 lockEth = value.mul(lockPct).div(100);
+						// Liquidity lock: Shards
+						uint256 price = prices[wallet];
+						uint lockShares = lockEth.div(price);
+						// this would call a factory to deploy a market
+						bytes memory returnData = ShardedWallet(payable(wallet)).moduleExecuteReturn(factory, 0, "");
+						// no idea if this would work
+						address market;
+						assembly {
+				      market := mload(add(returnData, 20))
+				    }
+						ShardedWallet(payable(wallet)).moduleApprove(to, market, lockShares);
+						// initialize market
+						/*
+							address               shardRegistryAddress_,
+							address               owner_,
+							address       				artistWallet_,
+							address        				niftexWallet_,
+							uint256 							suppliedShards_,
+							uint256								initialPriceInWei_,
+							uint256								minShard0_
+						*/
+						ShardedWallet(payable(wallet)).moduleExecute(market, lockEth, data);
+
+            Address.sendValue(payable(to), value.sub(lockEth));
             emit Withdraw(wallet, msg.sender, to, value);
         } else {
             ShardedWallet(payable(wallet)).moduleTransferOwnership(to);
