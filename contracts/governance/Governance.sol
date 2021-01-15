@@ -65,9 +65,7 @@ contract BasicGovernance is IGovernance, AccessControl
         // TODO: emit
     }
 
-    function setAllowedAddresses(address allower, address allowee, bool isAllowed) 
-    public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        _allowedAddresses[allower][allowee] = isAllowed;
+    function getKeyInBytes(string memory key) public view returns(bytes32) {
+        return bytes32(uint256(keccak256(key)) - 1);
     }
 }

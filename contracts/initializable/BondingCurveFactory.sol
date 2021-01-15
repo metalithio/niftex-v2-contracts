@@ -30,7 +30,11 @@ contract BondingCurveFactory is CloneFactory
     )
     external returns (address instance)
     {   
-        require(ShardedWallet(wallet).governance().getAllowedAddress(address(this),msg.sender));
+        bytes32 keyIsCrowdsale = ShardedWallet(wallet).governance().getKeyInBytes("IS_CROWDSALE");
+        require(
+          ShardedWallet(wallet).governance().hasRole(keyIsCrowdsale, msg.sender);
+          "[mintBondingCurve] Must be a crowdsale contract to initialize this bonding curve"
+          );
         instance = _clone();
         ShardedWallet(payable(wallet)).approve(instance, suppliedShards);
         BondingCurve(payable(instance)).initialize.value(ethToSend)(

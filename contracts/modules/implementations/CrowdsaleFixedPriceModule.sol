@@ -25,8 +25,13 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     mapping(address => uint256)                     public remainingsShares;
     mapping(address => mapping(address => uint256)) public premintShares;
     mapping(address => mapping(address => uint256)) public boughtShares;
-    address                                         public bondingCurveFactory;
-    mapping(address => uint256)                     public ethToBondingCurve;
+    mapping(address => address)                     public bondingCurveFactories;
+    mapping(address => CrowdsaleDetails)            public crowdsaleDetails;
+
+    struct CrowdsaleDetails {
+        uint256 shardCap;
+        uint256 shardInCrowdsale;
+    }
 
     event SharesBought(address indexed token, address indexed from, address to, uint256 count);
     event SharesRedeemedSuccess(address indexed token, address indexed from, address to, uint256 count);
@@ -65,16 +70,13 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         _;
     }
 
-    constructor(address _bondingCurveFactory) {
-        bondingCurveFactory = _bondingCurveFactory;
-    }
-
     function setup(
         address wallet,
         address recipient,
         uint256 price,
         uint256 duration,
         uint256 totalSupply,
+        uint256 bondingCurveFactory,
         Allocation[] calldata premints)
     external onlyBeforeTimer(bytes32(uint256(wallet))) onlyOwner(wallet, msg.sender)
     {
@@ -84,6 +86,12 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             totalSupply > 0,
             "[setup] Cannot trigger crowdsale selling 0 fractions"
         );
+
+        require(
+            ShardedWallet(payable(wallet)).governance().hasRole(ShardedWallet(payable(wallet)).governance().BONDING_CURVE_FACTORY(), bondingCurveFactory),
+            "[setup] You should put the right bondingCurveFactory"
+            );
+        crowdsaleDetails[wallet].shardCap = totalSupply;
         ShardedWallet(payable(wallet)).moduleTransferOwnership(address(0));
 
         Timers._startTimer(bytes32(uint256(wallet)), duration);
@@ -94,16 +102,15 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             premintShares[wallet][premint.receiver] = premint.amount;
             totalSupply = totalSupply.sub(premint.amount);
         }
-
         // calculate fractions for bonding curve factory at this stage
         uint256 pctEthToBondingCurve = ShardedWallet(payable(wallet)).governance().getConfig(PCT_ETH_TO_BONDING_CURVE);
-        ethToBondingCurve[wallet] = pctEthToBondingCurve;
         premintShares[wallet][bondingCurveFactory] = premintShares[wallet][recipient].mul(pctEthToBondingCurve).div(10000);
         premintShares[wallet][recipient] = premintShares[wallet][recipient].sub(premintShares[wallet][bondingCurveFactory]);
 
         recipients[wallet] = recipient;
         prices[wallet] = price;
         remainingsShares[wallet] = totalSupply;
+        crowdsaleDetails[wallet].shardInCrowdsale = totalSupply;
     }
 
     function initializeBondingCurve(address wallet) public {
@@ -112,14 +119,14 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             "[initializeBondingCurve] Crowdsale still proceeds or fails"
         );
 
-        uint256 ethAmount = ethToBondingCurve[wallet];
+       
         uint256 shardAmount = premintShares[wallet][bondingCurveFactory];
+        uint256 ethAmount = ethToBondingCurve[wallet]*prices[wallet].div(1e18);
+  
+        premintShares[wallet][bondingCurveFactories[wallet]] = 0;
 
-        ethToBondingCurve[wallet] = 0;
-        premintShares[wallet][bondingCurveFactory] = 0;
-
-        ShardedWallet(payable(wallet)).moduleMint(bondingCurveFactory, shardAmount);
-        Address.sendValue(payable(bondingCurveFactory), ethAmount);
+        ShardedWallet(payable(wallet)).moduleMint(bondingCurveFactories[wallet], shardAmount);
+        Address.sendValue(payable(bondingCurveFactories[wallet]), ethAmount);
 
         IBondingCurveFactory(bondingCurveFactory).mintBondingCurve(
             /*
