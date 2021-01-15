@@ -16,6 +16,9 @@ contract BasicGovernance is IGovernance, AccessControl
 
     mapping(bytes32 => uint256) internal _config;
     mapping(bytes4  => address) internal _staticcalls;
+    // (addressA => addressB => true) means address A allowed address B to interact
+    mapping(address => mapping(address => bool)) internal _allowedAddresses;
+
 
     constructor()
     {
@@ -60,5 +63,11 @@ contract BasicGovernance is IGovernance, AccessControl
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
         _config[key] = value;
         // TODO: emit
+    }
+
+    function setAllowedAddresses(address allower, address allowee, bool isAllowed) 
+    public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _allowedAddresses[allower][allowee] = isAllowed;
     }
 }

@@ -23,6 +23,7 @@ contract BondingCurve {
 	address internal _artistWallet;
 	address internal _niftexWallet;
 	uint256 internal _ethInPool = 0;
+	address internal _nftOwner;
 
 	// are these needed? all we do is add subtract
 	// needed for fees?
@@ -60,8 +61,8 @@ contract BondingCurve {
 
 	function initialize(
 		uint256 suppliedShards,
-		address shardRegistryAddress,
-		address owner,
+		address wallet, // shardedWallet
+		address nftOwner,
 		address artistWallet,
 		address niftexWallet,
 		uint256 initialPriceInWei,
@@ -70,20 +71,21 @@ contract BondingCurve {
 		// assumes ERC20.approve
 		// can also be used for WETH
 		// wrap in require?
-		_shardRegistry = IERC20(shardRegistryAddress);
+		_shardRegistry = IERC20(wallet);
 		// can create the bonding curve without transferring shards.
 		if (suppliedShards > 0) {
-			_shardRegistry.transferFrom(owner, address(this), suppliedShards);
+			_shardRegistry.transferFrom(msg.sender, address(this), suppliedShards);
 		}
 		
+		_nftOwner = nftOwner;
 		_x = minShard0.add(suppliedShards);
 		_p = initialPriceInWei;
 		
-		_shardSuppliers._mappingShardLPTokens[msg.sender] = suppliedShards;
+		_shardSuppliers._mappingShardLPTokens[address(this)] = suppliedShards;
 		_shardSuppliers._totalShardLPTokens = suppliedShards;
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = suppliedShards;
 
-		_ethSuppliers._mappingEthLPTokens[msg.sender] = msg.value;
+		_ethSuppliers._mappingEthLPTokens[address(this)] = msg.value;
 		_ethSuppliers._totalEthLPTokens = msg.value;
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
 
@@ -97,7 +99,7 @@ contract BondingCurve {
 			_feePctToArtist = 10;
 		}
 
-		emit Initialized(shardRegistryAddress, address(this));
+		emit Initialized(wallet, address(this));
 	}
 
 	// no need to add default fallback non-payable function in Solidity 0.7.0
