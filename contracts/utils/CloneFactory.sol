@@ -25,4 +25,10 @@ abstract contract CloneFactory
         instance = ERC1167.clone2(_cloneFactoryMaster, salt);
         emit NewInstance(instance);
     }
+
+    function _predict2(bytes32 salt)
+    internal view returns (address predicted)
+    {
+        predicted = ERC1167.predict2(_cloneFactoryMaster, salt);
+    }
 }
