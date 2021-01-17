@@ -61,19 +61,20 @@ contract BuyoutModule is IModule, ModuleBase, Timers
         emit BuyoutClosed(wallet, msg.sender);
     }
 
-    function claimBuyout(ShardedWallet wallet, address user)
+    function claimBuyout(ShardedWallet wallet)
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
-        uint256 shares = wallet.balanceOf(user);
-        wallet.moduleBurn(user, shares);
-        Address.sendValue(payable(user), shares.mul(_prices[wallet]));
+        uint256 shares = wallet.balanceOf(msg.sender);
+        wallet.moduleBurn(msg.sender, shares);
+        Address.sendValue(payable(msg.sender), shares.mul(_prices[wallet]));
 
-        emit BuyoutClaimed(wallet, user);
+        emit BuyoutClaimed(wallet, msg.sender);
     }
 
     function finalizeBuyout(ShardedWallet wallet)
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
+        // Warning: do NOT burn the locked shares, this would allow the last holder to retreive ownership of the wallet
         require(_proposers[wallet] != address(0));
         wallet.moduleTransferOwnership(_proposers[wallet]);
         delete _proposers[wallet];

@@ -185,7 +185,7 @@ contract('Workflow', function (accounts) {
 
 	describe('Claim funds', function () {
 		it('perform', async function () {
-			const { receipt } = await this.modules.buyout.claimBuyout(instance.address, user1, { from: user1 });
+			const { receipt } = await this.modules.buyout.claimBuyout(instance.address, { from: user1 });
 			// expectEvent(receipt, 'Transfer', { from: user1, to: constants.ZERO_ADDRESS, value: '8' });
 		});
 
