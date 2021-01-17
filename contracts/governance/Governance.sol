@@ -13,16 +13,18 @@ contract BasicGovernance is IGovernance, AccessControl
 
     bytes32 public constant MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
     bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
+    bytes32 public constant MINTING_SHARD_FEE  = bytes32(uint256(keccak256("MINTING_SHARD_FEE")) - 1);
 
     mapping(bytes32 => uint256) internal _config;
+    mapping(bytes32 => uint256) internal _configCap;
     mapping(bytes4  => address) internal _staticcalls;
-    // (addressA => addressB => true) means address A allowed address B to interact
-    mapping(address => mapping(address => bool)) internal _allowedAddresses;
+    address public _niftexWallet;
 
 
     constructor()
     {
         AccessControl._setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _niftexWallet = msg.sender;
     }
 
     function isModule(address /*wallet*/, address module)
@@ -61,11 +63,33 @@ contract BasicGovernance is IGovernance, AccessControl
     public
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        _config[key] = value;
+        if (_configCap[key] > 0 && value > _configCap[key]) {
+           _config[key] = _configCap[key];
+        } else {
+           _config[key] = value
+        }  
+        
         // TODO: emit
+    }
+    // useful for pct variables. pct must be <= 10000
+    function setConfigCap(bytes32 key, uint256 cap) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _configCap[key] = cap;
     }
 
     function getKeyInBytes(string memory key) public view returns(bytes32) {
         return bytes32(uint256(keccak256(key)) - 1);
+    }
+
+    function changeAdmin(address newAdmin) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        AccessControl._setupRole(DEFAULT_ADMIN_ROLE, newAdmin);
+        AccessControl.renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _niftexWallet = newAdmin;
+    }
+
+    function calcMintingShardFee(uint256 shardAmount) public view returns (uint256) {
+        uint256 pctShardFee = getConfig(address(0), MINTING_SHARD_FEE);
+        return shardAmount.mul(pctShardFee).div(10000);
     }
 }

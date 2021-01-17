@@ -5,6 +5,7 @@ pragma abicoder v2;
 
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
+import "../../initializable/IBondingCurveFactory";
 
 struct Allocation
 {
@@ -12,7 +13,7 @@ struct Allocation
     uint256 amount;
 }
 
-contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
+contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers, IBondingCurveFactory
 {
     using SafeMath for uint256;
 
@@ -28,9 +29,11 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     mapping(address => address)                     public bondingCurveFactories;
     mapping(address => CrowdsaleDetails)            public crowdsaleDetails;
 
+
     struct CrowdsaleDetails {
         uint256 shardCap;
         uint256 shardInCrowdsale;
+        uint256 ethToBondingCurve;
     }
 
     event SharesBought(address indexed token, address indexed from, address to, uint256 count);
@@ -76,7 +79,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         uint256 price,
         uint256 duration,
         uint256 totalSupply,
-        uint256 bondingCurveFactory,
+        address bondingCurveFactory,
         Allocation[] calldata premints)
     external onlyBeforeTimer(bytes32(uint256(wallet))) onlyOwner(wallet, msg.sender)
     {
@@ -87,10 +90,6 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             "[setup] Cannot trigger crowdsale selling 0 fractions"
         );
 
-        require(
-            ShardedWallet(payable(wallet)).governance().hasRole(ShardedWallet(payable(wallet)).governance().BONDING_CURVE_FACTORY(), bondingCurveFactory),
-            "[setup] You should put the right bondingCurveFactory"
-            );
         crowdsaleDetails[wallet].shardCap = totalSupply;
         ShardedWallet(payable(wallet)).moduleTransferOwnership(address(0));
 
@@ -102,13 +101,29 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             premintShares[wallet][premint.receiver] = premint.amount;
             totalSupply = totalSupply.sub(premint.amount);
         }
-        // calculate fractions for bonding curve factory at this stage
-        uint256 pctEthToBondingCurve = ShardedWallet(payable(wallet)).governance().getConfig(PCT_ETH_TO_BONDING_CURVE);
-        premintShares[wallet][bondingCurveFactory] = premintShares[wallet][recipient].mul(pctEthToBondingCurve).div(10000);
-        premintShares[wallet][recipient] = premintShares[wallet][recipient].sub(premintShares[wallet][bondingCurveFactory]);
+
+
+        if (ShardedWallet(payable(wallet)).governance()._niftexWallet() != address(0)) {
+            address niftexWallet = ShardedWallet(payable(wallet)).governance()._niftexWallet();
+            uint256 mintingShardFee = ShardedWallet(payable(wallet)).governance().calcMintingShardFee(crowdsaleDetails[wallet].shardCap);
+
+            premintShares[wallet][niftexWallet] = premintShares[wallet][niftexWallet].add(mintingShardFee);
+            totalSupply = totalSupply.sub(mintingShardFee);
+        }
 
         recipients[wallet] = recipient;
         prices[wallet] = price;
+
+        if (premintShares[wallet][bondingCurveFactory] > 0 && address(0) != bondingCurveFactory) {
+            require(
+                ShardedWallet(payable(wallet)).governance().hasRole(ShardedWallet(payable(wallet)).governance().getKeyInBytes("BONDING_CURVE_FACTORY"), bondingCurveFactory),
+                "[setup] The shardedWallet owner should put the right bondingCurveFactory"
+            );
+            bondingCurveFactories[wallet] = bondingCurveFactory;
+            uint256 ethAmountToRaise = totalSupply.mul(prices[wallet]).div(1e18);
+            crowdsaleDetails[wallet].ethToBondingCurve = ethAmountRaised.mul(ShardedWallet(payable(wallet)).governance().getConfig(wallet, PCT_ETH_TO_BONDING_CURVE)).div(10000);
+        }
+
         remainingsShares[wallet] = totalSupply;
         crowdsaleDetails[wallet].shardInCrowdsale = totalSupply;
     }
@@ -119,26 +134,33 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             "[initializeBondingCurve] Crowdsale still proceeds or fails"
         );
 
+        require(
+            bondingCurveFactories[wallet] != address(0),
+            "[initializeBondingCurve] No Bonding curve factory set"
+        );
+
        
-        uint256 shardAmount = premintShares[wallet][bondingCurveFactory];
-        uint256 ethAmount = ethToBondingCurve[wallet]*prices[wallet].div(1e18);
-  
+        uint256 shardAmount = premintShares[wallet][bondingCurveFactories[wallet]];
+        require(
+            shardAmount > 0,
+            "No shards allocated for bonding curve"
+        );
+
         premintShares[wallet][bondingCurveFactories[wallet]] = 0;
 
         ShardedWallet(payable(wallet)).moduleMint(bondingCurveFactories[wallet], shardAmount);
-        Address.sendValue(payable(bondingCurveFactories[wallet]), ethAmount);
+        Address.sendValue(payable(bondingCurveFactories[wallet]), crowdsaleDetails[wallet].ethToBondingCurve);
 
         IBondingCurveFactory(bondingCurveFactory).mintBondingCurve(
-            /*
-                suppliedShards,
-                wallet,
-                nftOwner,
-                artistWallet,
-                niftexWallet,
-                initialPriceInWei,
-                minShard0
-            */
-            );
+            shardAmount,
+            wallet,
+            recipients[wallet],
+            ShardedWallet(payable(wallet)).artistWallet(),
+            ShardedWallet(payable(wallet)).governance()._niftexWallet(),
+            prices[wallet],
+            ShardedWallet(payable(wallet)).governance().getConfig(wallet, ShardedWallet(payable(wallet)).governance().getKeysInBytes("PCT_MIN_SHARD_0")).mul(crowdsaleDetails[wallet].shardCap).div(10000),
+            crowdsaleDetails[wallet].ethToBondingCurve
+        );
     }
 
     function buy(address wallet, address to)
@@ -181,7 +203,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     {
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             // can only get remaining eth after putting some to bonding curve
-            uint256 value = balance[wallet].sub(ethToBondingCurve);
+            uint256 value = balance[wallet].sub(crowdsaleDetails[wallet].ethToBondingCurve);
             delete balance[wallet];
             Address.sendValue(payable(to), value);
             emit Withdraw(wallet, msg.sender, to, value);
