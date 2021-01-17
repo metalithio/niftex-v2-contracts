@@ -18,63 +18,63 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
     string public constant override name = type(CrowdsaleFixedPriceModule).name;
 
-    mapping(address => address)                     public recipients;
-    mapping(address => uint256)                     public prices;
-    mapping(address => uint256)                     public balance;
-    mapping(address => uint256)                     public remainingsShares;
-    mapping(address => mapping(address => uint256)) public premintShares;
-    mapping(address => mapping(address => uint256)) public boughtShares;
+    mapping(ShardedWallet => address)                     public recipients;
+    mapping(ShardedWallet => uint256)                     public prices;
+    mapping(ShardedWallet => uint256)                     public balance;
+    mapping(ShardedWallet => uint256)                     public remainingsShares;
+    mapping(ShardedWallet => mapping(address => uint256)) public premintShares;
+    mapping(ShardedWallet => mapping(address => uint256)) public boughtShares;
 
-    event SharesBought(address indexed token, address indexed from, address to, uint256 count);
-    event SharesRedeemedSuccess(address indexed token, address indexed from, address to, uint256 count);
-    event SharesRedeemedFaillure(address indexed token, address indexed from, address to, uint256 count);
-    event OwnershipReclaimed(address indexed token, address indexed from, address to);
-    event Withdraw(address indexed token, address indexed from, address to, uint256 value);
+    event SharesBought(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
+    event SharesRedeemedSuccess(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
+    event SharesRedeemedFaillure(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
+    event OwnershipReclaimed(ShardedWallet indexed wallet, address indexed from, address to);
+    event Withdraw(ShardedWallet indexed wallet, address indexed from, address to, uint256 value);
 
 
-    modifier onlyCrowdsaleActive(address wallet)
+    modifier onlyCrowdsaleActive(ShardedWallet wallet)
     {
-        require(_duringTimer(bytes32(uint256(wallet))) && remainingsShares[wallet] > 0);
+        require(_duringTimer(bytes32(uint256(address(wallet)))) && remainingsShares[wallet] > 0);
         _;
     }
 
-    modifier onlyCrowdsaleFinished(address wallet)
+    modifier onlyCrowdsaleFinished(ShardedWallet wallet)
     {
-        require(_afterTimer(bytes32(uint256(wallet))) || remainingsShares[wallet] == 0);
+        require(_afterTimer(bytes32(uint256(address(wallet)))) || remainingsShares[wallet] == 0);
         _;
     }
 
-    modifier onlyCrowdsaleFailled(address wallet)
+    modifier onlyCrowdsaleFailled(ShardedWallet wallet)
     {
-        require(_afterTimer(bytes32(uint256(wallet))) && remainingsShares[wallet] > 0);
+        require(_afterTimer(bytes32(uint256(address(wallet)))) && remainingsShares[wallet] > 0);
         _;
     }
 
-    modifier onlyCrowdsaleSuccess(address wallet)
+    modifier onlyCrowdsaleSuccess(ShardedWallet wallet)
     {
         require(remainingsShares[wallet] == 0);
         _;
     }
 
-    modifier onlyRecipient(address wallet)
+    modifier onlyRecipient(ShardedWallet wallet)
     {
         require(recipients[wallet] == msg.sender);
         _;
     }
 
     function setup(
-        address wallet,
-        address recipient,
-        uint256 price,
-        uint256 duration,
-        uint256 totalSupply,
+        ShardedWallet         wallet,
+        address               recipient,
+        uint256               price,
+        uint256               duration,
+        uint256               totalSupply,
         Allocation[] calldata premints)
-    external onlyBeforeTimer(bytes32(uint256(wallet))) onlyOwner(wallet, msg.sender)
+    external onlyBeforeTimer(bytes32(uint256(address(wallet)))) onlyOwner(wallet, msg.sender)
     {
-        require(ShardedWallet(payable(wallet)).totalSupply() == 0);
-        ShardedWallet(payable(wallet)).moduleTransferOwnership(address(0));
+        require(wallet.totalSupply() == 0);
+        wallet.moduleTransferOwnership(address(0));
 
-        Timers._startTimer(bytes32(uint256(wallet)), duration);
+        Timers._startTimer(bytes32(uint256(address(wallet))), duration);
 
         for (uint256 i = 0; i < premints.length; ++i)
         {
@@ -87,7 +87,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         remainingsShares[wallet] = totalSupply;
     }
 
-    function buy(address wallet, address to)
+    function buy(ShardedWallet wallet, address to)
     external payable onlyCrowdsaleActive(wallet)
     {
         uint256 price = prices[wallet];
@@ -102,7 +102,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         emit SharesBought(wallet, msg.sender, to, count);
     }
 
-    function redeem(address wallet, address to)
+    function redeem(ShardedWallet wallet, address to)
     external onlyCrowdsaleFinished(wallet)
     {
         uint256 premint = premintShares[wallet][to];
@@ -112,7 +112,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256 shares = premint.add(bought);
-            ShardedWallet(payable(wallet)).moduleMint(to, shares);
+            wallet.moduleMint(to, shares);
             emit SharesRedeemedSuccess(wallet, msg.sender, to, shares);
         } else {
             uint256 value = bought.mul(prices[wallet]);
@@ -122,7 +122,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         }
     }
 
-    function withdraw(address wallet, address to)
+    function withdraw(ShardedWallet wallet, address to)
     external onlyCrowdsaleFinished(wallet) onlyRecipient(wallet)
     {
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
@@ -131,28 +131,21 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             Address.sendValue(payable(to), value);
             emit Withdraw(wallet, msg.sender, to, value);
         } else {
-            ShardedWallet(payable(wallet)).moduleTransferOwnership(to);
+            wallet.moduleTransferOwnership(to);
             emit OwnershipReclaimed(wallet, msg.sender, to);
         }
     }
 
-    function retreive(address wallet)
-    external
-    {
-        ShardedWallet(payable(wallet)).moduleBurn(msg.sender, Math.max(ShardedWallet(payable(wallet)).totalSupply(), 1));
-        ShardedWallet(payable(wallet)).moduleTransferOwnership(msg.sender);
-    }
-
-    function cleanup(address wallet)
+    function cleanup(ShardedWallet wallet)
     external onlyCrowdsaleFinished(wallet)
     {
         require(balance[wallet] == 0); // either success + withdraw or faillure + redeems
-        Timers._resetTimer(bytes32(uint256(wallet)));
+        Timers._resetTimer(bytes32(uint256(address(wallet))));
     }
 
-    function deadline(address wallet)
+    function deadline(ShardedWallet wallet)
     external view returns (uint256)
     {
-        return _getDeadline(bytes32(uint256(wallet)));
+        return _getDeadline(bytes32(uint256(address(wallet))));
     }
 }

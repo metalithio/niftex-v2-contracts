@@ -93,13 +93,27 @@ contract ShardedWallet is Ownable, ERC20
         emit Execute(to, value, data);
     }
 
+    function retreive(address newOwner)
+    external
+    {
+        ERC20._burn(msg.sender, Math.max(ERC20.totalSupply(), 1));
+        Ownable._setOwner(newOwner);
+    }
+
     /*************************************************************************
      *                          Module interactions                          *
      *************************************************************************/
     function moduleExecute(address to, uint256 value, bytes calldata data)
     external onlyModule()
     {
-        Address.functionCallWithValue(to, data, value);
+        if (Address.isContract(to))
+        {
+            Address.functionCallWithValue(to, data, value);
+        }
+        else
+        {
+            Address.sendValue(payable(to), value);
+        }
         emit ModuleExecute(msg.sender, to, value, data);
     }
 

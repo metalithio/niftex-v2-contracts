@@ -135,7 +135,7 @@ contract('Workflow', function (accounts) {
 	describe('Buy shard', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.buy(instance.address, other1, { from: other1, value: web3.utils.toWei('0.01')})
-			expectEvent(receipt, 'SharesBought', { token: instance.address, from: other1, to: other1, count: '1' });
+			expectEvent(receipt, 'SharesBought', { wallet: instance.address, from: other1, to: other1, count: '1' });
 		});
 
 		after(async function () {
@@ -160,7 +160,7 @@ contract('Workflow', function (accounts) {
 	describe('Buy rest', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.buy(instance.address, other2, { from: other2, value: web3.utils.toWei('1')})
-			expectEvent(receipt, 'SharesBought', { token: instance.address, from: other2, to: other2, count: '9' });
+			expectEvent(receipt, 'SharesBought', { wallet: instance.address, from: other2, to: other2, count: '9' });
 		});
 
 		after(async function () {
@@ -185,7 +185,7 @@ contract('Workflow', function (accounts) {
 	describe('Withdraw', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, user1, { from: user1 });
-			expectEvent(receipt, 'Withdraw', { token: instance.address, from: user1, to: user1, value: web3.utils.toWei('0.10') });
+			expectEvent(receipt, 'Withdraw', { wallet: instance.address, from: user1, to: user1, value: web3.utils.toWei('0.10') });
 		});
 
 		after(async function () {
@@ -212,7 +212,7 @@ contract('Workflow', function (accounts) {
 			for ([ account, value ] of [[ user1, '8' ], [ user2, '2' ], [ other1, '1' ], [ other2, '9' ]])
 			{
 				const { receipt } = await this.modules.crowdsale.redeem(instance.address, account, { from: account });
-				expectEvent(receipt, 'SharesRedeemedSuccess', { token: instance.address, from: account, to: account, count: value });
+				expectEvent(receipt, 'SharesRedeemedSuccess', { wallet: instance.address, from: account, to: account, count: value });
 				// expectEvent(receipt, 'Transfer', { from: constants.ZERO_ADDRESS, to: account, value: value });
 			}
 		});
@@ -265,7 +265,7 @@ contract('Workflow', function (accounts) {
 
 	describe('Retreive ownership', function () {
 		it('perform', async function () {
-			await this.modules.crowdsale.retreive(instance.address, { from: other3 });
+			await instance.retreive(other3, { from: other3 });
 		});
 
 		after(async function () {

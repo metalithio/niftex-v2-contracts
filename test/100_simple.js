@@ -162,7 +162,7 @@ contract('Workflow', function (accounts) {
 
 	describe('Retreive ownership', function () {
 		it('perform', async function () {
-			await this.modules.crowdsale.retreive(instance.address, { from: other1 });
+			await instance.retreive(other1, { from: other1 });
 		});
 
 		after(async function () {

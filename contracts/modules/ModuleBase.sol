@@ -7,15 +7,15 @@ import "./IModule.sol";
 
 abstract contract ModuleBase is IModule
 {
-    modifier onlyAuthorized(address wallet, address user)
+    modifier onlyAuthorized(ShardedWallet wallet, address user)
     {
-        require(ShardedWallet(payable(wallet)).governance().isAuthorized(wallet, user));
+        require(wallet.governance().isAuthorized(address(wallet), user));
         _;
     }
 
-    modifier onlyOwner(address wallet, address user)
+    modifier onlyOwner(ShardedWallet wallet, address user)
     {
-        require(ShardedWallet(payable(wallet)).owner() == user);
+        require(wallet.owner() == user);
         _;
     }
 }
