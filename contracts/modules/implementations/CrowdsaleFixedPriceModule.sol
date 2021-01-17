@@ -3,6 +3,8 @@
 pragma solidity ^0.7.0;
 pragma abicoder v2;
 
+import "../../initializable/BondingCurve.sol";
+import "../../utils/ERC1167.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
 
@@ -17,6 +19,9 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     using SafeMath for uint256;
 
     string public constant override name = type(CrowdsaleFixedPriceModule).name;
+
+    bytes32 public constant CURVE_FRACTION_KEY = bytes32(uint256(keccak256("CURVE_FRACTION_KEY")) - 1);
+    bytes32 public constant CURVE_TEMPLATE_KEY = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
 
     mapping(ShardedWallet => address)                     public recipients;
     mapping(ShardedWallet => uint256)                     public prices;
@@ -129,6 +134,27 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256 value = balance[wallet];
             delete balance[wallet];
+
+            address template = address(uint160(wallet.governance().getConfig(address(wallet), CURVE_TEMPLATE_KEY)));
+            if (template != address(0))
+            {
+                uint256 ratio = wallet.governance().getConfig(address(wallet), CURVE_FRACTION_KEY);
+                uint256 valueForCurve = value.mul(ratio).div(10**18);
+                value = value.sub(valueForCurve);
+
+                address curve = ERC1167.clone2(template, bytes32(uint256(uint160(address(wallet)))));
+                BondingCurve(curve).initialize{value: valueForCurve}(
+                    0,          // TODO: uint256 suppliedShards,
+                    address(0), // TODO: address shardRegistryAddress,
+                    address(0), // TODO: address owner,
+                    address(0), // TODO: address artistWallet,
+                    address(0), // TODO: address niftexWallet,
+                    0,          // TODO: uint256 initialPriceInWei,
+                    0           // TODO: uint256 minShard0
+                );
+                // TODO: emit an event
+            }
+
             Address.sendValue(payable(to), value);
             emit Withdraw(wallet, msg.sender, to, value);
         } else {
