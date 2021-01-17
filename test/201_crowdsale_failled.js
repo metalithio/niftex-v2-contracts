@@ -118,7 +118,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '0');
+			assert.equal(await instance.totalSupply(),                              '20');
 			assert.equal(await instance.balanceOf(instance.address),                '0');
 			assert.equal(await instance.balanceOf(user1),                           '0');
 			assert.equal(await instance.balanceOf(user2),                           '0');
@@ -143,7 +143,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '0');
+			assert.equal(await instance.totalSupply(),                              '20');
 			assert.equal(await instance.balanceOf(instance.address),                '0');
 			assert.equal(await instance.balanceOf(user1),                           '0');
 			assert.equal(await instance.balanceOf(user2),                           '0');
@@ -168,7 +168,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '0');
+			assert.equal(await instance.totalSupply(),                              '20');
 			assert.equal(await instance.balanceOf(instance.address),                '0');
 			assert.equal(await instance.balanceOf(user1),                           '0');
 			assert.equal(await instance.balanceOf(user2),                           '0');
@@ -194,7 +194,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '0');
+			assert.equal(await instance.totalSupply(),                              '20');
 			assert.equal(await instance.balanceOf(instance.address),                '0');
 			assert.equal(await instance.balanceOf(user1),                           '0');
 			assert.equal(await instance.balanceOf(user2),                           '0');
@@ -220,7 +220,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '0');
+			assert.equal(await instance.totalSupply(),                              '20');
 			assert.equal(await instance.balanceOf(instance.address),                '0');
 			assert.equal(await instance.balanceOf(user1),                           '0');
 			assert.equal(await instance.balanceOf(user2),                           '0');

@@ -72,6 +72,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     external onlyBeforeTimer(bytes32(uint256(address(wallet)))) onlyOwner(wallet, msg.sender)
     {
         require(wallet.totalSupply() == 0);
+        wallet.moduleMint(address(this), totalSupply);
         wallet.moduleTransferOwnership(address(0));
 
         Timers._startTimer(bytes32(uint256(address(wallet))), duration);
@@ -112,7 +113,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256 shares = premint.add(bought);
-            wallet.moduleMint(to, shares);
+            wallet.transfer(to, shares);
             emit SharesRedeemedSuccess(wallet, msg.sender, to, shares);
         } else {
             uint256 value = bought.mul(prices[wallet]);
@@ -139,7 +140,8 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     function cleanup(ShardedWallet wallet)
     external onlyCrowdsaleFinished(wallet)
     {
-        require(balance[wallet] == 0); // either success + withdraw or faillure + redeems
+        require(balance[wallet] == 0); // failure + redeems
+        wallet.moduleBurn(address(this), wallet.totalSupply());
         Timers._resetTimer(bytes32(uint256(address(wallet))));
     }
 
