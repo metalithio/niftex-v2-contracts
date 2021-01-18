@@ -5,7 +5,7 @@
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import "../ShardedWallet";
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
@@ -13,16 +13,15 @@ contract BondingCurve {
 
 	using SafeMath for uint256;
 
-	uint256 internal _x;
-	uint256 internal _p; // last price per shard
-
+	uint256 public _x;
+	uint256 public _p; // last price per shard
+	bytes32 public PCT_FEE_TO_NIFTEX = bytes32(uint256(keccak256("PCT_FEE_TO_NIFTEX")) - 1);
+	bytes32 public PCT_FEE_TO_ARTIST = bytes32(uint256(keccak256("PCT_FEE_TO_ARTIST")) - 1);
+	bytes32 public PCT_FEE_TO_SUPPLIERS = bytes32(uint256(keccak256("PCT_FEE_TO_SUPPLIERS")) - 1);
+	bytes32 public PCT_MIN_SHARD_0 = bytes32(uint256(keccak256("PCT_MIN_SHARD_0")) - 1);
+	bytes32 public LIQUIDITY_TIMELOCK = bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
 	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
-	uint256 internal _feePctToSuppliers = 25; // 1 -> 10000 (1% is 100)
-	uint256 internal _feePctToNiftex = 5; // 1 -> 10000 (0.25% is 25)
-	uint256 internal _feePctToArtist = 0; // updated at initialize if artistWallet != address(0)
-	address internal _artistWallet;
-	address internal _niftexWallet;
-	uint256 internal _ethInPool = 0;
+	uint256 public _ethInPool = 0;
 
 	// are these needed? all we do is add subtract
 	// needed for fees?
@@ -43,11 +42,12 @@ contract BondingCurve {
 		uint256 _totalShardLPTokens;
 	}
 
-	ethSuppliers internal _ethSuppliers;
-	shardSuppliers internal _shardSuppliers;
-	
-	IERC20 internal _shardRegistry;
+	ethSuppliers public _ethSuppliers;
+	shardSuppliers public _shardSuppliers;
 
+	ShardedWallet public _wallet;
+	uint256 public _timelockDeadline;
+	address public _recipient;
 	event Initialized(address, address);
 	event ShardsBought(uint256, uint256, address);
 	event ShardsSold(uint256, uint256, address);
@@ -60,42 +60,34 @@ contract BondingCurve {
 
 	function initialize(
 		uint256 suppliedShards,
-		address shardRegistryAddress,
-		address owner,
-		address artistWallet,
-		address niftexWallet,
-		uint256 initialPriceInWei,
-		uint256 minShard0
+		ShardedWallet wallet, // shardedWallet instance 
+		address recipient, // recipient from crowdsale
+		uint256 initialPriceInWei
 	) public payable {
 		// assumes ERC20.approve
 		// can also be used for WETH
 		// wrap in require?
-		_shardRegistry = IERC20(shardRegistryAddress);
+		_wallet = wallet;
+		_recipient = recipient;
+		_timelockDeadline = now.add(_wallet.governance().getConfig(address(_wallet), LIQUIDITY_TIMELOCK));
 		// can create the bonding curve without transferring shards.
 		if (suppliedShards > 0) {
-			_shardRegistry.transferFrom(owner, address(this), suppliedShards);
+			_wallet.transferFrom(msg.sender, address(this), suppliedShards);
 		}
 		
-		_x = minShard0.add(suppliedShards);
+		_x = (_wallet.totalSupply().mul(_wallet.governance().getConfig(address(_wallet), PCT_MIN_SHARD_0)).div(10000)).add(suppliedShards);
 		_p = initialPriceInWei;
 		
-		_shardSuppliers._mappingShardLPTokens[msg.sender] = suppliedShards;
+		_shardSuppliers._mappingShardLPTokens[address(this)] = suppliedShards;
 		_shardSuppliers._totalShardLPTokens = suppliedShards;
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = suppliedShards;
 
-		_ethSuppliers._mappingEthLPTokens[msg.sender] = msg.value;
+		_ethSuppliers._mappingEthLPTokens[address(this)] = msg.value;
 		_ethSuppliers._totalEthLPTokens = msg.value;
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
 
 		// in case selfdestruct happens, the ETH from selfdestruct will forever be stuck in the bonding curve
 		_ethInPool = _ethInPool.add(msg.value);
-
-		_artistWallet = artistWallet;
-		_niftexWallet = niftexWallet;
-
-		if (artistWallet != address(0x0000000000000000000000000000000000000000)) {
-			_feePctToArtist = 10;
-		}
 
 		emit Initialized(shardRegistryAddress, address(this));
 	}
@@ -110,7 +102,11 @@ contract BondingCurve {
 		uint256 y = _x.mul(_p).div(1e18);
 		uint256 k = y.mul(_x);
 
-		uint256 shardAmountAfterFee = shardAmount.mul(uint256(10000).add(_feePctToSuppliers).add(_feePctToNiftex).add(_feePctToArtist)).div(10000);
+		uint256 shardAmountAfterFee = shardAmount.mul(uint256(10000))
+																						.add(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_SUPPLIERS))
+																						.add(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_NIFTEX))
+																						.add(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_ARTIST))
+																						.div(10000);
 		uint256 newXAfterFee = _x.sub(shardAmountAfterFee);
 		uint256 newYAfterFee = k.div(newXAfterFee);
 		assert(newXAfterFee > 0);
@@ -124,7 +120,7 @@ contract BondingCurve {
 			);
 
 		require(
-			_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) >= shardAmountAfterFee,
+			_wallet.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) >= shardAmountAfterFee,
 			"[buyShards] not having enough shards in the curve"
 		);
 
@@ -137,15 +133,19 @@ contract BondingCurve {
 		// newYAfterFee = k.div(newXAfterFee);
 
 		_p = newYAfterFee.mul(1e18).div(newXAfterFee);
-		_x = _x.sub(shardAmount.mul(uint256(10000).add(_feePctToNiftex).add(_feePctToArtist)).div(10000));
+		_x = _x.sub(shardAmount.mul(
+			uint256(10000)
+			.add(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_NIFTEX))
+			.add(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_ARTIST))
+		).div(10000));
 
-		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(_feePctToSuppliers).div(10000));
-		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(_feePctToNiftex).div(10000));
-		_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(_feePctToArtist).div(10000));
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_SUPPLIERS)).div(10000));
+		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_NIFTEX)).div(10000));
+		_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_ARTIST)).div(10000));
 
 		_ethInPool = _ethInPool.add(weiRequired);
 
-		_shardRegistry.transfer(msg.sender, shardAmount);
+		_wallet.transfer(msg.sender, shardAmount);
 
 		if (msg.value > weiRequired) {
 			// !TODO guard against msg.sender being contract
@@ -163,7 +163,7 @@ contract BondingCurve {
 		uint256 minEthForShardAmount
 	) public {
 		require(
-			_shardRegistry.balanceOf(msg.sender) >= shardAmount,
+			_wallet.balanceOf(msg.sender) >= shardAmount,
 			"[sellShards] user does not have enough balance to execute this trade"
 		);
 
@@ -190,14 +190,18 @@ contract BondingCurve {
 		_x = newX;
 		_p = newY.mul(1e18).div(newX);
 
-		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(_feePctToSuppliers).div(10000));
-		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_feePctToNiftex).div(10000));
-		_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(_feePctToArtist).div(10000));
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_SUPPLIERS)).div(10000));
+		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_NIFTEX)).div(10000));
+		_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_ARTIST)).div(10000));
 
 		_ethInPool = _ethInPool.sub(weiPayout);
-		require(_shardRegistry.transferFrom(msg.sender, address(this), shardAmount));
+		require(_wallet.transferFrom(msg.sender, address(this), shardAmount));
 
-		weiPayout = weiPayout.mul(uint256(10000).sub(_feePctToNiftex).sub(_feePctToSuppliers).sub(_feePctToArtist)).div(10000);
+		weiPayout = weiPayout.mul(uint256(10000)
+			.sub(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_NIFTEX))
+			.sub(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_SUPPLIERS))
+			.sub(_wallet.governance().getConfig(address(_wallet), PCT_FEE_TO_ARTIST))
+		).div(10000);
 
 		// !TODO guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
@@ -206,30 +210,6 @@ contract BondingCurve {
 		require(success, "[sellShards] ETH transfer failed as msg.sender cannot receive ETH");
 
 		emit ShardsSold(shardAmount, weiPayout, msg.sender);
-	}
-
-	function calcEthRequiredForShardBuy(uint256 shardAmount) public view returns (uint256) {
-		uint256 y = _x.mul(_p).div(1e18);
-		uint256 k = y.mul(_x);
-		uint256 newX = _x.sub(shardAmount);
-		uint256 newY = k.div(newX);
-		assert(newY > 0);
-		assert(newX > 0);
-		uint256 ethRequired = newY.sub(y);
-
-		return ethRequired;
-	}
-
-	function calcShardRequiredForEthSale(uint256 ethAmount) public view returns (uint256) {
-		uint256 y = _x.mul(_p).div(1e18);
-		uint256 k = y.mul(_x);
-		uint256 newY = y.sub(ethAmount);
-		uint256 newX = k.div(newY);
-		assert(newY > 0);
-		assert(newX > 0);
-		uint256 shardsRequired = newX.sub(_x);
-
-		return shardsRequired;
 	}
 
 	function calcNewShardLPTokensToIssue(uint256 addedAmount) public view returns (uint256) {
@@ -253,11 +233,11 @@ contract BondingCurve {
 	}
 
 	function calcShardsForEthSuppliers() public view returns (uint256) {
-		if (_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) < _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
+		if (_wallet.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) < _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
 			return 0;
 		} 
 
-		return _shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist).sub(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers);
+		return _wallet.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist).sub(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers);
 	}
 
 	function calcEthForShardSuppliers() public view returns (uint256) {
@@ -270,7 +250,7 @@ contract BondingCurve {
 
 	function supplyShards(uint256 shardAmount) external {
 		require(
-			_shardRegistry.transferFrom(msg.sender, address(this), shardAmount),
+			_wallet.transferFrom(msg.sender, address(this), shardAmount),
 			"[supplyShards] Suppliers has not approved this contract or do not have enough shards"
 		);
 
@@ -312,8 +292,8 @@ contract BondingCurve {
 			);
 
 		uint256 shardsToWithdraw;
-		if (_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) <= _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
-			shardsToWithdraw = (_shardRegistry.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist)).mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
+		if (_wallet.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) <= _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {
+			shardsToWithdraw = (_wallet.balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist)).mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 		} else {
 			shardsToWithdraw = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.mul(shardLPTokensAmount).div(_shardSuppliers._totalShardLPTokens);
 		}
@@ -328,7 +308,7 @@ contract BondingCurve {
 		_shardSuppliers._totalShardLPTokens = _shardSuppliers._totalShardLPTokens.sub(shardLPTokensAmount);
 
 	
-		_shardRegistry.transfer(msg.sender, shardsToWithdraw);
+		_wallet.transfer(msg.sender, shardsToWithdraw);
 
 		if (ethPayout > 0) {
 			_ethInPool = _ethInPool.sub(ethPayout);
@@ -378,7 +358,7 @@ contract BondingCurve {
 		require(success, "[sell] ETH transfer failed.");
 
 		if (shardPayout > 0) {
-			_shardRegistry.transfer(msg.sender, shardPayout);
+			_wallet.transfer(msg.sender, shardPayout);
 		}
 		
 		emit EtherWithdrawn(ethToWithdraw, shardPayout, msg.sender);
@@ -411,7 +391,7 @@ contract BondingCurve {
 	}
 
 	function withdrawNiftexFees(address recipient) public {
-		require(msg.sender == _niftexWallet);
+		require(msg.sender == _wallet.governance().getRoleMember(0x00, 0));
 		uint256 shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex;
 		uint256 ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex;
 
@@ -424,11 +404,11 @@ contract BondingCurve {
 		}("");
 		require(success, "[withdrawNiftexFees] ETH transfer failed as recipient cannot receive ETH");
 
-		_shardRegistry.transfer(recipient, shardFeesToNiftex);
+		_wallet.transfer(recipient, shardFeesToNiftex);
 	}
 
 	function withdrawArtistFees(address recipient) public {
-		require(msg.sender == _artistWallet);
+		require(msg.sender == _wallet.artistWallet());
 		uint256 shardFeesToArtist = _shardSuppliers._shardFeesToArtist;
 		uint256 ethFeesToArtist = _ethSuppliers._ethFeesToArtist;
 
@@ -442,7 +422,18 @@ contract BondingCurve {
 		}("");
 		require(success, "[withdrawArtistFees] ETH transfer failed as recipient cannot receive ETH");
 
-		_shardRegistry.transfer(recipient, shardFeesToArtist);
+		_wallet.transfer(recipient, shardFeesToArtist);
+	}
+
+	function transferTimelockLiquidity(address recipient) public {
+		require(_recipient == msg.sender && now > _timelockDeadline);
+		require(_shardSuppliers._mappingShardLPTokens[address(this)] > 0 || _ethSuppliers._mappingEthLPTokens[address(this)] >0);
+
+		_shardSuppliers._mappingShardLPTokens[recipient] = _shardSuppliers._mappingShardLPTokens[recipient].add(_shardSuppliers._mappingShardLPTokens[address(this)]);
+		_ethSuppliers._mappingEthLPTokens[recipient] = _ethSuppliers._mappingEthLPTokens[recipient].add(_ethSuppliers._mappingEthLPTokens[address(this)]);
+
+		_shardSuppliers._mappingShardLPTokens[address(this)] = 0;
+		_ethSuppliers._mappingEthLPTokens[address(this)] = 0;
 	}
 
 	function getCurrentPrice() external view returns (uint256) {

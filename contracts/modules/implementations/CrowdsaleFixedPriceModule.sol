@@ -118,6 +118,14 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256 shares = premint.add(bought);
+            if (recipients[wallet] == msg.sender) {
+                uint256 ratio = wallet.governance().getConfig(address(wallet), CURVE_FRACTION_KEY);
+                uint256 valueForCurve = value.mul(ratio).div(10**18);
+                value = value.sub(valueForCurve);
+
+                uint256 suppliedShards = valueForCurve.mul(1e18).div(prices[wallet]);
+                shares = shares.sub(suppliedShards);
+            }
             wallet.transfer(to, shares);
             emit SharesRedeemedSuccess(wallet, msg.sender, to, shares);
         } else {
@@ -142,15 +150,13 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
                 uint256 valueForCurve = value.mul(ratio).div(10**18);
                 value = value.sub(valueForCurve);
 
+                uint256 suppliedShards = valueForCurve.mul(1e18).div(prices[wallet]);
                 address curve = ERC1167.clone2(template, bytes32(uint256(uint160(address(wallet)))));
                 BondingCurve(curve).initialize{value: valueForCurve}(
-                    0,          // TODO: uint256 suppliedShards,
-                    address(0), // TODO: address shardRegistryAddress,
-                    address(0), // TODO: address owner,
-                    address(0), // TODO: address artistWallet,
-                    address(0), // TODO: address niftexWallet,
-                    0,          // TODO: uint256 initialPriceInWei,
-                    0           // TODO: uint256 minShard0
+                    suppliedShards, 
+                    wallet,
+                    recipients[wallet],
+                    prices[wallet]
                 );
                 // TODO: emit an event
             }
