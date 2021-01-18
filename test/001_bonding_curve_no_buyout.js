@@ -37,14 +37,14 @@ contract('Workflow', function (accounts) {
 		await this.governance.setConfig(await this.modules.action.ACTION_DURATION_KEY(), 50400);
 		await this.governance.setConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(), 50400);
 
-		await this.governance.setConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(), this.bondingCurve.address);
+		await this.governance.setConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(), this.bondingcurve.address);
 		await this.governance.setConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(), 2000); // 20% eth to bonding curve
 
-		await this.governance.setConfig(await this.modules.bondingCurve.PCT_FEE_TO_NIFTEX(), 0); // 0% to niftex initially
-		await this.governance.setConfig(await this.modules.bondingCurve.PCT_FEE_TO_ARTIST(), 10); // 0.1% to artist initially
-		await this.governance.setConfig(await this.modules.bondingCurve.PCT_FEE_TO_SUPPLIERS(), 30); // 0.3% to providers initially
-		await this.governance.setConfig(await this.modules.bondingCurve.PCT_MIN_SHARD_0(), 2500);
-		await this.governance.setConfig(await this.modules.bondingCurve.LIQUIDITY_TIMELOCK(), 100800); // timelock for 1 month
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(), 0); // 0% to niftex initially
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(), 10); // 0.1% to artist initially
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(), 30); // 0.3% to providers initially
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_MIN_SHARD_0(), 2500);
+		await this.governance.setConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(), 100800); // timelock for 1 month
 
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
