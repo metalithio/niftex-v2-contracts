@@ -20,7 +20,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
     string public constant override name = type(CrowdsaleFixedPriceModule).name;
 
-    bytes32 public constant CURVE_FRACTION_KEY = bytes32(uint256(keccak256("CURVE_FRACTION_KEY")) - 1);
+    bytes32 public constant PCT_ETH_TO_CURVE = bytes32(uint256(keccak256("CURVE_FRACTION_KEY")) - 1);
     bytes32 public constant CURVE_TEMPLATE_KEY = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
 
     mapping(ShardedWallet => address)                     public recipients;
@@ -120,7 +120,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             uint256 shares = premint.add(bought);
             if (recipients[wallet] == msg.sender) {
                 uint256 ratio = wallet.governance().getConfig(address(wallet), CURVE_FRACTION_KEY);
-                uint256 valueForCurve = value.mul(ratio).div(10**18);
+                uint256 valueForCurve = value.mul(ratio).div(10000);
                 value = value.sub(valueForCurve);
 
                 uint256 suppliedShards = valueForCurve.mul(1e18).div(prices[wallet]);

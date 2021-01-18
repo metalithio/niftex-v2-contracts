@@ -61,4 +61,9 @@ contract BasicGovernance is IGovernance, AccessControl
         _config[key] = value;
         // TODO: emit
     }
+
+    function setConfig(bytes32 key, address value) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _config[key] = uint160(address(value))
+    }
 }
