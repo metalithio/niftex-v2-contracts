@@ -50,10 +50,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
         uint256 lockedshares  = wallet.balanceOf(address(this));
         uint256 buyshares     = msg.value.div(pricepershare).min(lockedshares);
         uint256 buyprice      = buyshares.mul(pricepershare);
-
         _deposit[wallet]      = _deposit[wallet].add(buyprice);
-
-        wallet.moduleTransfer(address(this), msg.sender, buyshares);
 
         if (buyshares == lockedshares)
         {
@@ -68,6 +65,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
             emit BuyoutClosed(wallet, msg.sender);
         }
 
+        wallet.moduleTransfer(address(this), msg.sender, buyshares);
         Address.sendValue(msg.sender, msg.value.sub(buyprice));
     }
 
@@ -76,8 +74,6 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     {
         uint256 shares = wallet.balanceOf(msg.sender);
         uint256 value  = shares.mul(_prices[wallet]);
-
-        _deposit[wallet] = _deposit[wallet].sub(value);
 
         wallet.moduleBurn(msg.sender, shares);
         Address.sendValue(payable(msg.sender), value);
@@ -92,6 +88,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
         require(_proposers[wallet] != address(0));
         wallet.moduleTransferOwnership(_proposers[wallet]);
         delete _proposers[wallet];
+        delete _deposit[wallet];
 
         emit BuyoutFinalized(wallet);
     }

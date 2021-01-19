@@ -161,7 +161,7 @@ contract('Workflow', function (accounts) {
 	describe('Close buyout - #1', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.buyout.closeBuyout(instance.address, { from: user2, value: web3.utils.toWei('0.001') });
-			// expectEvent(receipt, 'Transfer', { from: instance.address, to: user2, value: '8' });
+			// expectEvent(receipt, 'Transfer', { from: instance.address, to: user2, value: '1' });
 		});
 
 		after(async function () {
@@ -187,7 +187,8 @@ contract('Workflow', function (accounts) {
 	describe('Close buyout - #2', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.buyout.closeBuyout(instance.address, { from: user3, value: web3.utils.toWei('0.007') });
-			// expectEvent(receipt, 'Transfer', { from: instance.address, to: user2, value: '8' });
+			expectEvent(receipt, 'BuyoutClosed', { wallet: instance.address, closer: user3 });
+			// expectEvent(receipt, 'Transfer', { from: instance.address, to: user3, value: '7' });
 		});
 
 		after(async function () {
