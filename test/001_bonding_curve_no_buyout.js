@@ -1,5 +1,7 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const BigNumber = require('bignumber.js');
+
+const BondingCurve = artifacts.require('BondingCurve');
 contract('Workflow', function (accounts) {
 	const [ admin, nftOwner, cBuyer1, cBuyer2, mBuyer1, mBuyer2, artist, newAdmin, claimant1, claimant2 ] = accounts;
 
@@ -21,7 +23,7 @@ contract('Workflow', function (accounts) {
 	};
 
 	let instance;
-	let bondingCurveInstance;
+	let curveInstance;
 
 	before(async function () {
 		// Deploy factory
@@ -169,7 +171,7 @@ contract('Workflow', function (accounts) {
 				}
 			);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
-			bondingCurveInstance = receipt.logs[0].args.curve;
+			curveInstance = receipt.logs[0].args.curve;
 		});
 
 
@@ -181,8 +183,33 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             '0');
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(bondingCurveInstance),         web3.utils.toWei('20'));
+			assert.equal(await instance.balanceOf(curveInstance),         web3.utils.toWei('20'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),web3.utils.toWei('980'));
 		});
 	});
+
+	describe('mBuyer1 buy 5 shards', () => {
+		it("perform", async() => {
+			const shardAmount = new BigNumber(5).times(1e18);
+			const maxEthForShardAmount = new BigNumber(10).times(1e18);
+			const curve = await BondingCurve.at(curveInstance);
+
+			const buyShardsTxn = await curve.buyShards(
+				shardAmount,
+				maxEthForShardAmount,
+				{
+					from: mBuyer1,
+					value: maxEthForShardAmount
+				}
+				);
+
+			const curveCoordinates = await curve.getCurveCoordinates();
+			const ethInPool = await curve.getEthInPool();
+			const shardsInPool = await instance.balanceOf(curveInstance);
+
+			console.log('buyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
+		})
+	})
 });
