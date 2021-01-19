@@ -34,7 +34,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     event SharesRedeemedSuccess(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event SharesRedeemedFaillure(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event OwnershipReclaimed(ShardedWallet indexed wallet, address indexed from, address to);
-    event Withdraw(ShardedWallet indexed wallet, address indexed from, address to, uint256 value);
+    event Withdraw(ShardedWallet indexed wallet, address indexed from, address to, uint256 value, address curve);
 
 
     modifier onlyCrowdsaleActive(ShardedWallet wallet)
@@ -141,10 +141,11 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             delete balance[wallet];
 
             address template = address(uint160(wallet.governance().getConfig(address(wallet), CURVE_TEMPLATE_KEY)));
+            address curve;
             if (template != address(0))
             {
-                uint256 suppliedShards = value.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(prices[wallet]);
-                address curve = ERC1167.clone2(template, bytes32(uint256(uint160(address(wallet)))));
+                uint256 suppliedShards = value.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).mul(1e14).div(prices[wallet]);
+                curve = ERC1167.clone2(template, bytes32(uint256(uint160(address(wallet)))));
                 wallet.approve(curve, suppliedShards);
                 BondingCurve(curve).initialize{value: value.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(10**18)}(
                     suppliedShards, 
@@ -156,7 +157,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             }
 
             Address.sendValue(payable(to), value.mul(uint256(10000).sub(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE))).div(10**18));
-            emit Withdraw(wallet, msg.sender, to, value);
+            emit Withdraw(wallet, msg.sender, to, value, curve);
         } else {
             wallet.moduleTransferOwnership(to);
             emit OwnershipReclaimed(wallet, msg.sender, to);

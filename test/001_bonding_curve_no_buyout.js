@@ -158,4 +158,31 @@ contract('Workflow', function (accounts) {
 			await web3.currentProvider.send({ jsonrpc: "2.0", method: "evm_increaseTime", params: [ 50400 ], id: 0 }, () => {});
 		});
 	});
+
+	describe('withdraw and trigger bonding curve', function () {
+		it('perform', async function () {
+			const { receipt } = await this.modules.crowdsale.withdraw(
+				instance.address,
+				nftOwner,
+				{ 
+					from: nftOwner,
+				}
+			);
+			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
+			bondingCurveInstance = receipt.logs[0].args.curve;
+		});
+
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             '0');
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(bondingCurveInstance),         web3.utils.toWei('20'));
+			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),web3.utils.toWei('980'));
+		});
+	});
 });
