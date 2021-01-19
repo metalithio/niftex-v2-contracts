@@ -97,8 +97,8 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     external payable onlyCrowdsaleActive(wallet)
     {
         uint256 price = prices[wallet];
-        uint256 count = Math.min(msg.value.div(price), remainingsShares[wallet]);
-        uint256 value = count.mul(price);
+        uint256 count = Math.min(msg.value.mul(1e18).div(price), remainingsShares[wallet]);
+        uint256 value = count.mul(price).div(1e18);
 
         balance[wallet] = balance[wallet].add(value);
         boughtShares[wallet][to] = boughtShares[wallet][to].add(count);
