@@ -22,6 +22,7 @@ contract BondingCurve {
 	bytes32 public constant PCT_FEE_TO_SUPPLIERS= bytes32(uint256(keccak256("PCT_FEE_TO_SUPPLIERS")) - 1);
 	bytes32 public constant PCT_MIN_SHARD_0= bytes32(uint256(keccak256("PCT_MIN_SHARD_0")) - 1);
 	bytes32 public constant LIQUIDITY_TIMELOCK= bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
+
 	struct ethSuppliers {
 		uint256 _totalSuppliedEthPlusFeesToSuppliers;
 		uint256 _ethFeesToNiftex;
@@ -93,6 +94,15 @@ contract BondingCurve {
 		emit Initialized(_shardedWalletDetails.wallet, address(this));
 	}
 
+	function getExternalFee() internal view returns (uint256) {
+		uint256 externalFees = ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX);
+		if (ShardedWallet(payable(_shardedWalletDetails.wallet)).artistWallet() != address(0)) {
+			externalFees = externalFees.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST));
+		} 
+
+		return externalFees;
+	}
+
 	// no need to add default fallback non-payable function in Solidity 0.7.0
 	// address(this).balance will only be updated via specified function in this contract
 
@@ -105,8 +115,7 @@ contract BondingCurve {
 
 		uint256 shardAmountAfterFee = shardAmount.mul(uint256(10000))
 																						.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_SUPPLIERS))
-																						.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX))
-																						.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST))
+																						.add(getExternalFee())
 																						.div(10000);
 		uint256 newXAfterFee = _x.sub(shardAmountAfterFee);
 		uint256 newYAfterFee = k.div(newXAfterFee);
@@ -133,13 +142,15 @@ contract BondingCurve {
 		_p = newYAfterFee.mul(1e18).div(newXAfterFee);
 		_x = _x.sub(shardAmount.mul(
 			uint256(10000)
-			.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX))
-			.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST))
+			.add(getExternalFee())
 		).div(10000));
 
 		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_SUPPLIERS)).div(10000));
 		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX)).div(10000));
-		_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST)).div(10000));
+		if (ShardedWallet(payable(_shardedWalletDetails.wallet)).artistWallet() != address(0)) {
+			_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST)).div(10000));
+		}
+		
 
 		_ethInPool = _ethInPool.add(weiRequired);
 
@@ -187,15 +198,17 @@ contract BondingCurve {
 
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_SUPPLIERS)).div(10000));
 		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX)).div(10000));
-		_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST)).div(10000));
+		if (ShardedWallet(payable(_shardedWalletDetails.wallet)).artistWallet() != address(0)) {
+			_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST)).div(10000));
+		}
+		
 
 		_ethInPool = _ethInPool.sub(weiPayout);
 		require(ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), shardAmount));
 
 		weiPayout = weiPayout.mul(uint256(10000)
-			.sub(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX))
 			.sub(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_SUPPLIERS))
-			.sub(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST))
+			.sub(getExternalFee())
 		).div(10000);
 
 		// !TODO guard against msg.sender being contract
