@@ -14,6 +14,7 @@ contract ShardedWallet is Ownable, ERC20
     using SafeMath for uint256;
 
     IGovernance public governance;
+    address public artistWallet;
 
     event Received(address indexed sender, uint256 value, bytes data);
     event Execute(address indexed to, uint256 value, bytes data);
@@ -68,13 +69,16 @@ contract ShardedWallet is Ownable, ERC20
         address         governance_,
         address         minter_,
         string calldata name_,
-        string calldata symbol_)
+        string calldata symbol_,
+        address         artistWallet_
+    )
     external
     {
         require(address(governance) == address(0));
         governance = IGovernance(governance_);
         Ownable._setOwner(minter_);
         ERC20._initialize(name_, symbol_);
+        artistWallet = artistWallet_;
     }
 
     function _isModule(address module)
