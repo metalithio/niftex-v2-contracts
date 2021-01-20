@@ -53,6 +53,7 @@ contract('Workflow', function (accounts) {
 				user1,                        // owner_
 				'Tokenized NFT',              // name_
 				'TNFT',                       // symbol_
+				constants.ZERO_ADDRESS        // artistWallet_
 			);
 			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == "NewInstance").args.instance);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
@@ -157,10 +158,10 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
-	describe('Buy rest', function () {
+	describe('Wait deadline', function () {
 		it('perform', async function () {
-			const { receipt } = await this.modules.crowdsale.buy(instance.address, other2, { from: other2, value: web3.utils.toWei('1')})
-			expectEvent(receipt, 'SharesBought', { wallet: instance.address, from: other2, to: other2, count: '9' });
+			const deadline = await this.modules.crowdsale.deadline(instance.address);
+			await web3.currentProvider.send({ jsonrpc: "2.0", method: "evm_increaseTime", params: [ Number(deadline) - (await web3.eth.getBlock("latest")).timestamp ], id: 0 }, () => {});
 		});
 
 		after(async function () {
@@ -178,70 +179,15 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(other3),                          '0');
 			assert.equal(await this.mocks.erc721.ownerOf(1),                        instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),               web3.utils.toWei('0'));
-			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address), web3.utils.toWei('0.10'));
-		});
-	});
-
-	describe('Withdraw', function () {
-		it('perform', async function () {
-			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, user1, { from: user1 });
-			expectEvent(receipt, 'Withdraw', { wallet: instance.address, from: user1, to: user1, value: web3.utils.toWei('0.10') });
-		});
-
-		after(async function () {
-			assert.equal(await instance.owner(),                                    constants.ZERO_ADDRESS);
-			assert.equal(await instance.name(),                                     'Tokenized NFT');
-			assert.equal(await instance.symbol(),                                   'TNFT');
-			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '20');
-			assert.equal(await instance.balanceOf(instance.address),                '0');
-			assert.equal(await instance.balanceOf(user1),                           '0');
-			assert.equal(await instance.balanceOf(user2),                           '0');
-			assert.equal(await instance.balanceOf(user3),                           '0');
-			assert.equal(await instance.balanceOf(other1),                          '0');
-			assert.equal(await instance.balanceOf(other2),                          '0');
-			assert.equal(await instance.balanceOf(other3),                          '0');
-			assert.equal(await this.mocks.erc721.ownerOf(1),                        instance.address);
-			assert.equal(await web3.eth.getBalance(instance.address),               web3.utils.toWei('0'));
-			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address), web3.utils.toWei('0'));
+			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address), web3.utils.toWei('0.01'));
 		});
 	});
 
 	describe('redeem', function () {
 		it('perform', async function () {
-			for ([ account, value ] of [[ user1, '8' ], [ user2, '2' ], [ other1, '1' ], [ other2, '9' ]])
-			{
-				const { receipt } = await this.modules.crowdsale.redeem(instance.address, account, { from: account });
-				expectEvent(receipt, 'SharesRedeemedSuccess', { wallet: instance.address, from: account, to: account, count: value });
-				// expectEvent(receipt, 'Transfer', { from: constants.ZERO_ADDRESS, to: account, value: value });
-			}
-		});
-
-		after(async function () {
-			assert.equal(await instance.owner(),                                    constants.ZERO_ADDRESS);
-			assert.equal(await instance.name(),                                     'Tokenized NFT');
-			assert.equal(await instance.symbol(),                                   'TNFT');
-			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '20');
-			assert.equal(await instance.balanceOf(instance.address),                '0');
-			assert.equal(await instance.balanceOf(user1),                           '8');
-			assert.equal(await instance.balanceOf(user2),                           '2');
-			assert.equal(await instance.balanceOf(user3),                           '0');
-			assert.equal(await instance.balanceOf(other1),                          '1');
-			assert.equal(await instance.balanceOf(other2),                          '9');
-			assert.equal(await instance.balanceOf(other3),                          '0');
-			assert.equal(await this.mocks.erc721.ownerOf(1),                        instance.address);
-			assert.equal(await web3.eth.getBalance(instance.address),               web3.utils.toWei('0'));
-			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address), web3.utils.toWei('0'));
-		});
-	});
-
-	describe('Transfers', function () {
-		it('perform', async function () {
-			for (from of [ user1, user2, other1, other2 ])
-			{
-				await instance.transfer(other3, await instance.balanceOf(from), { from });
-			}
+			const { receipt } = await this.modules.crowdsale.redeem(instance.address, other1, { from: other1 });
+			expectEvent(receipt, 'SharesRedeemedFaillure', { wallet: instance.address, from: other1, to: other1, count: '1' });
+			// expectEvent(receipt, 'Transfer', { from: instance.address, to: other1, value: '1' });
 		});
 
 		after(async function () {
@@ -256,24 +202,26 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(user3),                           '0');
 			assert.equal(await instance.balanceOf(other1),                          '0');
 			assert.equal(await instance.balanceOf(other2),                          '0');
-			assert.equal(await instance.balanceOf(other3),                          '20');
+			assert.equal(await instance.balanceOf(other3),                          '0');
 			assert.equal(await this.mocks.erc721.ownerOf(1),                        instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),               web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address), web3.utils.toWei('0'));
 		});
 	});
 
-	describe('Retreive ownership', function () {
+	describe('withdraw', function () {
 		it('perform', async function () {
-			await instance.retreive(other3, { from: other3 });
+			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, user1, { from: user1 });
+			expectEvent(receipt, 'OwnershipReclaimed', { wallet: instance.address, from: user1, to: user1 });
+			// expectEvent(receipt, 'OwnershipTransferred', { from: this.crowdsale.address, to: user1 });
 		});
 
 		after(async function () {
-			assert.equal(await instance.owner(),                                    other3);
+			assert.equal(await instance.owner(),                                    user1);
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '0');
+			assert.equal(await instance.totalSupply(),                              '20');
 			assert.equal(await instance.balanceOf(instance.address),                '0');
 			assert.equal(await instance.balanceOf(user1),                           '0');
 			assert.equal(await instance.balanceOf(user2),                           '0');
@@ -283,34 +231,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(other3),                          '0');
 			assert.equal(await this.mocks.erc721.ownerOf(1),                        instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),               web3.utils.toWei('0'));
-		});
-	});
-
-	describe('Execute (get NFT)', function () {
-		it('perform', async function () {
-			await instance.execute(
-				this.mocks.erc721.address,
-				"0",
-				this.mocks.erc721.contract.methods.safeTransferFrom(instance.address, other3, 1).encodeABI(),
-				{ from: other3 }
-			);
-		});
-
-		after(async function () {
-			assert.equal(await instance.owner(),                                    other3);
-			assert.equal(await instance.name(),                                     'Tokenized NFT');
-			assert.equal(await instance.symbol(),                                   'TNFT');
-			assert.equal(await instance.decimals(),                                 '18');
-			assert.equal(await instance.totalSupply(),                              '0');
-			assert.equal(await instance.balanceOf(instance.address),                '0');
-			assert.equal(await instance.balanceOf(user1),                           '0');
-			assert.equal(await instance.balanceOf(user2),                           '0');
-			assert.equal(await instance.balanceOf(user3),                           '0');
-			assert.equal(await instance.balanceOf(other1),                          '0');
-			assert.equal(await instance.balanceOf(other2),                          '0');
-			assert.equal(await instance.balanceOf(other3),                          '0');
-			assert.equal(await this.mocks.erc721.ownerOf(1),                        other3);
-			assert.equal(await web3.eth.getBalance(instance.address),               web3.utils.toWei('0'));
+			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address), web3.utils.toWei('0'));
 		});
 	});
 });
