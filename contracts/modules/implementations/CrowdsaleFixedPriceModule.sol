@@ -126,7 +126,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             wallet.transfer(to, shares);
             emit SharesRedeemedSuccess(wallet, msg.sender, to, shares);
         } else {
-            uint256 value = bought.mul(prices[wallet]);
+            uint256 value = bought.mul(prices[wallet]).div(1e18);
             balance[wallet] = balance[wallet].sub(value);
             Address.sendValue(payable(to), value);
             emit SharesRedeemedFaillure(wallet, msg.sender, to, bought);
