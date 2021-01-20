@@ -147,7 +147,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
                 uint256 suppliedShards = value.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).mul(1e14).div(prices[wallet]);
                 curve = ERC1167.clone2(template, bytes32(uint256(uint160(address(wallet)))));
                 wallet.approve(curve, suppliedShards);
-                BondingCurve(curve).initialize{value: value.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(10**18)}(
+                BondingCurve(curve).initialize{value: value.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(10000)}(
                     suppliedShards, 
                     address(wallet),
                     recipients[wallet],
@@ -156,7 +156,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
                 // TODO: emit an event
             }
 
-            Address.sendValue(payable(to), value.mul(uint256(10000).sub(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE))).div(10**18));
+            Address.sendValue(payable(to), value.mul(uint256(10000).sub(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE))).div(10000));
             emit Withdraw(wallet, msg.sender, to, value, curve);
         } else {
             wallet.moduleTransferOwnership(to);
