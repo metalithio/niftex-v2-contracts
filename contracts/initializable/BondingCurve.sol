@@ -15,7 +15,6 @@ contract BondingCurve {
 	uint256 internal _x;
 	uint256 internal _p; // last price per shard
 	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
-	uint256 internal _ethInPool = 0;
 
 	bytes32 public constant PCT_FEE_TO_NIFTEX = bytes32(uint256(keccak256("PCT_FEE_TO_NIFTEX")) - 1);
 	bytes32 public constant PCT_FEE_TO_ARTIST= bytes32(uint256(keccak256("PCT_FEE_TO_ARTIST")) - 1);
@@ -88,9 +87,6 @@ contract BondingCurve {
 		_ethSuppliers._totalEthLPTokens = msg.value;
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = msg.value;
 
-		// in case selfdestruct happens, the ETH from selfdestruct will forever be stuck in the bonding curve
-		_ethInPool = _ethInPool.add(msg.value);
-
 		emit Initialized(_shardedWalletDetails.wallet, address(this));
 	}
 
@@ -152,8 +148,6 @@ contract BondingCurve {
 		}
 		
 
-		_ethInPool = _ethInPool.add(weiRequired);
-
 		ShardedWallet(payable(_shardedWalletDetails.wallet)).transfer(msg.sender, shardAmount);
 
 		if (msg.value > weiRequired) {
@@ -190,7 +184,7 @@ contract BondingCurve {
 		);
 
 		require(
-			weiPayout <= _ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)
+			weiPayout <= address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)
 		);
 
 		_x = newX;
@@ -202,8 +196,6 @@ contract BondingCurve {
 			_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST)).div(10000));
 		}
 		
-
-		_ethInPool = _ethInPool.sub(weiPayout);
 		require(ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), shardAmount));
 
 		weiPayout = weiPayout.mul(uint256(10000)
@@ -249,11 +241,11 @@ contract BondingCurve {
 	}
 
 	function calcEthForShardSuppliers() public view returns (uint256) {
-		if (_ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist) < _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
+		if (address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist) < _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
 			return 0;
 		}
 
-		return _ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist).sub(_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers);
+		return address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist).sub(_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers);
 	}
 
 	function supplyShards(uint256 shardAmount) external {
@@ -280,8 +272,6 @@ contract BondingCurve {
 		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].add(newEthLPTokensToIssue);
 		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.add(newEthLPTokensToIssue);
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(msg.value);
-
-		_ethInPool = _ethInPool.add(msg.value);
 
 		emit EtherSupplied(msg.value, msg.sender);
 	}
@@ -315,7 +305,6 @@ contract BondingCurve {
 		ShardedWallet(payable(_shardedWalletDetails.wallet)).transfer(msg.sender, shardsToWithdraw);
 
 		if (ethPayout > 0) {
-			_ethInPool = _ethInPool.sub(ethPayout);
 			(bool success, ) = msg.sender.call{
 				value: ethPayout
 			}("");
@@ -337,8 +326,8 @@ contract BondingCurve {
 			);
 
 		uint256 ethToWithdraw;
-		if (_ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist) <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
-			ethToWithdraw = (_ethInPool.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)).mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
+		if (address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist) <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
+			ethToWithdraw = (address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)).mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
 		} else {
 			ethToWithdraw = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.mul(ethLPTokensAmount).div(_ethSuppliers._totalEthLPTokens);
 		}
@@ -352,7 +341,6 @@ contract BondingCurve {
 			_x = _x.sub(shardPayout);
 		}
 
-		_ethInPool = _ethInPool.sub(ethToWithdraw);
 		// guard against msg.sender being contract
 		(bool success, ) = msg.sender.call{
 			value: ethToWithdraw
@@ -413,7 +401,6 @@ contract BondingCurve {
 			_ethSuppliers._ethFeesToNiftex = 0;
 		}
 
-		_ethInPool = _ethInPool.sub(ethFees);
 		(bool success, ) = address(recipient).call{
 			value: ethFees
 		}("");
@@ -458,6 +445,6 @@ contract BondingCurve {
 	}
 
 	function getEthInPool() public view returns (uint256) {
-		return _ethInPool;
+		return address(this).balance;
 	}
 }
