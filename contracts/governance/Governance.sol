@@ -13,11 +13,7 @@ contract BasicGovernance is IGovernance, AccessControl
 
     bytes32 public constant MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
     bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
-    bytes32 public constant PCT_FEE_TO_NIFTEX = bytes32(uint256(keccak256("PCT_FEE_TO_NIFTEX")) - 1);
-    bytes32 public constant PCT_FEE_TO_ARTIST = bytes32(uint256(keccak256("PCT_FEE_TO_ARTIST")) - 1);
-    bytes32 public constant PCT_FEE_TO_SUPPLIERS = bytes32(uint256(keccak256("PCT_FEE_TO_SUPPLIERS")) - 1);
-    bytes32 public constant PCT_MIN_SHARD_0 = bytes32(uint256(keccak256("PCT_MIN_SHARD_0")) - 1);
-    bytes32 public constant LIQUIDITY_TIMELOCK = bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
+
     mapping(bytes32 => uint256) internal _config;
     mapping(bytes4  => address) internal _staticcalls;
 
