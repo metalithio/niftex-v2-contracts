@@ -28,8 +28,9 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     function openBuyout(ShardedWallet wallet, uint256 pricePerShare)
     external payable onlyAuthorized(wallet, msg.sender) onlyBeforeTimer(bytes32(uint256(address(wallet))))
     {
+        uint256 decimals    = wallet.decimals();
         uint256 ownedshares = wallet.balanceOf(msg.sender);
-        uint256 buyoutprice = wallet.totalSupply().sub(ownedshares).mul(pricePerShare).div(10**18);
+        uint256 buyoutprice = wallet.totalSupply().sub(ownedshares).mul(pricePerShare).div(10**decimals);
 
         Timers._startTimer(bytes32(uint256(address(wallet))), wallet.governance().getConfig(address(wallet), BUYOUT_DURATION_KEY));
         _proposers[wallet] = msg.sender;
@@ -46,10 +47,11 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     function closeBuyout(ShardedWallet wallet)
     external payable onlyAuthorized(wallet, msg.sender) onlyDuringTimer(bytes32(uint256(address(wallet))))
     {
+        uint256 decimals      = wallet.decimals();
         uint256 pricepershare = _prices[wallet];
         uint256 lockedshares  = wallet.balanceOf(address(this));
-        uint256 buyshares     = msg.value.mul(10**18).div(pricepershare).min(lockedshares);
-        uint256 buyprice      = buyshares.mul(pricepershare).div(10**18);
+        uint256 buyshares     = msg.value.mul(10**decimals).div(pricepershare).min(lockedshares);
+        uint256 buyprice      = buyshares.mul(pricepershare).div(10**decimals);
         _deposit[wallet]      = _deposit[wallet].add(buyprice);
 
         if (buyshares == lockedshares)
@@ -72,9 +74,10 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     function claimBuyout(ShardedWallet wallet)
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
+        uint256 decimals      = wallet.decimals();
         uint256 pricepershare = _prices[wallet];
         uint256 shares        = wallet.balanceOf(msg.sender);
-        uint256 value         = shares.mul(pricepershare).div(10**18);
+        uint256 value         = shares.mul(pricepershare).div(10**decimals);
 
         wallet.moduleBurn(msg.sender, shares);
         Address.sendValue(payable(msg.sender), value);
