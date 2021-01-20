@@ -63,14 +63,14 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                  'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                'TNFT');
 			assert.equal(await instance.decimals(),                              '18');
-			assert.equal(await instance.totalSupply(),                           '0');
-			assert.equal(await instance.balanceOf(instance.address),             '0');
-			assert.equal(await instance.balanceOf(user1),                        '0');
-			assert.equal(await instance.balanceOf(user2),                        '0');
-			assert.equal(await instance.balanceOf(user3),                        '0');
-			assert.equal(await instance.balanceOf(other1),                       '0');
-			assert.equal(await instance.balanceOf(other2),                       '0');
-			assert.equal(await instance.balanceOf(other3),                       '0');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user1),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user2),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user3),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other1),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other2),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other3),                       web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(instance.address),            web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(this.modules.buyout.address), web3.utils.toWei('0'));
 		});
@@ -87,14 +87,14 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                  'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                'TNFT');
 			assert.equal(await instance.decimals(),                              '18');
-			assert.equal(await instance.totalSupply(),                           '0');
-			assert.equal(await instance.balanceOf(instance.address),             '0');
-			assert.equal(await instance.balanceOf(user1),                        '0');
-			assert.equal(await instance.balanceOf(user2),                        '0');
-			assert.equal(await instance.balanceOf(user3),                        '0');
-			assert.equal(await instance.balanceOf(other1),                       '0');
-			assert.equal(await instance.balanceOf(other2),                       '0');
-			assert.equal(await instance.balanceOf(other3),                       '0');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user1),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user2),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user3),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other1),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other2),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other3),                       web3.utils.toWei('0'));
 			assert.equal(await this.mocks.erc721.ownerOf(1),                     instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),            web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(this.modules.buyout.address), web3.utils.toWei('0'));
@@ -105,7 +105,7 @@ contract('Workflow', function (accounts) {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.setup(
 				instance.address,
-				[[ user1, 8 ], [ user2, 2 ]],
+				[[ user1, web3.utils.toWei('8') ], [ user2, web3.utils.toWei('2') ]],
 				{ from: user1 }
 			);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
@@ -116,14 +116,14 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                  'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                'TNFT');
 			assert.equal(await instance.decimals(),                              '18');
-			assert.equal(await instance.totalSupply(),                           '10');
-			assert.equal(await instance.balanceOf(instance.address),             '0');
-			assert.equal(await instance.balanceOf(user1),                        '8');
-			assert.equal(await instance.balanceOf(user2),                        '2');
-			assert.equal(await instance.balanceOf(user3),                        '0');
-			assert.equal(await instance.balanceOf(other1),                       '0');
-			assert.equal(await instance.balanceOf(other2),                       '0');
-			assert.equal(await instance.balanceOf(other3),                       '0');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('10'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user1),                        web3.utils.toWei('8'));
+			assert.equal(await instance.balanceOf(user2),                        web3.utils.toWei('2'));
+			assert.equal(await instance.balanceOf(user3),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other1),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other2),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other3),                       web3.utils.toWei('0'));
 			assert.equal(await this.mocks.erc721.ownerOf(1),                     instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),            web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(this.modules.buyout.address), web3.utils.toWei('0'));
@@ -143,15 +143,15 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                  'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                'TNFT');
 			assert.equal(await instance.decimals(),                              '18');
-			assert.equal(await instance.totalSupply(),                           '10');
-			assert.equal(await instance.balanceOf(instance.address),             '0');
-			assert.equal(await instance.balanceOf(this.modules.buyout.address),  '2');
-			assert.equal(await instance.balanceOf(user1),                        '8');
-			assert.equal(await instance.balanceOf(user2),                        '0');
-			assert.equal(await instance.balanceOf(user3),                        '0');
-			assert.equal(await instance.balanceOf(other1),                       '0');
-			assert.equal(await instance.balanceOf(other2),                       '0');
-			assert.equal(await instance.balanceOf(other3),                       '0');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('10'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(this.modules.buyout.address),  web3.utils.toWei('2'));
+			assert.equal(await instance.balanceOf(user1),                        web3.utils.toWei('8'));
+			assert.equal(await instance.balanceOf(user2),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user3),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other1),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other2),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other3),                       web3.utils.toWei('0'));
 			assert.equal(await this.mocks.erc721.ownerOf(1),                     instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),            web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(this.modules.buyout.address), web3.utils.toWei('0.008'));
@@ -169,14 +169,14 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.name(),                                  'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                'TNFT');
 			assert.equal(await instance.decimals(),                              '18');
-			assert.equal(await instance.totalSupply(),                           '10');
-			assert.equal(await instance.balanceOf(instance.address),             '0');
-			assert.equal(await instance.balanceOf(user1),                        '10');
-			assert.equal(await instance.balanceOf(user2),                        '0');
-			assert.equal(await instance.balanceOf(user3),                        '0');
-			assert.equal(await instance.balanceOf(other1),                       '0');
-			assert.equal(await instance.balanceOf(other2),                       '0');
-			assert.equal(await instance.balanceOf(other3),                       '0');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('10'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user1),                        web3.utils.toWei('10'));
+			assert.equal(await instance.balanceOf(user2),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(user3),                        web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other1),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other2),                       web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(other3),                       web3.utils.toWei('0'));
 			assert.equal(await this.mocks.erc721.ownerOf(1),                     instance.address);
 			assert.equal(await web3.eth.getBalance(instance.address),            web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(this.modules.buyout.address), web3.utils.toWei('0'));
