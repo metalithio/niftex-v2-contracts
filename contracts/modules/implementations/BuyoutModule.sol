@@ -18,7 +18,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
 
     mapping(ShardedWallet => address) internal _proposers;
     mapping(ShardedWallet => uint256) internal _prices;
-    mapping(ShardedWallet => uint256) internal _deposit;
+    mapping(ShardedWallet => uint256) public _deposit;
 
     event BuyoutOpened(ShardedWallet indexed wallet, address proposer, uint256 pricePerShare);
     event BuyoutClosed(ShardedWallet indexed wallet, address closer);
@@ -28,8 +28,9 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     function openBuyout(ShardedWallet wallet, uint256 pricePerShare)
     external payable onlyAuthorized(wallet, msg.sender) onlyBeforeTimer(bytes32(uint256(address(wallet))))
     {
+        uint256 decimals    = wallet.decimals();
         uint256 ownedshares = wallet.balanceOf(msg.sender);
-        uint256 buyoutprice = wallet.totalSupply().sub(ownedshares).mul(pricePerShare);
+        uint256 buyoutprice = wallet.totalSupply().sub(ownedshares).mul(pricePerShare).div(10**decimals);
 
         Timers._startTimer(bytes32(uint256(address(wallet))), wallet.governance().getConfig(address(wallet), BUYOUT_DURATION_KEY));
         _proposers[wallet] = msg.sender;
@@ -46,10 +47,11 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     function closeBuyout(ShardedWallet wallet)
     external payable onlyAuthorized(wallet, msg.sender) onlyDuringTimer(bytes32(uint256(address(wallet))))
     {
+        uint256 decimals      = wallet.decimals();
         uint256 pricepershare = _prices[wallet];
         uint256 lockedshares  = wallet.balanceOf(address(this));
-        uint256 buyshares     = msg.value.div(pricepershare).min(lockedshares);
-        uint256 buyprice      = buyshares.mul(pricepershare);
+        uint256 buyshares     = msg.value.mul(10**decimals).div(pricepershare).min(lockedshares);
+        uint256 buyprice      = buyshares.mul(pricepershare).div(10**decimals);
         _deposit[wallet]      = _deposit[wallet].add(buyprice);
 
         if (buyshares == lockedshares)
@@ -72,8 +74,10 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     function claimBuyout(ShardedWallet wallet)
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
-        uint256 shares = wallet.balanceOf(msg.sender);
-        uint256 value  = shares.mul(_prices[wallet]);
+        uint256 decimals      = wallet.decimals();
+        uint256 pricepershare = _prices[wallet];
+        uint256 shares        = wallet.balanceOf(msg.sender);
+        uint256 value         = shares.mul(pricepershare).div(10**decimals);
 
         wallet.moduleBurn(msg.sender, shares);
         Address.sendValue(payable(msg.sender), value);
