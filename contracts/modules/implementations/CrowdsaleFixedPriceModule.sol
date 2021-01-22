@@ -4,6 +4,7 @@ pragma solidity ^0.7.0;
 pragma abicoder v2;
 
 import "../../initializable/BondingCurve.sol";
+import "../../governance/IGovernance.sol";
 import "../../utils/ERC1167.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
@@ -96,9 +97,10 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     function buy(ShardedWallet wallet, address to)
     external payable onlyCrowdsaleActive(wallet)
     {
+        uint256 decimals = wallet.decimals();
         uint256 price = prices[wallet];
-        uint256 count = Math.min(msg.value.mul(1e18).div(price), remainingsShares[wallet]);
-        uint256 value = count.mul(price).div(1e18);
+        uint256 count = Math.min(msg.value.mul(10**decimals).div(price), remainingsShares[wallet]);
+        uint256 value = count.mul(price).div(10**decimals);
 
         balance[wallet] = balance[wallet].add(value);
         boughtShares[wallet][to] = boughtShares[wallet][to].add(count);
@@ -111,6 +113,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     function redeem(ShardedWallet wallet, address to)
     external onlyCrowdsaleFinished(wallet)
     {
+        uint256 decimals = wallet.decimals();
         uint256 premint = premintShares[wallet][to];
         uint256 bought  = boughtShares[wallet][to];
         delete premintShares[wallet][to];
@@ -120,43 +123,55 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             uint256 shares = premint.add(bought);
             if (recipients[wallet] == msg.sender && balance[wallet] > 0) {
                 uint256 valueForCurve = balance[wallet].mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(10000);
-                uint256 suppliedShards = valueForCurve.mul(1e18).div(prices[wallet]);
+                uint256 suppliedShards = valueForCurve.mul(10**decimals).div(prices[wallet]);
                 shares = shares.sub(suppliedShards);
             }
             wallet.transfer(to, shares);
             emit SharesRedeemedSuccess(wallet, msg.sender, to, shares);
         } else {
-            uint256 value = bought.mul(prices[wallet]).div(1e18);
+            uint256 value = bought.mul(prices[wallet]).div(10**decimals);
             balance[wallet] = balance[wallet].sub(value);
             Address.sendValue(payable(to), value);
             emit SharesRedeemedFaillure(wallet, msg.sender, to, bought);
         }
     }
 
+    function _initializeCurve(address curve, uint256 suppliedShards, ShardedWallet wallet, uint256 valueToCurve) internal {
+        wallet.approve(curve, suppliedShards);
+        BondingCurve(curve).initialize{value: valueToCurve}(
+            suppliedShards, 
+            address(wallet),
+            recipients[wallet],
+            prices[wallet]
+        );
+    }
+
     function withdraw(ShardedWallet wallet, address to)
     external onlyCrowdsaleFinished(wallet) onlyRecipient(wallet)
     {
+        address shardedWalletAddress = address(wallet);
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256 value = balance[wallet];
             delete balance[wallet];
-
-            address template = address(uint160(wallet.governance().getConfig(address(wallet), CURVE_TEMPLATE_KEY)));
+            IGovernance gov = wallet.governance();
+            
+            address template = address(uint160(gov.getConfig(shardedWalletAddress, CURVE_TEMPLATE_KEY)));
+            uint256 valueToCurve = template != address(0) ? value.mul(gov.getConfig(shardedWalletAddress, PCT_ETH_TO_CURVE)).div(10000) : 0;
             address curve;
             if (template != address(0))
             {
-                uint256 suppliedShards = value.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).mul(1e14).div(prices[wallet]);
-                curve = ERC1167.clone2(template, bytes32(uint256(uint160(address(wallet)))));
-                wallet.approve(curve, suppliedShards);
-                BondingCurve(curve).initialize{value: value.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(10000)}(
-                    suppliedShards, 
-                    address(wallet),
-                    recipients[wallet],
-                    prices[wallet]
-                );
+                uint256 suppliedShards = valueToCurve.mul(10**wallet.decimals()).div(prices[wallet]);
+                curve = ERC1167.clone2(template, bytes32(uint256(uint160(shardedWalletAddress))));
+                _initializeCurve(
+                    curve,
+                    suppliedShards,
+                    wallet,
+                    valueToCurve
+                    );
                 // TODO: emit an event
             }
 
-            Address.sendValue(payable(to), value.mul(uint256(10000).sub(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE))).div(10000));
+            Address.sendValue(payable(to), value.sub(valueToCurve));
             emit Withdraw(wallet, msg.sender, to, value, curve);
         } else {
             wallet.moduleTransferOwnership(to);

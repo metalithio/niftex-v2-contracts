@@ -249,6 +249,7 @@ contract('Workflow', function (accounts) {
 			);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 			curveInstance = receipt.logs[0].args.curve;
+			console.log(curveInstance, 'curveInstance');
 		});
 
 
