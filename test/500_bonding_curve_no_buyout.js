@@ -374,10 +374,13 @@ contract('Workflow', function (accounts) {
 	});
 
 
-	describe('cBuyer1 supply 1 ETH', () => {
+	describe('cBuyer1 supply 0.1 ETH', () => {
 		it("perform", async() => {
-			const ethAmount = new BigNumber(1).times(1e18);
+			const ethAmount = new BigNumber('0.1').times(1e18);
 			const curve = await BondingCurve.at(curveInstance);
+			const decimals = await curve.decimals();
+
+			console.log(new BigNumber(decimals).toFixed(), 'decimals');
 
 			const buyShardsTxn = await curve.supplyEther(
 				{

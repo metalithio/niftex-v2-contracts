@@ -44,6 +44,7 @@ contract BondingCurve {
 		address wallet;
 		address recipient;
 		uint256 timelockDeadline;
+		uint256 decimals;
 	}
 
 	ethSuppliers internal _ethSuppliers;
@@ -73,6 +74,7 @@ contract BondingCurve {
 		_shardedWalletDetails.wallet = wallet;
 		_shardedWalletDetails.recipient = recipient;
 		_shardedWalletDetails.timelockDeadline = block.timestamp.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, LIQUIDITY_TIMELOCK));
+		_shardedWalletDetails.decimals = ShardedWallet(payable(_shardedWalletDetails.wallet)).decimals();
 		// can create the bonding curve without transferring shards.
 		if (suppliedShards > 0) {
 			ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), suppliedShards);
@@ -108,7 +110,7 @@ contract BondingCurve {
 		uint256 shardAmount,
 		uint256 maxEthForShardAmount
 	) public payable {
-		uint256 y = _x.mul(_p).div(1e18);
+		uint256 y = _x.mul(_p).div(10**_shardedWalletDetails.decimals);
 		uint256 k = y.mul(_x);
 		IGovernance governance = ShardedWallet(payable(_shardedWalletDetails.wallet)).governance();
 		
@@ -147,7 +149,7 @@ contract BondingCurve {
 		newXAfterFee = _x.sub(shardAmount);
 		// newYAfterFee = k.div(newXAfterFee);
 
-		_p = newYAfterFee.mul(1e18).div(newXAfterFee);
+		_p = newYAfterFee.mul(10**_shardedWalletDetails.decimals).div(newXAfterFee);
 		_x = _x.sub(shardAmount.mul(
 			uint256(10000)
 			.add(getExternalFee(fees[1], fees[2], hasArtistWallet))
@@ -180,7 +182,7 @@ contract BondingCurve {
 			ShardedWallet(payable(_shardedWalletDetails.wallet)).balanceOf(msg.sender) >= shardAmount
 		);
 
-		uint256 y = _x.mul(_p).div(1e18);
+		uint256 y = _x.mul(_p).div(10**_shardedWalletDetails.decimals);
 		uint256 k = y.mul(_x);
 
 		IGovernance governance = ShardedWallet(payable(_shardedWalletDetails.wallet)).governance();
@@ -208,7 +210,7 @@ contract BondingCurve {
 		);
 
 		_x = newX;
-		_p = newY.mul(1e18).div(newX);
+		_p = newY.mul(10**_shardedWalletDetails.decimals).div(newX);
 
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(fees[0]).div(10000));
 		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(fees[1]).div(10000));
@@ -286,6 +288,11 @@ contract BondingCurve {
 	function supplyEther() external payable {
 		require(
 			msg.value > 0
+			);
+
+		// ether to provide plus eth in pool should be less than y (_x*_p)
+		require(
+			(_x.mul(_p).div(10**_shardedWalletDetails.decimals)).sub(address(this).balance) >= 0
 			);
 
 		uint256 newEthLPTokensToIssue = calcNewEthLPTokensToIssue(msg.value);
@@ -462,6 +469,10 @@ contract BondingCurve {
 
 	function getShardLPTokens(address owner) public view returns (uint256) {
 		return _shardSuppliers._mappingShardLPTokens[owner];
+	}
+
+	function decimals() public view returns (uint256) {
+		return _shardedWalletDetails.decimals;
 	}
 
 	function getEthInPool() public view returns (uint256) {
