@@ -114,6 +114,12 @@ contract BondingCurve {
 		uint256 k = y.mul(_x);
 		IGovernance governance = ShardedWallet(payable(_shardedWalletDetails.wallet)).governance();
 		
+		// pause if someone else reclaimed the ownership of shardedWallet
+		require(
+			ShardedWallet(payable(_shardedWalletDetails.wallet)).owner() == address(0) ||
+			governance.isModule(_shardedWalletDetails.wallet,ShardedWallet(payable(_shardedWalletDetails.wallet)).owner())
+			);
+
 		uint256[3] memory fees;
 		fees[0] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_SUPPLIERS);
 		fees[1] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX);
@@ -187,6 +193,12 @@ contract BondingCurve {
 
 		IGovernance governance = ShardedWallet(payable(_shardedWalletDetails.wallet)).governance();
 		
+		// pause if someone else reclaimed the ownership of shardedWallet
+		require(
+			ShardedWallet(payable(_shardedWalletDetails.wallet)).owner() == address(0) ||
+			governance.isModule(_shardedWalletDetails.wallet,ShardedWallet(payable(_shardedWalletDetails.wallet)).owner())
+			);
+
 		uint256[3] memory fees;
 		fees[0] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_SUPPLIERS);
 		fees[1] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX);
