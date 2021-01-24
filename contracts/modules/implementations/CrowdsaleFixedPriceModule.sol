@@ -96,7 +96,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
         uint256 sharesToCurve = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(10000); // TODO: base 10000?
         premintShares[wallet][CURVE_PREMINT_RESERVE] = sharesToCurve;
-        totalSupply.sub(totalSupply);
+        premintShares[wallet][recipient] = premintShares[wallet][recipient].sub(sharesToCurve);
 
         recipients[wallet] = recipient;
         prices[wallet] = price;
