@@ -39,8 +39,8 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     event SharesRedeemedSuccess(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event SharesRedeemedFaillure(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event OwnershipReclaimed(ShardedWallet indexed wallet, address indexed from, address to);
-    event Withdraw(ShardedWallet indexed wallet, address indexed from, address to, uint256 value, address curve);
-
+    event Withdraw(ShardedWallet indexed wallet, address indexed from, address to, uint256 value);
+    event BoundingCurve(ShardedWallet indexed wallet, address indexed curve);
 
     modifier onlyCrowdsaleActive(ShardedWallet wallet)
     {
@@ -125,11 +125,8 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         require(to != CURVE_PREMINT_RESERVE);
 
         uint256 decimals = wallet.decimals();
-        if (remainingsShares[wallet] == 0 && balance[wallet] > 0 && msg.sender == recipients[wallet]) {
-            withdraw(wallet, to);
-        }
-        uint256 premint = premintShares[wallet][to];
-        uint256 bought  = boughtShares[wallet][to];
+        uint256 premint  = premintShares[wallet][to];
+        uint256 bought   = boughtShares[wallet][to];
         delete premintShares[wallet][to];
         delete boughtShares[wallet][to];
 
@@ -160,16 +157,17 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
                 recipients[wallet],
                 prices[wallet]
             );
-            // TODO: emit an event
+            emit BoundingCurve(wallet, curve);
             return curve;
         } else {
             return address(0);
         }
     }
 
-    function withdraw(ShardedWallet wallet, address to)
-    public onlyCrowdsaleFinished(wallet) onlyRecipient(wallet)
+    function withdraw(ShardedWallet wallet)
+    public onlyCrowdsaleFinished(wallet)
     {
+        address to = recipients[wallet];
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256     sharesToCurve = premintShares[wallet][CURVE_PREMINT_RESERVE];
             uint256     valueToCurve  = sharesToCurve.mul(prices[wallet]).div(10**wallet.decimals());
@@ -184,7 +182,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             }
 
             Address.sendValue(payable(to), value);
-            emit Withdraw(wallet, msg.sender, to, value, curve);
+            emit Withdraw(wallet, msg.sender, to, value);
         } else {
             wallet.moduleTransferOwnership(to);
             emit OwnershipReclaimed(wallet, msg.sender, to);

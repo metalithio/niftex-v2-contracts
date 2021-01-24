@@ -211,7 +211,7 @@ contract('Workflow', function (accounts) {
 
 	describe('withdraw', function () {
 		it('perform', async function () {
-			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, user1, { from: user1 });
+			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, { from: user1 });
 			expectEvent(receipt, 'OwnershipReclaimed', { wallet: instance.address, from: user1, to: user1 });
 			// expectEvent(receipt, 'OwnershipTransferred', { from: this.crowdsale.address, to: user1 });
 		});

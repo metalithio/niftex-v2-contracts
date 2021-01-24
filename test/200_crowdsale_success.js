@@ -185,7 +185,7 @@ contract('Workflow', function (accounts) {
 
 	describe('Withdraw', function () {
 		it('perform', async function () {
-			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, user1, { from: user1 });
+			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, { from: user1 });
 			expectEvent(receipt, 'Withdraw', { wallet: instance.address, from: user1, to: user1, value: web3.utils.toWei('0.10') });
 		});
 
