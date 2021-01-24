@@ -356,7 +356,7 @@ contract BondingCurve {
 
 		require(
 			_ethSuppliers._mappingEthLPTokens[msg.sender] >= ethLPTokensAmount
-			);
+		);
 
 		uint256 ethToWithdraw;
 		if (address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist) <= _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers) {
@@ -388,7 +388,7 @@ contract BondingCurve {
 	function transferShardLPTokens(uint256 shardLPTokensAmount, address recipient) public {
 		require(
 			_shardSuppliers._mappingShardLPTokens[msg.sender] >= shardLPTokensAmount
-			);
+		);
 
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].sub(shardLPTokensAmount);
 		_shardSuppliers._mappingShardLPTokens[recipient] = _shardSuppliers._mappingShardLPTokens[recipient].add(shardLPTokensAmount);
