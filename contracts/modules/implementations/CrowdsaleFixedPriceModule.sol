@@ -94,10 +94,16 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             totalSupply = totalSupply.sub(premint.amount);
         }
 
+        /**
+        * Compute the number of shares that should be reserved for the bounding
+        * curve. if to much shares are reserved to the bounding curve, the
+        * crowdsale ETH wouldn't be enough to setup the bounding curve
+        */
         uint256 sharesToCurve = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(10000); // TODO: base 10000?
+        require(sharesToCurve <= totalSupply);
+
         premintShares[wallet][CURVE_PREMINT_RESERVE] = sharesToCurve;
         premintShares[wallet][recipient] = premintShares[wallet][recipient].sub(sharesToCurve);
-
         recipients[wallet] = recipient;
         prices[wallet] = price;
         remainingsShares[wallet] = totalSupply;
