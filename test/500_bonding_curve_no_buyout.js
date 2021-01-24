@@ -42,7 +42,8 @@ contract('Workflow', function (accounts) {
 		await this.governance.setConfig(await this.modules.action.ACTION_DURATION_KEY(),        50400);
 		await this.governance.setConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(),        50400);
 		await this.governance.setConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(),      this.modules.bondingcurve.address);
-		await this.governance.setConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),        web3.utils.toWei('0.20')); // 20% eth to bonding curve
+		await this.governance.setConfig(await this.modules.crowdsale.PCT_SHARES_TO_ADMIN(),     web3.utils.toWei('0.0')); // 0% eth to niftex
+		await this.governance.setConfig(await this.modules.crowdsale.PCT_SHARES_TO_CURVE(),     web3.utils.toWei('0.20')); // 20% eth to bonding curve
 		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),    10); // 0% to niftex initially
 		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),    10); // 0.1% to artist initially
 		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(), 30); // 0.3% to providers initially
