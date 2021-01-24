@@ -9,12 +9,12 @@ contract('Workflow', function (accounts) {
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 	const Governance           = artifacts.require('BasicGovernance');
 	const Modules = {
-		Action:        { artifact: artifacts.require('ActionModule')         },
-		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
+		Action:        { artifact: artifacts.require('ActionModule')              },
+		Buyout:        { artifact: artifacts.require('BuyoutModule')              },
 		Crowdsale:     { artifact: artifacts.require('CrowdsaleFixedPriceModule') },
-		Multicall:     { artifact: artifacts.require('MulticallModule')      },
-		TokenReceiver: { artifact: artifacts.require('TokenReceiverModuke')  },
-		BondingCurve: { artifact: artifacts.require('BondingCurve') }
+		Multicall:     { artifact: artifacts.require('MulticallModule')           },
+		TokenReceiver: { artifact: artifacts.require('TokenReceiverModuke')       },
+		BondingCurve:  { artifact: artifacts.require('BondingCurve')              },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -36,18 +36,16 @@ contract('Workflow', function (accounts) {
 			await this.governance.grantRole(await this.governance.MODULE_ROLE(), address);
 		}
 		// set config
-		await this.governance.setConfig(await this.governance.AUTHORIZATION_RATIO(), web3.utils.toWei('0.01'));
-		await this.governance.setConfig(await this.modules.action.ACTION_DURATION_KEY(), 50400);
-		await this.governance.setConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(), 50400);
-
-		await this.governance.setConfigAddress(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(), this.modules.bondingcurve.address);
-		await this.governance.setConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(), 2000); // 20% eth to bonding curve
-
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(), 10); // 0% to niftex initially
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(), 10); // 0.1% to artist initially
+		await this.governance.setConfig(await this.governance.AUTHORIZATION_RATIO(),            web3.utils.toWei('0.01'));
+		await this.governance.setConfig(await this.modules.action.ACTION_DURATION_KEY(),        50400);
+		await this.governance.setConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(),        50400);
+		await this.governance.setConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(),      this.modules.bondingcurve.address);
+		await this.governance.setConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),        2000); // 20% eth to bonding curve
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),    10); // 0% to niftex initially
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),    10); // 0.1% to artist initially
 		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(), 30); // 0.3% to providers initially
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_MIN_SHARD_0(), 2500);
-		await this.governance.setConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(), 100800); // timelock for 1 month
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_MIN_SHARD_0(),      2500);
+		await this.governance.setConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(),   100800); // timelock for 1 month
 
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
@@ -136,9 +134,9 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await this.modules.crowdsale.buy(
 				instance.address,
 				cBuyer1,
-				{ 
+				{
 					from: cBuyer1,
-					value: new BigNumber('70').times(0.001).times(1e18).toFixed() 
+					value: new BigNumber('70').times(0.001).times(1e18).toFixed()
 				}
 			);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
@@ -162,9 +160,9 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await this.modules.crowdsale.buy(
 				instance.address,
 				cBuyer2,
-				{ 
+				{
 					from: cBuyer2,
-					value: new BigNumber('30').times(0.001).times(1e18).toFixed() 
+					value: new BigNumber('30').times(0.001).times(1e18).toFixed()
 				}
 			);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
@@ -192,7 +190,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await this.modules.crowdsale.redeem(
 				instance.address,
 				cBuyer1,
-				{ 
+				{
 					from: cBuyer1,
 				}
 			);
@@ -217,7 +215,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await this.modules.crowdsale.redeem(
 				instance.address,
 				cBuyer2,
-				{ 
+				{
 					from: cBuyer2,
 				}
 			);
@@ -243,7 +241,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await this.modules.crowdsale.withdraw(
 				instance.address,
 				nftOwner,
-				{ 
+				{
 					from: nftOwner,
 				}
 			);
