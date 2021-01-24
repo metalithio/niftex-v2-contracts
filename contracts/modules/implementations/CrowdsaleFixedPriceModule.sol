@@ -21,8 +21,12 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
     string public constant override name = type(CrowdsaleFixedPriceModule).name;
 
-    bytes32 public constant PCT_ETH_TO_CURVE = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
-    bytes32 public constant CURVE_TEMPLATE_KEY = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
+    // address public constant CURVE_PREMINT_RESERVE = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
+    address public constant CURVE_PREMINT_RESERVE = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
+    // bytes32 public constant PCT_ETH_TO_CURVE      = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
+    bytes32 public constant PCT_ETH_TO_CURVE      = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
+    // bytes32 public constant CURVE_TEMPLATE_KEY    = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
+    bytes32 public constant CURVE_TEMPLATE_KEY    = 0xa54b8f5412e457a4cf09be0c646e265f0357e8fca2d539fe7302c431422cd77d;
 
     mapping(ShardedWallet => address)                     public recipients;
     mapping(ShardedWallet => uint256)                     public prices;
@@ -89,6 +93,11 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             premintShares[wallet][premint.receiver] = premint.amount;
             totalSupply = totalSupply.sub(premint.amount);
         }
+
+        uint256 sharesToCurve = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE)).div(10000); // TODO: base 10000?
+        premintShares[wallet][CURVE_PREMINT_RESERVE] = sharesToCurve;
+        totalSupply.sub(totalSupply);
+
         recipients[wallet] = recipient;
         prices[wallet] = price;
         remainingsShares[wallet] = totalSupply;
@@ -113,6 +122,8 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     function redeem(ShardedWallet wallet, address to)
     external onlyCrowdsaleFinished(wallet)
     {
+        require(to != CURVE_PREMINT_RESERVE);
+
         uint256 decimals = wallet.decimals();
         if (remainingsShares[wallet] == 0 && balance[wallet] > 0 && msg.sender == recipients[wallet]) {
             withdraw(wallet, to);
@@ -134,43 +145,45 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         }
     }
 
-    function _initializeCurve(address curve, uint256 suppliedShards, ShardedWallet wallet, uint256 valueToCurve) internal {
-        wallet.approve(curve, suppliedShards);
-        BondingCurve(curve).initialize{value: valueToCurve}(
-            suppliedShards, 
-            address(wallet),
-            recipients[wallet],
-            prices[wallet]
-        );
+    function _makeCurve(ShardedWallet wallet, uint256 valueToCurve, uint256 sharesToCurve)
+    internal returns (address)
+    {
+        IGovernance governance = wallet.governance();
+        address     template   = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_KEY)));
+
+        if (template != address(0)) {
+            address curve = ERC1167.clone2(template, bytes32(uint256(uint160(address(wallet)))));
+            wallet.approve(curve, sharesToCurve);
+            BondingCurve(curve).initialize{value: valueToCurve}(
+                sharesToCurve,
+                address(wallet),
+                recipients[wallet],
+                prices[wallet]
+            );
+            // TODO: emit an event
+            return curve;
+        } else {
+            return address(0);
+        }
     }
 
     function withdraw(ShardedWallet wallet, address to)
     public onlyCrowdsaleFinished(wallet) onlyRecipient(wallet)
     {
-        address shardedWalletAddress = address(wallet);
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
-            uint256 value = balance[wallet];
+            uint256     sharesToCurve = premintShares[wallet][CURVE_PREMINT_RESERVE];
+            uint256     valueToCurve  = sharesToCurve.mul(prices[wallet]).div(10**wallet.decimals());
+            uint256     value         = balance[wallet].sub(valueToCurve);
+            address     curve         = _makeCurve(wallet, valueToCurve, sharesToCurve);
             delete balance[wallet];
-            IGovernance gov = wallet.governance();
-            address recipient = recipients[wallet];
-            address template = address(uint160(gov.getConfig(shardedWalletAddress, CURVE_TEMPLATE_KEY)));
-            uint256 valueToCurve = template != address(0) ? value.mul(gov.getConfig(shardedWalletAddress, PCT_ETH_TO_CURVE)).div(10000) : 0;
-            address curve;
-            if (template != address(0))
-            {
-                uint256 suppliedShards = valueToCurve.mul(10**wallet.decimals()).div(prices[wallet]);
-                premintShares[wallet][recipient] = premintShares[wallet][recipient].sub(suppliedShards);
-                curve = ERC1167.clone2(template, bytes32(uint256(uint160(shardedWalletAddress))));
-                _initializeCurve(
-                    curve,
-                    suppliedShards,
-                    wallet,
-                    valueToCurve
-                    );
-                // TODO: emit an event
+            delete premintShares[wallet][CURVE_PREMINT_RESERVE];
+
+            if (curve == address(0)) {
+                wallet.transfer(payable(to), sharesToCurve);
+                value = value.add(valueToCurve);
             }
 
-            Address.sendValue(payable(to), value.sub(valueToCurve));
+            Address.sendValue(payable(to), value);
             emit Withdraw(wallet, msg.sender, to, value, curve);
         } else {
             wallet.moduleTransferOwnership(to);
