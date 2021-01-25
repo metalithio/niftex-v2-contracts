@@ -124,6 +124,8 @@ contract BondingCurve {
 		{
 			IGovernance governance = ShardedWallet(payable(_shardedWalletDetails.wallet)).governance();
 			address owner = ShardedWallet(payable(_shardedWalletDetails.wallet)).owner();
+			// uint256 totalSupply = ShardedWallet(payable(_shardedWalletDetails.wallet)).totalSupply();
+			// require(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers >= totalSupply.mul(15).div(100));
 			// pause if someone else reclaimed the ownership of shardedWallet
 			require(owner == address(0) || governance.isModule(_shardedWalletDetails.wallet, owner));
 
