@@ -29,7 +29,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     bytes32 public constant PCT_SHARES_TO_ADMIN   = 0x60c9fbb8e18a8add8713ae81c9af0e91eba23c5b3fd626736d35962bbb23748f;
     // bytes32 public constant CURVE_TEMPLATE_KEY    = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
     bytes32 public constant CURVE_TEMPLATE_KEY    = 0xa54b8f5412e457a4cf09be0c646e265f0357e8fca2d539fe7302c431422cd77d;
-    // bytes32 public constant PCT_MIN_PROVIDED_SHARDS      = bytes32(uint256(keccak256("PCT_MIN_SHARD_0")) - 1);
+    // bytes32 public constant PCT_MIN_PROVIDED_SHARDS      = bytes32(uint256(keccak256("PCT_MIN_PROVIDED_SHARDS")) - 1);
     bytes32 public constant PCT_MIN_PROVIDED_SHARDS = 0x2886806cfaeaffef9ad015d45f6f2b865c8f2e4478c1c1fa88f385940fd06a09;
 
     mapping(ShardedWallet => address)                     public recipients;
@@ -93,11 +93,22 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
         // Allocate a faction of the total supply to the Niftex. Dedicated block
         // to avoid stack to deep issues.
+        // Compute the number of shares that should be reserved for the bounding
+        // curve. if to much shares are reserved to the bounding curve, the
+        // crowdsale ETH wouldn't be enough to setup the bounding curve
         {
-            uint256 sharesToAdmin = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_MIN_PROVIDED_SHARDS)).div(10**18);
+            uint256 sharesToCurve = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_MIN_PROVIDED_SHARDS)).div(10**18);
+            require(sharesToCurve <= totalSupply);
+            premintShares[wallet][CURVE_PREMINT_RESERVE] = sharesToCurve;
+        }
+
+        {
+            uint256 sharesToAdmin = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARES_TO_ADMIN)).div(10**18);
             premintShares[wallet][wallet.governance().getNiftexWallet()] = sharesToAdmin;
             totalSupply = totalSupply.sub(sharesToAdmin);
         }
+
+        
 
         // Allocate the premints
         for (uint256 i = 0; i < premints.length; ++i)
@@ -106,14 +117,8 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             totalSupply = totalSupply.sub(premints[i].amount);
         }
 
-        // Compute the number of shares that should be reserved for the bounding
-        // curve. if to much shares are reserved to the bounding curve, the
-        // crowdsale ETH wouldn't be enough to setup the bounding curve
         {
-            uint256 sharesToCurve = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARES_TO_CURVE)).div(10**18);
-            require(sharesToCurve <= totalSupply);
-            premintShares[wallet][CURVE_PREMINT_RESERVE] = sharesToCurve;
-            premintShares[wallet][recipient] = premintShares[wallet][recipient].sub(sharesToCurve);
+            premintShares[wallet][recipient] = premintShares[wallet][recipient].sub(premintShares[wallet][CURVE_PREMINT_RESERVE]);
         }
 
         recipients[wallet] = recipient;
@@ -188,7 +193,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         address to = recipients[wallet];
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256     sharesToCurve = premintShares[wallet][CURVE_PREMINT_RESERVE];
-            uint256     valueToCurve  = balance[wallet].mul(PCT_ETH_TO_CURVE).div(10**18);
+            uint256     valueToCurve  = balance[wallet].mul(wallet.governance().getConfig(address(wallet),PCT_ETH_TO_CURVE)).div(10**18);
             uint256     value         = balance[wallet].sub(valueToCurve);
             address     curve         = _makeCurve(wallet, valueToCurve, sharesToCurve);
             delete balance[wallet];

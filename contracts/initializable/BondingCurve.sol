@@ -87,7 +87,7 @@ contract BondingCurve {
 			ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), suppliedShards);
 		}
 
-		_x = (ShardedWallet(payable(_shardedWalletDetails.wallet)).totalSupply().mul(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, PCT_MIN_SHARD_0)).div(10000)).add(suppliedShards);
+		_x = suppliedShards;
 		_p = initialPriceInWei;
 
 		_shardSuppliers._mappingShardLPTokens[address(this)] = suppliedShards;
