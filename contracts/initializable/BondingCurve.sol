@@ -26,8 +26,8 @@ contract BondingCurve {
 	bytes32 public constant PCT_FEE_TO_ARTIST    = 0x7a685f3ff12f1b7204575ecb08e31b2c40983b278bce2e1efb080f3673b0356d;
 	// bytes32 public constant PCT_FEE_TO_SUPPLIERS = bytes32(uint256(keccak256("PCT_FEE_TO_SUPPLIERS")) - 1);
 	bytes32 public constant PCT_FEE_TO_SUPPLIERS = 0x6de5efbdcfb6f45ae3d7205700e1e3fe90a2441758cdacb2730fe9e4c824340b;
-	// bytes32 public constant PCT_MIN_SHARD_0      = bytes32(uint256(keccak256("PCT_MIN_SHARD_0")) - 1);
-	bytes32 public constant PCT_MIN_SHARD_0      = 0x35e1d595e235aaf97c9c6173a0714d3af13efe47365b5c0156ffce24abc2f5e2;
+	// bytes32 public constant PCT_MIN_PROVIDED_SHARDS      = bytes32(uint256(keccak256("PCT_MIN_SHARD_0")) - 1);
+	bytes32 public constant PCT_MIN_PROVIDED_SHARDS = 0x2886806cfaeaffef9ad015d45f6f2b865c8f2e4478c1c1fa88f385940fd06a09;
 	// bytes32 public constant LIQUIDITY_TIMELOCK   = bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
 	bytes32 public constant LIQUIDITY_TIMELOCK   = 0x4babff57ebd34f251a515a845400ed950a51f0a64c92e803a3e144fc40623fa8;
 

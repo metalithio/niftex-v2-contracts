@@ -23,12 +23,14 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
     // address public constant CURVE_PREMINT_RESERVE = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
     address public constant CURVE_PREMINT_RESERVE = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
-    // bytes32 public constant PCT_SHARES_TO_CURVE   = bytes32(uint256(keccak256("PCT_SHARES_TO_CURVE")) - 1);
-    bytes32 public constant PCT_SHARES_TO_CURVE   = 0x53e9c04f8661be4707c1b7d409f3f044f312510bb7425cadb000ac4fd8d8ed21;
+    // bytes32 public constant PCT_SHARES_TO_CURVE   = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
+    bytes32 public constant PCT_ETH_TO_CURVE   = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
     // bytes32 public constant PCT_SHARES_TO_ADMIN   = bytes32(uint256(keccak256("PCT_SHARES_TO_ADMIN")) - 1);
     bytes32 public constant PCT_SHARES_TO_ADMIN   = 0x60c9fbb8e18a8add8713ae81c9af0e91eba23c5b3fd626736d35962bbb23748f;
     // bytes32 public constant CURVE_TEMPLATE_KEY    = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
     bytes32 public constant CURVE_TEMPLATE_KEY    = 0xa54b8f5412e457a4cf09be0c646e265f0357e8fca2d539fe7302c431422cd77d;
+    // bytes32 public constant PCT_MIN_PROVIDED_SHARDS      = bytes32(uint256(keccak256("PCT_MIN_SHARD_0")) - 1);
+    bytes32 public constant PCT_MIN_PROVIDED_SHARDS = 0x2886806cfaeaffef9ad015d45f6f2b865c8f2e4478c1c1fa88f385940fd06a09;
 
     mapping(ShardedWallet => address)                     public recipients;
     mapping(ShardedWallet => uint256)                     public prices;
@@ -92,7 +94,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         // Allocate a faction of the total supply to the Niftex. Dedicated block
         // to avoid stack to deep issues.
         {
-            uint256 sharesToAdmin = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARES_TO_ADMIN)).div(10**18);
+            uint256 sharesToAdmin = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_MIN_PROVIDED_SHARDS)).div(10**18);
             premintShares[wallet][wallet.governance().getNiftexWallet()] = sharesToAdmin;
             totalSupply = totalSupply.sub(sharesToAdmin);
         }
@@ -186,7 +188,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         address to = recipients[wallet];
         if (remainingsShares[wallet] == 0) { // crowdsaleSuccess
             uint256     sharesToCurve = premintShares[wallet][CURVE_PREMINT_RESERVE];
-            uint256     valueToCurve  = sharesToCurve.mul(prices[wallet]).div(10**wallet.decimals());
+            uint256     valueToCurve  = balance[wallet].mul(PCT_ETH_TO_CURVE).div(10**18);
             uint256     value         = balance[wallet].sub(valueToCurve);
             address     curve         = _makeCurve(wallet, valueToCurve, sharesToCurve);
             delete balance[wallet];
