@@ -26,7 +26,7 @@ contract BondingCurve {
 	bytes32 public constant PCT_FEE_TO_ARTIST    = 0x7a685f3ff12f1b7204575ecb08e31b2c40983b278bce2e1efb080f3673b0356d;
 	// bytes32 public constant PCT_FEE_TO_SUPPLIERS = bytes32(uint256(keccak256("PCT_FEE_TO_SUPPLIERS")) - 1);
 	bytes32 public constant PCT_FEE_TO_SUPPLIERS = 0x6de5efbdcfb6f45ae3d7205700e1e3fe90a2441758cdacb2730fe9e4c824340b;
-	// bytes32 public constant PCT_MIN_PROVIDED_SHARDS      = bytes32(uint256(keccak256("PCT_MIN_SHARD_0")) - 1);
+	// bytes32 public constant PCT_MIN_PROVIDED_SHARDS      = bytes32(uint256(keccak256("PCT_MIN_PROVIDED_SHARDS")) - 1);
 	bytes32 public constant PCT_MIN_PROVIDED_SHARDS = 0x2886806cfaeaffef9ad015d45f6f2b865c8f2e4478c1c1fa88f385940fd06a09;
 	// bytes32 public constant LIQUIDITY_TIMELOCK   = bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
 	bytes32 public constant LIQUIDITY_TIMELOCK   = 0x4babff57ebd34f251a515a845400ed950a51f0a64c92e803a3e144fc40623fa8;
@@ -124,8 +124,8 @@ contract BondingCurve {
 		{
 			IGovernance governance = ShardedWallet(payable(_shardedWalletDetails.wallet)).governance();
 			address owner = ShardedWallet(payable(_shardedWalletDetails.wallet)).owner();
-			// uint256 totalSupply = ShardedWallet(payable(_shardedWalletDetails.wallet)).totalSupply();
-			// require(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers >= totalSupply.mul(15).div(100));
+			uint256 totalSupply = ShardedWallet(payable(_shardedWalletDetails.wallet)).totalSupply();
+			require(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers >= totalSupply.mul(governance.getConfig(_shardedWalletDetails.wallet, PCT_MIN_PROVIDED_SHARDS)).div(10**18));
 			// pause if someone else reclaimed the ownership of shardedWallet
 			require(owner == address(0) || governance.isModule(_shardedWalletDetails.wallet, owner));
 
@@ -137,10 +137,10 @@ contract BondingCurve {
 		bool hasArtistWallet = ShardedWallet(payable(_shardedWalletDetails.wallet)).artistWallet() != address(0);
 
 		uint256 shardAmountAfterFee = shardAmount.mul(
-			uint256(10000)
+			uint256(10**18)
 			.add(fees[0])
 			.add(getExternalFee(fees[1], fees[2], hasArtistWallet))
-		).div(10000);
+		).div(10**18);
 
 		uint256 newXAfterFee = _x.sub(shardAmountAfterFee);
 		uint256 newYAfterFee = k.div(newXAfterFee);
@@ -166,14 +166,14 @@ contract BondingCurve {
 
 		_p = newYAfterFee.mul(10**_shardedWalletDetails.decimals).div(newXAfterFee);
 		_x = _x.sub(shardAmount.mul(
-			uint256(10000)
+			uint256(10**18)
 			.add(getExternalFee(fees[1], fees[2], hasArtistWallet))
-		).div(10000));
+		).div(10**18));
 
-		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(fees[0]).div(10000));
-		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(fees[1]).div(10000));
+		_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers = _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers.add(shardAmount.mul(fees[0]).div(10**18));
+		_shardSuppliers._shardFeesToNiftex = _shardSuppliers._shardFeesToNiftex.add(shardAmount.mul(fees[1]).div(10**18));
 		if (hasArtistWallet) {
-			_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(fees[2]).div(10000));
+			_shardSuppliers._shardFeesToArtist = _shardSuppliers._shardFeesToArtist.add(shardAmount.mul(fees[2]).div(10**18));
 		}
 
 		ShardedWallet(payable(_shardedWalletDetails.wallet)).transfer(msg.sender, shardAmount);
@@ -227,18 +227,18 @@ contract BondingCurve {
 		_x = newX;
 		_p = newY.mul(10**_shardedWalletDetails.decimals).div(newX);
 
-		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(fees[0]).div(10000));
-		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(fees[1]).div(10000));
+		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.add(weiPayout.mul(fees[0]).div(10**18));
+		_ethSuppliers._ethFeesToNiftex = _ethSuppliers._ethFeesToNiftex.add(weiPayout.mul(fees[1]).div(10**18));
 		if (hasArtistWallet) {
-			_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(fees[2]).div(10000));
+			_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(fees[2]).div(10**18));
 		}
 
 		require(ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), shardAmount));
 
-		weiPayout = weiPayout.mul(uint256(10000)
+		weiPayout = weiPayout.mul(uint256(10**18)
 			.sub(fees[0])
 			.sub(getExternalFee(fees[1], fees[2], hasArtistWallet))
-		).div(10000);
+		).div(10**18);
 
 		Address.sendValue(msg.sender, weiPayout);
 
@@ -250,8 +250,8 @@ contract BondingCurve {
 		if (existingShardPool == 0) {
 			return addedAmount;
 		}
-		uint256 proportion = addedAmount.mul(10000).div(existingShardPool.add(addedAmount));
-		uint256 newShardLPTokensToIssue = proportion.mul(existingShardPool).div(uint256(10000).sub(proportion));
+		uint256 proportion = addedAmount.mul(10**18).div(existingShardPool.add(addedAmount));
+		uint256 newShardLPTokensToIssue = proportion.mul(existingShardPool).div(uint256(10**18).sub(proportion));
 		return newShardLPTokensToIssue;
 	}
 
@@ -260,8 +260,8 @@ contract BondingCurve {
 		if (existingEthPool == 0) {
 			return addedAmount;
 		}
-		uint256 proportion = addedAmount.mul(10000).div(existingEthPool.add(addedAmount));
-		uint256 newEthLPTokensToIssue = proportion.mul(existingEthPool).div(uint256(10000).sub(proportion));
+		uint256 proportion = addedAmount.mul(10**18).div(existingEthPool.add(addedAmount));
+		uint256 newEthLPTokensToIssue = proportion.mul(existingEthPool).div(uint256(10**18).sub(proportion));
 		return newEthLPTokensToIssue;
 	}
 

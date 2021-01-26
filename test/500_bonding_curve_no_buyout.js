@@ -45,9 +45,9 @@ contract('Workflow', function (accounts) {
 		await this.governance.setConfig(await this.modules.crowdsale.PCT_SHARES_TO_ADMIN(),     web3.utils.toWei('0.0')); // 0% eth to niftex
 		await this.governance.setConfig(await this.modules.bondingcurve.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
 		await this.governance.setConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(), web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),    10); // 0% to niftex initially
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),    10); // 0.1% to artist initially
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(), 30); // 0.3% to providers initially
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),    web3.utils.toWei('0.00')); // 0% to niftex initially
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),    web3.utils.toWei('0.001')); // 0.1% to artist initially
+		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(), web3.utils.toWei('0.003')); // 0.3% to providers initially
 		await this.governance.setConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(),   100800); // timelock for 1 month
 
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
@@ -132,8 +132,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('880'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('20'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 		});
 	});
 
@@ -161,8 +161,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.070'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('880'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('20'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('70'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
@@ -192,8 +192,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('880'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('20'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('70'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('30'));
 		});
@@ -227,8 +227,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('930'));;
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('880'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('20'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('30'));
 		});
@@ -259,14 +259,14 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('900'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('880'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('20'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 
-	describe('nftOwner redeem 880 shards in crowdsale', function () {
+	describe('nftOwner redeem 820 shards in crowdsale', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.redeem(
 				instance.address,
@@ -286,13 +286,13 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.decimals(),                                                           '18');
 			assert.equal(await instance.totalSupply(),                                                        web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),                                          web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('880'));
+			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('820'));
 			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
-			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('20'));
+			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('80'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
 			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('20'));
+			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
 			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
@@ -314,8 +314,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.decimals(),                                                           '18');
 			assert.equal(await instance.totalSupply(),                                                        web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),                                          web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('880'));
-			assert.equal(await instance.balanceOf(curveInstance),                                             web3.utils.toWei('20'));
+			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('820'));
 			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('0'));
@@ -358,8 +357,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('880'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('15'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('75'));
 		});
 	})
 
@@ -394,8 +393,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('880'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('10'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('70'));
 		});
 	});
 
@@ -430,15 +429,15 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('880'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('40'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('100'));
 		});
 	});
 
 
 	describe('cBuyer1 supply 0.1 ETH', () => {
 		it("perform", async() => {
-			const ethAmount = new BigNumber('0.1').times(1e18);
+			const ethAmount = new BigNumber('0.001').times(1e18);
 			const curve = await BondingCurve.at(curveInstance);
 			const decimals = await curve.decimals();
 
@@ -467,8 +466,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('880'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('40'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('100'));
 		});
 	});
 
@@ -503,8 +502,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('880'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('45'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('105'));
 		});
 
 		it('Move till end of timelock', async function () {
@@ -540,8 +539,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('880'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('45'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('105'));
 		});
 	});
 
