@@ -251,7 +251,7 @@ contract BondingCurve {
 			return addedAmount;
 		}
 		uint256 proportion = addedAmount.mul(10**18).div(existingShardPool.add(addedAmount));
-		uint256 newShardLPTokensToIssue = proportion.mul(existingShardPool).div(uint256(10**18).sub(proportion));
+		uint256 newShardLPTokensToIssue = proportion.mul(_shardSuppliers._totalShardLPTokens).div(uint256(10**18).sub(proportion));
 		return newShardLPTokensToIssue;
 	}
 
@@ -261,7 +261,7 @@ contract BondingCurve {
 			return addedAmount;
 		}
 		uint256 proportion = addedAmount.mul(10**18).div(existingEthPool.add(addedAmount));
-		uint256 newEthLPTokensToIssue = proportion.mul(existingEthPool).div(uint256(10**18).sub(proportion));
+		uint256 newEthLPTokensToIssue = proportion.mul(_ethSuppliers._totalEthLPTokens).div(uint256(10**18).sub(proportion));
 		return newEthLPTokensToIssue;
 	}
 
