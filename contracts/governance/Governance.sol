@@ -14,7 +14,7 @@ contract BasicGovernance is IGovernance, AccessControl
     bytes32 public constant MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
     bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
 
-    mapping(bytes32 => uint256) internal _config;
+    mapping(address => mapping(bytes32 => uint256)) internal _config;
     mapping(bytes4  => address) internal _staticcalls;
 
     constructor()
@@ -48,17 +48,17 @@ contract BasicGovernance is IGovernance, AccessControl
         // TODO: emit
     }
 
-    function getConfig(address /*wallet*/, bytes32 key)
+    function getConfig(address wallet, bytes32 key)
     public view override returns (uint256)
     {
-        return _config[key];
+        return _config[wallet][key];
     }
 
-    function setConfig(bytes32 key, uint256 value)
+    function setConfig(address wallet, bytes32 key, uint256 value)
     public
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        _config[key] = value;
+        _config[wallet][key] = value;
         // TODO: emit
     }
 
