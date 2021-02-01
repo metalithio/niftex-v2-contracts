@@ -301,8 +301,8 @@ contract('Workflow', function (accounts) {
 	describe('withdraw and trigger bonding curve', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, { from: nftOwner });
-			expectEvent(receipt, 'BoundingCurve', { wallet: instance.address });
-			curveInstance = receipt.logs.find(({ event }) => event == 'BoundingCurve').args.curve;
+			expectEvent(receipt, 'BondingCurve', { wallet: instance.address });
+			curveInstance = receipt.logs.find(({ event }) => event == 'BondingCurve').args.curve;
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 			console.log(curveInstance, 'curveInstance');
 		});

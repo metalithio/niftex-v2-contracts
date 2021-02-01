@@ -44,7 +44,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     event SharesRedeemedFaillure(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event OwnershipReclaimed(ShardedWallet indexed wallet, address indexed from, address to);
     event Withdraw(ShardedWallet indexed wallet, address indexed from, address to, uint256 value);
-    event BoundingCurve(ShardedWallet indexed wallet, address indexed curve);
+    event BondingCurve(ShardedWallet indexed wallet, address indexed curve);
 
     modifier onlyCrowdsaleActive(ShardedWallet wallet)
     {
@@ -93,9 +93,9 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
         // Allocate a faction of the total supply to the Niftex. Dedicated block
         // to avoid stack to deep issues.
-        // Compute the number of shares that should be reserved for the bounding
-        // curve. if to much shares are reserved to the bounding curve, the
-        // crowdsale ETH wouldn't be enough to setup the bounding curve
+        // Compute the number of shares that should be reserved for the bonding
+        // curve. if to much shares are reserved to the bonding curve, the
+        // crowdsale ETH wouldn't be enough to setup the bonding curve
         {
             uint256 sharesToCurve = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_MIN_PROVIDED_SHARDS)).div(10**18);
             require(sharesToCurve <= totalSupply);
@@ -108,7 +108,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             totalSupply = totalSupply.sub(sharesToAdmin);
         }
 
-        
+
 
         // Allocate the premints
         for (uint256 i = 0; i < premints.length; ++i)
@@ -180,7 +180,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
                 recipients[wallet],
                 prices[wallet]
             );
-            emit BoundingCurve(wallet, curve);
+            emit BondingCurve(wallet, curve);
             return curve;
         } else {
             return address(0);
