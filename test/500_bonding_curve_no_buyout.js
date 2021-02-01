@@ -555,7 +555,6 @@ contract('Workflow', function (accounts) {
 				} else {
 					await expectRevert.unspecified(curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]}));
 				}
-				
 			})
 		}
 
