@@ -51,14 +51,23 @@ contract BasicGovernance is IGovernance, AccessControl
     function getConfig(address wallet, bytes32 key)
     public view override returns (uint256)
     {
-        return _config[wallet][key];
+				if (_config[wallet][key] == 0) {
+					// global
+					return _config[getNiftexWallet()][key];
+				} else {
+					// local
+        	return _config[wallet][key];
+				}
     }
 
     function setConfig(address wallet, bytes32 key, uint256 value)
     public
     {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        _config[wallet][key] = value;
+        if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender) {
+					_config[wallet][key] = value;
+				} else if (_config[getNiftexWallet()][key] == 0) {
+					_config[msg.sender][key] = value;
+				}
         // TODO: emit
     }
 
