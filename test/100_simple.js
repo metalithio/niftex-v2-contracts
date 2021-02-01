@@ -161,9 +161,9 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
-	describe('Retreive ownership', function () {
+	describe('Retrieve ownership', function () {
 		it('perform', async function () {
-			await instance.retreive(other1, { from: other1 });
+			await instance.retrieve(other1, { from: other1 });
 		});
 
 		after(async function () {

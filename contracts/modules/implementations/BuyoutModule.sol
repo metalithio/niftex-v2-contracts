@@ -88,7 +88,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     function finalizeBuyout(ShardedWallet wallet)
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
-        // Warning: do NOT burn the locked shares, this would allow the last holder to retreive ownership of the wallet
+        // Warning: do NOT burn the locked shares, this would allow the last holder to retrieve ownership of the wallet
         require(_proposers[wallet] != address(0));
         wallet.moduleTransferOwnership(_proposers[wallet]);
         delete _proposers[wallet];

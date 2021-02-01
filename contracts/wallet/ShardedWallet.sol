@@ -97,7 +97,7 @@ contract ShardedWallet is Ownable, ERC20
         emit Execute(to, value, data);
     }
 
-    function retreive(address newOwner)
+    function retrieve(address newOwner)
     external
     {
         ERC20._burn(msg.sender, Math.max(ERC20.totalSupply(), 1));
