@@ -13,13 +13,11 @@ contract BasicGovernance is IGovernance, AccessControl
 
     bytes32 public constant MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
     bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
-
-		// address public constant GLOBAL_CONFIG 			= address(uint160(uint256(keccak256("GLOBAL_CONFIG")) - 1));
-		address public constant GLOBAL_CONFIG 			= address(uint160(uint256(keccak256("GLOBAL_CONFIG")) - 1));
+    address public constant GLOBAL_CONFIG       = address(0);
 
     mapping(address => mapping(bytes32 => uint256)) internal _config;
-    mapping(bytes4  => address) internal _staticcalls;
-		mapping(bytes32 => bool) internal _globalOnlyKeys;
+    mapping(address => mapping(bytes4  => address)) internal _staticcalls;
+    mapping(bytes32 => bool) internal _globalOnlyKeys;
 
     constructor()
     {
@@ -38,53 +36,50 @@ contract BasicGovernance is IGovernance, AccessControl
         return ShardedWallet(payable(wallet)).balanceOf(user) >= Math.max(ShardedWallet(payable(wallet)).totalSupply().mul(getConfig(wallet, AUTHORIZATION_RATIO)).div(10**18), 1);
     }
 
-    function getModule(address /*wallet*/, bytes4 sig)
+    function getModule(address wallet, bytes4 sig)
     public view override returns (address)
     {
-        return _staticcalls[sig];
+        address global = _staticcalls[GLOBAL_CONFIG][sig];
+        address local  = _staticcalls[wallet][sig];
+        return _globalOnlyKeys[bytes32(sig)] || local == address(0) ? global : local;
     }
 
-    function setModule(bytes4 sig, address value)
+    function setConfig(address wallet, bytes4 sig, address value)
     public
     {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        _staticcalls[sig] = value;
+        require(wallet == msg.sender || hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _staticcalls[wallet][sig] = value;
         // TODO: emit
     }
 
     function getConfig(address wallet, bytes32 key)
     public view override returns (uint256)
     {
-				if (_config[wallet][key] > 0 && !_globalOnlyKeys[key]) {
-					return _config[wallet][key];
-				} else {
-        	return _config[GLOBAL_CONFIG][key];
-				}
+        uint256 global = _config[GLOBAL_CONFIG][key];
+        uint256 local  = _config[wallet][key];
+        return _globalOnlyKeys[key] || local == 0 ? global : local;
     }
 
     function setConfig(address wallet, bytes32 key, uint256 value)
     public
     {
-        if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
-					_config[wallet][key] = value;
-				} else if (!_globalOnlyKeys[key]) {
-					_config[msg.sender][key] = value;
-				}
+        require(wallet == msg.sender || hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _config[wallet][key] = value;
         // TODO: emit
     }
 
-		function getGlobalOnlyKey(bytes32 key)
-		public view override returns (bool)
-		{
-			return _globalOnlyKeys[key];
-		}
+    function getGlobalOnlyKey(bytes32 key)
+    public view returns (bool)
+    {
+        return _globalOnlyKeys[key];
+    }
 
-		function setGlobalKey(bytes32 key, bool value)
-		public
-		{
-			require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-			_globalOnlyKeys[key] = value;
-		}
+    function setGlobalKey(bytes32 key, bool value)
+    public
+    {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _globalOnlyKeys[key] = value;
+    }
 
     function getNiftexWallet() public view override returns(address) {
         return AccessControl.getRoleMember(DEFAULT_ADMIN_ROLE, 0);
