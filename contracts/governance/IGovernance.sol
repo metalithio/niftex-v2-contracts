@@ -8,6 +8,6 @@ interface IGovernance
     function isAuthorized(address, address) external view returns (bool);
     function getModule(address, bytes4) external view returns (address);
     function getConfig(address, bytes32) external view returns (uint256);
-		function getGlobalKey(bytes32) external view returns (uint256);
+		function getGlobalOnlyKey(bytes32) external view returns (bool);
     function getNiftexWallet() external view returns (address);
 }

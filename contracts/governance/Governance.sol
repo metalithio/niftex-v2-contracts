@@ -19,7 +19,7 @@ contract BasicGovernance is IGovernance, AccessControl
 
     mapping(address => mapping(bytes32 => uint256)) internal _config;
     mapping(bytes4  => address) internal _staticcalls;
-		mapping(bytes32 => uint256) internal _globalKeys;
+		mapping(bytes32 => bool) internal _globalOnlyKeys;
 
     constructor()
     {
@@ -55,7 +55,7 @@ contract BasicGovernance is IGovernance, AccessControl
     function getConfig(address wallet, bytes32 key)
     public view override returns (uint256)
     {
-				if (_globalKeys[key] == 0) {
+				if (_config[wallet][key] > 0 && !_globalOnlyKeys[key]) {
 					return _config[wallet][key];
 				} else {
         	return _config[GLOBAL_CONFIG][key];
@@ -67,23 +67,23 @@ contract BasicGovernance is IGovernance, AccessControl
     {
         if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
 					_config[wallet][key] = value;
-				} else if (_globalKeys[key] == 0) {
+				} else if (!_globalOnlyKeys[key]) {
 					_config[msg.sender][key] = value;
 				}
         // TODO: emit
     }
 
-		function getGlobalKey(bytes32 key)
-		public view override returns (uint256)
+		function getGlobalOnlyKey(bytes32 key)
+		public view override returns (bool)
 		{
-			return _globalKeys[key];
+			return _globalOnlyKeys[key];
 		}
 
-		function setGlobalKey(bytes32 key, uint256 value)
+		function setGlobalKey(bytes32 key, bool value)
 		public
 		{
 			require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-			_globalKeys[key] = value;
+			_globalOnlyKeys[key] = value;
 		}
 
     function getNiftexWallet() public view override returns(address) {
