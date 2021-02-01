@@ -546,20 +546,15 @@ contract('Workflow', function (accounts) {
 				const ethLPTokensAmount = await curveInstance.getEthLPTokens(LPAccounts[i]);
 				console.log(`${LPAccounts[i]}'s ethLPTokensAmount: ${ethLPTokensAmount.toString(10)}`);
 
-				switch (i)
-				{
-					case 0:
-					case 1:
-						const withdrawEth = await curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]});
-						const withdrawEthLiquidity = withdrawEth.logs[0].args;
-						console.log('withdrawEth.gasUsed:', withdrawEth.receipt.gasUsed);
-						console.log(
-							`${LPAccounts[i]} withdraw ${new BigNumber(withdrawEthLiquidity[0]).div(1e18).toFixed()} ETH and ${new BigNumber(withdrawEthLiquidity[1]).div(1e18).toFixed()} Shards`
-						);
-						break;
-					case 2:
-						await expectRevert.unspecified(curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]}));
-						break;
+				if (ethLPTokensAmount > 0) {
+					const withdrawEth = await curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]});
+					const withdrawEthLiquidity = withdrawEth.logs[0].args;
+					console.log('withdrawEth.gasUsed:', withdrawEth.receipt.gasUsed);
+					console.log(
+						`${LPAccounts[i]} withdraw ${new BigNumber(withdrawEthLiquidity[0]).div(1e18).toFixed()} ETH and ${new BigNumber(withdrawEthLiquidity[1]).div(1e18).toFixed()} Shards`
+					);
+				} else {
+					await expectRevert.unspecified(curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]}));
 				}
 			})
 		}
@@ -569,20 +564,15 @@ contract('Workflow', function (accounts) {
 				const shardLPTokensAmount = await curveInstance.getShardLPTokens(LPAccounts[i]);
 				console.log(`${LPAccounts[i]}'s shardLPTokensAmount: ${shardLPTokensAmount.toString(10)}`);
 
-				switch (i)
-				{
-					case 0:
-					case 2:
-						const withdrawShard = await curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]});
-						const withdrawShardLiquidity = withdrawShard.logs[0].args;
-						console.log('withdrawShard.gasUsed:', withdrawShard.receipt.gasUsed);
-						console.log(
-							`${LPAccounts[i]} withdraw ${new BigNumber(withdrawShardLiquidity[0]).div(1e18).toFixed()} ETH and ${new BigNumber(withdrawShardLiquidity[1]).div(1e18).toFixed()} Shards`
-						);
-						break;
-					case 1:
-						await expectRevert.unspecified(curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]}));
-						break;
+				if (shardLPTokensAmount > 0) {
+					const withdrawShard = await curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]});
+					const withdrawShardLiquidity = withdrawShard.logs[0].args;
+					console.log('withdrawShard.gasUsed:', withdrawShard.receipt.gasUsed);
+					console.log(
+						`${LPAccounts[i]} withdraw ${new BigNumber(withdrawShardLiquidity[0]).div(1e18).toFixed()} ETH and ${new BigNumber(withdrawShardLiquidity[1]).div(1e18).toFixed()} Shards`
+					);
+				} else {
+					await expectRevert.unspecified(curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]}));
 				}
 			})
 		}
