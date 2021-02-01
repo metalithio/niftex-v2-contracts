@@ -44,7 +44,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     event SharesRedeemedFaillure(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event OwnershipReclaimed(ShardedWallet indexed wallet, address indexed from, address to);
     event Withdraw(ShardedWallet indexed wallet, address indexed from, address to, uint256 value);
-    event BondingCurve(ShardedWallet indexed wallet, address indexed curve);
+    event NewBondingCurve(ShardedWallet indexed wallet, address indexed curve);
 
     modifier onlyCrowdsaleActive(ShardedWallet wallet)
     {
@@ -180,7 +180,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
                 recipients[wallet],
                 prices[wallet]
             );
-            emit BondingCurve(wallet, curve);
+            emit NewBondingCurve(wallet, curve);
             return curve;
         } else {
             return address(0);

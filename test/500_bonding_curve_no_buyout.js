@@ -38,21 +38,21 @@ contract('Workflow', function (accounts) {
 			await this.governance.grantRole(await this.governance.MODULE_ROLE(), address);
 		}
 		// set config
-		await this.governance.setConfig(await this.governance.AUTHORIZATION_RATIO(),            web3.utils.toWei('0.01'));
-		await this.governance.setConfig(await this.modules.action.ACTION_DURATION_KEY(),        50400);
-		await this.governance.setConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(),        50400);
-		await this.governance.setConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(),      this.modules.bondingcurve.address);
-		await this.governance.setConfig(await this.modules.crowdsale.PCT_SHARES_TO_ADMIN(),     web3.utils.toWei('0.0')); // 0% eth to niftex
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
-		await this.governance.setConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(), web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),    web3.utils.toWei('0.00')); // 0% to niftex initially
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),    web3.utils.toWei('0.001')); // 0.1% to artist initially
-		await this.governance.setConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(), web3.utils.toWei('0.003')); // 0.3% to providers initially
-		await this.governance.setConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(),   100800); // timelock for 1 month
+		await this.governance.setGlobalConfig(await this.governance.AUTHORIZATION_RATIO(),               web3.utils.toWei('0.01'));
+		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION_KEY(),           50400);
+		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(),           50400);
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(),         this.modules.bondingcurve.address);
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARES_TO_ADMIN(),        web3.utils.toWei('0.0')); // 0% eth to niftex
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),           web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),       web3.utils.toWei('0.00')); // 0% to niftex initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),       web3.utils.toWei('0.001')); // 0.1% to artist initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(),    web3.utils.toWei('0.003')); // 0.3% to providers initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(),      100800); // timelock for 1 month
 
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
-			await this.governance.setModule(funcSig, this.modules.tokenreceiver.address);
+			await this.governance.setGlobalModule(funcSig, this.modules.tokenreceiver.address);
 		}
 		// Deploy Mocks
 		this.mocks = await Object.entries(Mocks).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
@@ -301,10 +301,10 @@ contract('Workflow', function (accounts) {
 	describe('withdraw and trigger bonding curve', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, { from: nftOwner });
-			expectEvent(receipt, 'BondingCurve', { wallet: instance.address });
-			curveInstance = receipt.logs.find(({ event }) => event == 'BondingCurve').args.curve;
+			expectEvent(receipt, 'NewBondingCurve', { wallet: instance.address });
+			curveInstance = await BondingCurve.at(receipt.logs.find(({ event }) => event == 'NewBondingCurve').args.curve);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
-			console.log(curveInstance, 'curveInstance');
+			console.log('curveInstance:', curveInstance.address);
 		});
 
 		after(async function () {
@@ -330,9 +330,8 @@ contract('Workflow', function (accounts) {
 		it("perform", async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
 			const maxEthForShardAmount = new BigNumber(10).times(1e18);
-			const curve = await BondingCurve.at(curveInstance);
 
-			const buyShardsTxn = await curve.buyShards(
+			const buyShardsTxn = await curveInstance.buyShards(
 				shardAmount,
 				maxEthForShardAmount,
 				{
@@ -341,9 +340,9 @@ contract('Workflow', function (accounts) {
 				}
 				);
 
-			const curveCoordinates = await curve.getCurveCoordinates();
-			const ethInPool = await curve.getEthInPool();
-			const shardsInPool = await instance.balanceOf(curveInstance);
+			const curveCoordinates = await curveInstance.getCurveCoordinates();
+			const ethInPool = await curveInstance.getEthInPool();
+			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('buyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
 			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -358,7 +357,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('75'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('75'));
 		});
 	})
 
@@ -366,9 +365,8 @@ contract('Workflow', function (accounts) {
 		it("perform", async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
 			const maxEthForShardAmount = new BigNumber(10).times(1e18);
-			const curve = await BondingCurve.at(curveInstance);
 
-			const buyShardsTxn = await curve.buyShards(
+			const buyShardsTxn = await curveInstance.buyShards(
 				shardAmount,
 				maxEthForShardAmount,
 				{
@@ -377,9 +375,9 @@ contract('Workflow', function (accounts) {
 				}
 				);
 
-			const curveCoordinates = await curve.getCurveCoordinates();
-			const ethInPool = await curve.getEthInPool();
-			const shardsInPool = await instance.balanceOf(curveInstance);
+			const curveCoordinates = await curveInstance.getCurveCoordinates();
+			const ethInPool = await curveInstance.getEthInPool();
+			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('buyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
 			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -394,7 +392,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('70'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('70'));
 		});
 	});
 
@@ -402,20 +400,19 @@ contract('Workflow', function (accounts) {
 		it("perform", async() => {
 			const shardAmount = new BigNumber(30).times(1e18);
 			const maxEthForShardAmount = new BigNumber(10).times(1e18);
-			const curve = await BondingCurve.at(curveInstance);
 
-			await instance.approve(curveInstance, constants.MAX_UINT256, { from: cBuyer2 });
+			await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: cBuyer2 });
 
-			const buyShardsTxn = await curve.supplyShards(
+			const buyShardsTxn = await curveInstance.supplyShards(
 				shardAmount,
 				{
 					from: cBuyer2,
 				}
 			);
 
-			const curveCoordinates = await curve.getCurveCoordinates();
-			const ethInPool = await curve.getEthInPool();
-			const shardsInPool = await instance.balanceOf(curveInstance);
+			const curveCoordinates = await curveInstance.getCurveCoordinates();
+			const ethInPool = await curveInstance.getEthInPool();
+			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('supplyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
 			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -430,7 +427,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('100'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('100'));
 		});
 	});
 
@@ -438,21 +435,20 @@ contract('Workflow', function (accounts) {
 	describe('cBuyer1 supply 0.1 ETH', () => {
 		it("perform", async() => {
 			const ethAmount = new BigNumber('0.001').times(1e18);
-			const curve = await BondingCurve.at(curveInstance);
-			const decimals = await curve.decimals();
+			const decimals = await curveInstance.decimals();
 
 			console.log(new BigNumber(decimals).toFixed(), 'decimals');
 
-			const buyShardsTxn = await curve.supplyEther(
+			const buyShardsTxn = await curveInstance.supplyEther(
 				{
 					from: cBuyer1,
 					value: ethAmount,
 				}
 			);
 
-			const curveCoordinates = await curve.getCurveCoordinates();
-			const ethInPool = await curve.getEthInPool();
-			const shardsInPool = await instance.balanceOf(curveInstance);
+			const curveCoordinates = await curveInstance.getCurveCoordinates();
+			const ethInPool = await curveInstance.getEthInPool();
+			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('supplyEther gasUsed: ', buyShardsTxn.receipt.gasUsed);
 			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -467,18 +463,17 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('100'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('100'));
 		});
 	});
 
 	describe('mBuyer1 sells 5 shards', () => {
 		it("perform", async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
-			const curve = await BondingCurve.at(curveInstance);
 
-			await instance.approve(curveInstance, constants.MAX_UINT256, { from: mBuyer1 });
+			await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: mBuyer1 });
 
-			const buyShardsTxn = await curve.sellShards(
+			const buyShardsTxn = await curveInstance.sellShards(
 				shardAmount,
 				new BigNumber(0.05).times(1e18),
 				{
@@ -486,9 +481,9 @@ contract('Workflow', function (accounts) {
 				}
 			);
 
-			const curveCoordinates = await curve.getCurveCoordinates();
-			const ethInPool = await curve.getEthInPool();
-			const shardsInPool = await instance.balanceOf(curveInstance);
+			const curveCoordinates = await curveInstance.getCurveCoordinates();
+			const ethInPool = await curveInstance.getEthInPool();
+			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('sellShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
 			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -503,7 +498,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('105'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
 		});
 
 		it('Move till end of timelock', async function () {
@@ -514,18 +509,17 @@ contract('Workflow', function (accounts) {
 	describe('nftOwner transfer timelock', () => {
 		it("perform", async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
-			const curve = await BondingCurve.at(curveInstance);
 
-			const buyShardsTxn = await curve.transferTimelockLiquidity(
+			const buyShardsTxn = await curveInstance.transferTimelockLiquidity(
 				nftOwner,
 				{
 					from: nftOwner,
 				}
 			);
 
-			const curveCoordinates = await curve.getCurveCoordinates();
-			const ethInPool = await curve.getEthInPool();
-			const shardsInPool = await instance.balanceOf(curveInstance);
+			const curveCoordinates = await curveInstance.getCurveCoordinates();
+			const ethInPool = await curveInstance.getEthInPool();
+			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('transferTimelockLiquidity gasUsed: ', buyShardsTxn.receipt.gasUsed);
 			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
@@ -540,7 +534,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-			assert.equal(await instance.balanceOf(curveInstance),                web3.utils.toWei('105'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
 		});
 	});
 
@@ -549,10 +543,9 @@ contract('Workflow', function (accounts) {
 	describe('3 LPs withdraw liquidity', () => {
 		for (let i = 0; i < 3; i++) {
 			it(`${LPAccounts[i]} withdraw ETH liquidity`, async() => {
-				const curve = await BondingCurve.at(curveInstance);
-				const ethLPTokensAmount = await curve.getEthLPTokens(LPAccounts[i]);
+				const ethLPTokensAmount = await curveInstance.getEthLPTokens(LPAccounts[i]);
 				console.log(`${LPAccounts[i]}'s ethLPTokensAmount: ${ethLPTokensAmount.toString(10)}`);
-				const withdrawEth = await curve.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]});
+				const withdrawEth = await curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]});
 				const withdrawEthLiquidity = withdrawEth.logs[0].args;
 				console.log('withdrawEth.gasUsed:', withdrawEth.receipt.gasUsed);
 				console.log(
@@ -563,10 +556,9 @@ contract('Workflow', function (accounts) {
 
 		for (let i = 0; i < 3; i++) {
 			it(`${LPAccounts[i]} withdraw Shard liquidity`, async() => {
-				const curve = await BondingCurve.at(curveInstance);
-				const shardLPTokensAmount = await curve.getShardLPTokens(LPAccounts[i]);
+				const shardLPTokensAmount = await curveInstance.getShardLPTokens(LPAccounts[i]);
 				console.log(`${LPAccounts[i]}'s shardLPTokensAmount: ${shardLPTokensAmount.toString(10)}`);
-				const withdrawShard = await curve.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]});
+				const withdrawShard = await curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]});
 				const withdrawShardLiquidity = withdrawShard.logs[0].args;
 				console.log('withdrawShard.gasUsed:', withdrawShard.receipt.gasUsed);
 				console.log(
@@ -576,18 +568,17 @@ contract('Workflow', function (accounts) {
 		}
 
 		it('check if ethInPool and shardsInPool are both the remaining for artist and NIFTEX', async() => {
-			const curve = await BondingCurve.at(curveInstance);
-			const curveCoordinates = await curve.getCurveCoordinates();
-			const ethInPool = await curve.getEthInPool();
-			const shardsInPool = await instance.balanceOf(curve.address);
+			const curveCoordinates = await curveInstance.getCurveCoordinates();
+			const ethInPool = await curveInstance.getEthInPool();
+			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 
-			const ethSuppliers = await curve.getEthSuppliers();
+			const ethSuppliers = await curveInstance.getEthSuppliers();
 			console.log('ethSuppliers (suppliedEthPlusFees, ethLPTokens, ethFeesToNiftex, ethFeesToArtist): ', new BigNumber(ethSuppliers[0]).div(1e18).toFixed(), new BigNumber(ethSuppliers[1]).div(1e18).toFixed(), new BigNumber(ethSuppliers[2]).div(1e18).toFixed(), new BigNumber(ethSuppliers[3]).div(1e18).toFixed());
 
-			const shardSuppliers = await curve.getShardSuppliers();
+			const shardSuppliers = await curveInstance.getShardSuppliers();
 			console.log('shardSuppliers (suppliedShardPlusFees, shardLPTokens, shardFeesToNiftex, shardFeesToArtist): ', new BigNumber(shardSuppliers[0]).div(1e18).toFixed(), new BigNumber(shardSuppliers[1]).div(1e18).toFixed(), new BigNumber(shardSuppliers[2]).div(1e18).toFixed(), new BigNumber(shardSuppliers[3]).div(1e18).toFixed());
 		})
 	})

@@ -44,11 +44,18 @@ contract BasicGovernance is IGovernance, AccessControl
         return _globalOnlyKeys[bytes32(sig)] || local == address(0) ? global : local;
     }
 
-    function setConfig(address wallet, bytes4 sig, address value)
+    function setModule(bytes4 sig, address value)
     public
     {
-        require(wallet == msg.sender || hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        _staticcalls[wallet][sig] = value;
+        _staticcalls[msg.sender][sig] = value;
+        // TODO: emit
+    }
+
+    function setGlobalModule(bytes4 sig, address value)
+    public
+    {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _staticcalls[GLOBAL_CONFIG][sig] = value;
         // TODO: emit
     }
 
@@ -60,11 +67,18 @@ contract BasicGovernance is IGovernance, AccessControl
         return _globalOnlyKeys[key] || local == 0 ? global : local;
     }
 
-    function setConfig(address wallet, bytes32 key, uint256 value)
+    function setConfig(bytes32 key, uint256 value)
     public
     {
-        require(wallet == msg.sender || hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        _config[wallet][key] = value;
+        _config[msg.sender][key] = value;
+        // TODO: emit
+    }
+
+    function setGlobalConfig(bytes32 key, uint256 value)
+    public
+    {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _config[GLOBAL_CONFIG][key] = value;
         // TODO: emit
     }
 
