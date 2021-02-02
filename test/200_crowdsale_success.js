@@ -115,7 +115,7 @@ contract('Workflow', function (accounts) {
 		});
 
 		after(async function () {
-			assert.equal(await instance.owner(),                                    constants.ZERO_ADDRESS);
+			assert.equal(await instance.owner(),                                    this.modules.crowdsale.address);
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
@@ -140,7 +140,7 @@ contract('Workflow', function (accounts) {
 		});
 
 		after(async function () {
-			assert.equal(await instance.owner(),                                    constants.ZERO_ADDRESS);
+			assert.equal(await instance.owner(),                                    this.modules.crowdsale.address);
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
@@ -165,7 +165,7 @@ contract('Workflow', function (accounts) {
 		});
 
 		after(async function () {
-			assert.equal(await instance.owner(),                                    constants.ZERO_ADDRESS);
+			assert.equal(await instance.owner(),                                    this.modules.crowdsale.address);
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
@@ -190,7 +190,7 @@ contract('Workflow', function (accounts) {
 		});
 
 		after(async function () {
-			assert.equal(await instance.owner(),                                    constants.ZERO_ADDRESS);
+			assert.equal(await instance.owner(),                                    this.modules.crowdsale.address);
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
@@ -219,7 +219,7 @@ contract('Workflow', function (accounts) {
 		});
 
 		after(async function () {
-			assert.equal(await instance.owner(),                                    constants.ZERO_ADDRESS);
+			assert.equal(await instance.owner(),                                    this.modules.crowdsale.address);
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');
@@ -246,7 +246,7 @@ contract('Workflow', function (accounts) {
 		});
 
 		after(async function () {
-			assert.equal(await instance.owner(),                                    constants.ZERO_ADDRESS);
+			assert.equal(await instance.owner(),                                    this.modules.crowdsale.address);
 			assert.equal(await instance.name(),                                     'Tokenized NFT');
 			assert.equal(await instance.symbol(),                                   'TNFT');
 			assert.equal(await instance.decimals(),                                 '18');

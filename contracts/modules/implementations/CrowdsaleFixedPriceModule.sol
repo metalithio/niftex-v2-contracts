@@ -87,7 +87,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     {
         require(wallet.totalSupply() == 0);
         wallet.moduleMint(address(this), totalSupply);
-        wallet.moduleTransferOwnership(address(0));
+        wallet.moduleTransferOwnership(address(this));
 
         Timers._startTimer(bytes32(uint256(address(wallet))), duration);
 
@@ -207,7 +207,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             Address.sendValue(payable(to), value);
             emit Withdraw(wallet, msg.sender, to, value);
         } else {
-            wallet.moduleTransferOwnership(to);
+            wallet.transferOwnership(to);
             emit OwnershipReclaimed(wallet, msg.sender, to);
         }
     }
