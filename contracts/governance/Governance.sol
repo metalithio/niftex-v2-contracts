@@ -16,7 +16,7 @@ contract BasicGovernance is IGovernance, AccessControl
     address public immutable GLOBAL_CONFIG       = address(0);
 
     mapping(address => mapping(bytes32 => uint256)) internal _config;
-    mapping(address => mapping(address => bool   )) internal _modules;
+    mapping(address => mapping(address => bool   )) internal _disabled;
     mapping(address => mapping(bytes4  => address)) internal _staticcalls;
     mapping(bytes32 => bool) internal _globalOnlyKeys;
 
@@ -28,14 +28,14 @@ contract BasicGovernance is IGovernance, AccessControl
     function isModule(address wallet, address module)
     public view override returns (bool)
     {
-        return AccessControl.hasRole(MODULE_ROLE, module) || _modules[wallet][module];
+        return AccessControl.hasRole(MODULE_ROLE, module) && !_disabled[wallet][module];
     }
 
-    function enableModuleForWallet(address wallet, address module, bool authorized)
+    function disableModuleForWallet(address wallet, address module, bool disabled)
     public
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-        _modules[wallet][module] = authorized;
+        _disabled[wallet][module] = disabled;
         // TODO: emit
     }
 
