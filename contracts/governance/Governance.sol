@@ -11,11 +11,12 @@ contract BasicGovernance is IGovernance, AccessControl
 {
     using SafeMath for uint256;
 
-    bytes32 public constant MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
-    bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
-    address public constant GLOBAL_CONFIG       = address(0);
+    bytes32 public immutable MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
+    bytes32 public immutable AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
+    address public immutable GLOBAL_CONFIG       = address(0);
 
     mapping(address => mapping(bytes32 => uint256)) internal _config;
+    mapping(address => mapping(address => bool   )) internal _modules;
     mapping(address => mapping(bytes4  => address)) internal _staticcalls;
     mapping(bytes32 => bool) internal _globalOnlyKeys;
 
@@ -24,10 +25,18 @@ contract BasicGovernance is IGovernance, AccessControl
         AccessControl._setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function isModule(address /*wallet*/, address module)
+    function isModule(address wallet, address module)
     public view override returns (bool)
     {
-        return AccessControl.hasRole(MODULE_ROLE, module);
+        return AccessControl.hasRole(MODULE_ROLE, module) || _modules[wallet][module];
+    }
+
+    function enableModuleForWallet(address wallet, address module, bool authorized)
+    public
+    {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+        _modules[wallet][module] = authorized;
+        // TODO: emit
     }
 
     function isAuthorized(address wallet, address user)
