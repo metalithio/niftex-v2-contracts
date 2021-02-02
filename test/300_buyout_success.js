@@ -55,7 +55,7 @@ contract('Workflow', function (accounts) {
 				'TNFT',                       // symbol_
 				constants.ZERO_ADDRESS        // artistWallet_
 			);
-			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == "NewInstance").args.instance);
+			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewInstance').args.instance);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 		});
 
@@ -161,7 +161,7 @@ contract('Workflow', function (accounts) {
 
 	describe('Wait buyout', function () {
 		it('perform', async function () {
-			await web3.currentProvider.send({ jsonrpc: "2.0", method: "evm_increaseTime", params: [ Number(deadline) - (await web3.eth.getBlock("latest")).timestamp ], id: 0 }, () => {});
+			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ Number(deadline) - (await web3.eth.getBlock('latest')).timestamp ], id: 0 }, () => {});
 		});
 
 		after(async function () {
@@ -240,7 +240,7 @@ contract('Workflow', function (accounts) {
 		it('perform', async function () {
 			await instance.execute(
 				this.mocks.erc721.address,
-				"0",
+				'0',
 				this.mocks.erc721.contract.methods.safeTransferFrom(instance.address, user2, 1).encodeABI(),
 				{ from: user2 }
 			);

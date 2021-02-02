@@ -5,7 +5,7 @@ const BondingCurve = artifacts.require('BondingCurve');
 
 contract('Workflow', function (accounts) {
 	const [ admin, nftOwner, cBuyer1, cBuyer2, mBuyer1, mBuyer2, artist, newAdmin, claimant1, claimant2 ] = accounts;
-	const CURVE_PREMINT_RESERVE = "0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9";
+	const CURVE_PREMINT_RESERVE = '0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9';
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
@@ -71,7 +71,7 @@ contract('Workflow', function (accounts) {
 				constants.ZERO_ADDRESS,                            // artistWallet_
 				{ from: nftOwner }
 			);
-			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == "NewInstance").args.instance);
+			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewInstance').args.instance);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 		});
 
@@ -200,7 +200,7 @@ contract('Workflow', function (accounts) {
 
 		// Not necessary, all shares have been sold.
 		it('Move till end of crowdsale', async function () {
-			await web3.currentProvider.send({ jsonrpc: "2.0", method: "evm_increaseTime", params: [ 50400 ], id: 0 }, () => {});
+			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 50400 ], id: 0 }, () => {});
 		});
 	});
 
@@ -327,7 +327,7 @@ contract('Workflow', function (accounts) {
 	});
 
 	describe('mBuyer1 buy 5 shards', () => {
-		it("perform", async() => {
+		it('perform', async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
 			const maxEthForShardAmount = new BigNumber(10).times(1e18);
 
@@ -345,7 +345,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('buyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -362,7 +362,7 @@ contract('Workflow', function (accounts) {
 	})
 
 	describe('cBuyer1 buy 5 shards', () => {
-		it("perform", async() => {
+		it('perform', async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
 			const maxEthForShardAmount = new BigNumber(10).times(1e18);
 
@@ -380,7 +380,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('buyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -397,7 +397,7 @@ contract('Workflow', function (accounts) {
 	});
 
 	describe('cBuyer2 supply 30 shards', () => {
-		it("perform", async() => {
+		it('perform', async() => {
 			const shardAmount = new BigNumber(30).times(1e18);
 			const maxEthForShardAmount = new BigNumber(10).times(1e18);
 
@@ -415,7 +415,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('supplyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -433,7 +433,7 @@ contract('Workflow', function (accounts) {
 
 
 	describe('cBuyer1 supply 0.1 ETH', () => {
-		it("perform", async() => {
+		it('perform', async() => {
 			const ethAmount = new BigNumber('0.001').times(1e18);
 			const decimals = await curveInstance.decimals();
 
@@ -451,7 +451,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('supplyEther gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -468,7 +468,7 @@ contract('Workflow', function (accounts) {
 	});
 
 	describe('mBuyer1 sells 5 shards', () => {
-		it("perform", async() => {
+		it('perform', async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
 
 			await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: mBuyer1 });
@@ -486,7 +486,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('sellShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -502,12 +502,12 @@ contract('Workflow', function (accounts) {
 		});
 
 		it('Move till end of timelock', async function () {
-			await web3.currentProvider.send({ jsonrpc: "2.0", method: "evm_increaseTime", params: [ 100800 ], id: 0 }, () => {});
+			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 100800 ], id: 0 }, () => {});
 		});
 	});
 
 	describe('nftOwner transfer timelock', () => {
-		it("perform", async() => {
+		it('perform', async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
 
 			const buyShardsTxn = await curveInstance.transferTimelockLiquidity(
@@ -522,7 +522,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('transferTimelockLiquidity gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -582,7 +582,7 @@ contract('Workflow', function (accounts) {
 			const ethInPool = await curveInstance.getEthInPool();
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), "_x, _p");
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 
 			const ethSuppliers = await curveInstance.getEthSuppliers();

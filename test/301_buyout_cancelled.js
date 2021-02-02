@@ -55,7 +55,7 @@ contract('Workflow', function (accounts) {
 				'TNFT',                       // symbol_
 				constants.ZERO_ADDRESS        // artistWallet_
 			);
-			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == "NewInstance").args.instance);
+			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewInstance').args.instance);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 		});
 

@@ -49,7 +49,7 @@ contract('Workflow', function (accounts) {
 	it('Modules metadata', async function () {
 		for ([ name, module ] of Object.entries(this.modules))
 		{
-			console.log(">>", name, await module.name());
+			console.log('>>', name, await module.name());
 		}
 	});
 
@@ -62,7 +62,7 @@ contract('Workflow', function (accounts) {
 				'TNFT',                       // symbol_
 				constants.ZERO_ADDRESS        // artistWallet_
 			);
-			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == "NewInstance").args.instance);
+			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewInstance').args.instance);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 		});
 
@@ -188,7 +188,7 @@ contract('Workflow', function (accounts) {
 		it('perform', async function () {
 			await instance.execute(
 				this.mocks.erc721.address,
-				"0",
+				'0',
 				this.mocks.erc721.contract.methods.safeTransferFrom(instance.address, other1, 1).encodeABI(),
 				{ from: other1 }
 			);

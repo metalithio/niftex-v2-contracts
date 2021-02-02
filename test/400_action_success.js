@@ -55,7 +55,7 @@ contract('Workflow', function (accounts) {
 				'TNFT',                       // symbol_
 				constants.ZERO_ADDRESS        // artistWallet_
 			);
-			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == "NewInstance").args.instance);
+			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewInstance').args.instance);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 		});
 
@@ -161,7 +161,7 @@ contract('Workflow', function (accounts) {
 
 	describe('Wait action', function () {
 		it('perform', async function () {
-			await web3.currentProvider.send({ jsonrpc: "2.0", method: "evm_increaseTime", params: [ Number(deadline) - (await web3.eth.getBlock("latest")).timestamp ], id: 0 }, () => {});
+			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ Number(deadline) - (await web3.eth.getBlock('latest')).timestamp ], id: 0 }, () => {});
 		});
 
 		after(async function () {

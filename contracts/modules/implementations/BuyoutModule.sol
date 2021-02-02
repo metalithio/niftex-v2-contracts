@@ -67,7 +67,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
             emit BuyoutClosed(wallet, msg.sender);
         }
 
-        wallet.moduleTransfer(address(this), msg.sender, buyshares);
+        wallet.transfer(msg.sender, buyshares);
         Address.sendValue(msg.sender, msg.value.sub(buyprice));
     }
 
@@ -85,12 +85,26 @@ contract BuyoutModule is IModule, ModuleBase, Timers
         emit BuyoutClaimed(wallet, msg.sender);
     }
 
+    function claimBuyoutBackup(ShardedWallet wallet)
+    external onlyAfterTimer(bytes32(uint256(address(wallet))))
+    {
+        uint256 decimals      = wallet.decimals();
+        uint256 pricepershare = _prices[wallet];
+        uint256 shares        = wallet.balanceOf(msg.sender);
+        uint256 value         = shares.mul(pricepershare).div(10**decimals);
+
+        wallet.burnFrom(msg.sender, shares);
+        Address.sendValue(payable(msg.sender), value);
+
+        emit BuyoutClaimed(wallet, msg.sender);
+    }
+
     function finalizeBuyout(ShardedWallet wallet)
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
         // Warning: do NOT burn the locked shares, this would allow the last holder to retrieve ownership of the wallet
         require(_proposers[wallet] != address(0));
-        wallet.moduleTransferOwnership(_proposers[wallet]);
+        wallet.transferOwnership(_proposers[wallet]);
         delete _proposers[wallet];
         delete _deposit[wallet];
 
