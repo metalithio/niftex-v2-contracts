@@ -2,7 +2,7 @@
 
 pragma solidity ^0.7.0;
 
-import "./ERC1167.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 
 abstract contract CloneFactory
 {
@@ -15,20 +15,20 @@ abstract contract CloneFactory
     function _clone()
     internal returns (address instance)
     {
-        instance = ERC1167.clone(_cloneFactoryMaster);
+        instance = Clones.clone(_cloneFactoryMaster);
         emit NewInstance(instance);
     }
 
-    function _clone2(bytes32 salt)
+    function _cloneDeterministic(bytes32 salt)
     internal returns (address instance)
     {
-        instance = ERC1167.clone2(_cloneFactoryMaster, salt);
+        instance = Clones.cloneDeterministic(_cloneFactoryMaster, salt);
         emit NewInstance(instance);
     }
 
-    function _predict2(bytes32 salt)
+    function _predictDeterministicAddress(bytes32 salt)
     internal view returns (address predicted)
     {
-        predicted = ERC1167.predict2(_cloneFactoryMaster, salt);
+        predicted = Clones.predictDeterministicAddress(_cloneFactoryMaster, salt);
     }
 }

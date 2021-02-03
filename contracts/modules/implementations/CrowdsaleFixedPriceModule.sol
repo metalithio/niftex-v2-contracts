@@ -3,9 +3,9 @@
 pragma solidity ^0.7.0;
 pragma abicoder v2;
 
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "../../initializable/BondingCurve.sol";
 import "../../governance/IGovernance.sol";
-import "../../utils/ERC1167.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
 
@@ -21,15 +21,15 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
     string public constant override name = type(CrowdsaleFixedPriceModule).name;
 
-    // address public constant CURVE_PREMINT_RESERVE = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
-    address public constant CURVE_PREMINT_RESERVE = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
-    // bytes32 public constant PCT_SHARES_TO_CURVE   = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
-    bytes32 public constant PCT_ETH_TO_CURVE   = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
-    // bytes32 public constant PCT_SHARES_TO_ADMIN   = bytes32(uint256(keccak256("PCT_SHARES_TO_ADMIN")) - 1);
-    bytes32 public constant PCT_SHARES_TO_ADMIN   = 0x60c9fbb8e18a8add8713ae81c9af0e91eba23c5b3fd626736d35962bbb23748f;
-    // bytes32 public constant CURVE_TEMPLATE_KEY    = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
-    bytes32 public constant CURVE_TEMPLATE_KEY    = 0xa54b8f5412e457a4cf09be0c646e265f0357e8fca2d539fe7302c431422cd77d;
-    // bytes32 public constant PCT_MIN_PROVIDED_SHARDS      = bytes32(uint256(keccak256("PCT_MIN_PROVIDED_SHARDS")) - 1);
+    // address public constant CURVE_PREMINT_RESERVE   = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
+    address public constant CURVE_PREMINT_RESERVE   = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
+    // bytes32 public constant PCT_SHARES_TO_CURVE     = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
+    bytes32 public constant PCT_ETH_TO_CURVE        = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
+    // bytes32 public constant PCT_SHARES_TO_ADMIN     = bytes32(uint256(keccak256("PCT_SHARES_TO_ADMIN")) - 1);
+    bytes32 public constant PCT_SHARES_TO_ADMIN     = 0x60c9fbb8e18a8add8713ae81c9af0e91eba23c5b3fd626736d35962bbb23748f;
+    // bytes32 public constant CURVE_TEMPLATE_KEY      = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
+    bytes32 public constant CURVE_TEMPLATE_KEY      = 0xa54b8f5412e457a4cf09be0c646e265f0357e8fca2d539fe7302c431422cd77d;
+    // bytes32 public constant PCT_MIN_PROVIDED_SHARDS = bytes32(uint256(keccak256("PCT_MIN_PROVIDED_SHARDS")) - 1);
     bytes32 public constant PCT_MIN_PROVIDED_SHARDS = 0x2886806cfaeaffef9ad015d45f6f2b865c8f2e4478c1c1fa88f385940fd06a09;
 
     mapping(ShardedWallet => address)                     public recipients;
@@ -172,7 +172,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         address     template   = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_KEY)));
 
         if (template != address(0)) {
-            address curve = ERC1167.clone2(template, bytes32(uint256(uint160(address(wallet)))));
+            address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
             wallet.approve(curve, sharesToCurve);
             BondingCurve(curve).initialize{value: valueToCurve}(
                 sharesToCurve,

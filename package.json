@@ -16,7 +16,7 @@
     "clean": "rimraf artifacts cache coverage"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^3.3.0-solc-0.7"
+    "@openzeppelin/contracts": "^3.4.0-solc-0.7"
   },
   "devDependencies": {
     "@amxx/graphprotocol-utils": "0.0.7",
