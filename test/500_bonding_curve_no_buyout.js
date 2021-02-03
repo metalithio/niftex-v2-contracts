@@ -43,9 +43,9 @@ contract('Workflow', function (accounts) {
 		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(),           50400);
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(),         this.modules.bondingcurve.address);
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARES_TO_ADMIN(),        web3.utils.toWei('0.0')); // 0% eth to niftex
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),           web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),       web3.utils.toWei('0.00')); // 0% to niftex initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),       web3.utils.toWei('0.001')); // 0% to niftex initially
 		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),       web3.utils.toWei('0.001')); // 0.1% to artist initially
 		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(),    web3.utils.toWei('0.003')); // 0.3% to providers initially
 		await this.governance.setGlobalConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(),      100800); // timelock for 1 month
@@ -345,7 +345,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('buyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _k');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -380,7 +380,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('buyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _k');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -415,7 +415,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('supplyShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _k');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -432,7 +432,7 @@ contract('Workflow', function (accounts) {
 	});
 
 
-	describe('cBuyer1 supply 0.1 ETH', () => {
+	describe('cBuyer1 supply 0.001 ETH', () => {
 		it('perform', async() => {
 			const ethAmount = new BigNumber('0.001').times(1e18);
 			const decimals = await curveInstance.decimals();
@@ -451,7 +451,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('supplyEther gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _k');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -486,7 +486,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('sellShards gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _k');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -522,7 +522,7 @@ contract('Workflow', function (accounts) {
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
 			console.log('transferTimelockLiquidity gasUsed: ', buyShardsTxn.receipt.gasUsed);
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _k');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 		})
 
@@ -582,7 +582,7 @@ contract('Workflow', function (accounts) {
 			const ethInPool = await curveInstance.getEthInPool();
 			const shardsInPool = await instance.balanceOf(curveInstance.address);
 
-			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _p');
+			console.log(new BigNumber(curveCoordinates[0]).toFixed(), new BigNumber(curveCoordinates[1]).toFixed(), '_x, _k');
 			console.log(new BigNumber(ethInPool).div(1e18).toFixed(), new BigNumber(shardsInPool).div(1e18).toFixed(), 'ethInPool, shardsInPool');
 
 			const ethSuppliers = await curveInstance.getEthSuppliers();
