@@ -77,7 +77,7 @@ contract ShardedWallet is Ownable, ERC20
     )
     external
     {
-        require(governance == address(0));
+        require(address(governance) == address(0));
 
         governance = IGovernance(governance_);
         Ownable._setOwner(minter_);

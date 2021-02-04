@@ -9,9 +9,9 @@ import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "../IModule.sol";
 
-contract TokenReceiverModuke is IModule, ERC165, IERC721Receiver, IERC777Recipient, IERC1155Receiver
+contract TokenReceiverModule is IModule, ERC165, IERC721Receiver, IERC777Recipient, IERC1155Receiver
 {
-    string public constant override name = type(TokenReceiverModuke).name;
+    string public constant override name = type(TokenReceiverModule).name;
 
     constructor()
     {

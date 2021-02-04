@@ -11,7 +11,7 @@ contract('Workflow', function (accounts) {
 		Buyout:        { artifact: artifacts.require('BuyoutModule')              },
 		Crowdsale:     { artifact: artifacts.require('CrowdsaleFixedPriceModule') },
 		Multicall:     { artifact: artifacts.require('MulticallModule')           },
-		TokenReceiver: { artifact: artifacts.require('TokenReceiverModuke')       },
+		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')       },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -26,6 +26,7 @@ contract('Workflow', function (accounts) {
 		this.factory = await ShardedWalletFactory.new();
 		// Deploy & whitelist modules
 		this.governance = await Governance.new();
+		await this.governance.initialize(); // Performed by proxy
 		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		for ({ address } of Object.values(this.modules))
 		{
