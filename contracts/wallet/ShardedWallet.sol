@@ -77,11 +77,14 @@ contract ShardedWallet is Ownable, ERC20
     )
     external
     {
-        require(address(governance) == address(0));
+        require(governance == address(0));
+
         governance = IGovernance(governance_);
         Ownable._setOwner(minter_);
         ERC20._initialize(name_, symbol_);
         artistWallet = artistWallet_;
+
+        emit GovernanceUpdated(address(0), governance_);
     }
 
     function _isModule(address module)

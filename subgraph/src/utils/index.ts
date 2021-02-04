@@ -22,15 +22,12 @@ export function fetchShardedWallet(address: Address): ShardedWallet {
 	let wallet = ShardedWallet.load(id)
 	if (wallet == null) {
 		let contract        = ShardedWalletContract.bind(address)
-		let governance      = new Governance(contract.governance().toHex())
 		wallet              = new ShardedWallet(id)
-		wallet.governance   = governance.id
 		wallet.name         = contract.name()
 		wallet.symbol       = contract.symbol()
 		wallet.decimals     = contract.decimals()
 		let walletsupply    = new decimals.Value(id.concat('-totalSupply'), wallet.decimals)
 		wallet.totalSupply  = walletsupply.id;
-		governance.save()
 	}
 	return wallet as ShardedWallet
 }

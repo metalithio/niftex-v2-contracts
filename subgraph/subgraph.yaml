@@ -129,6 +129,9 @@ dataSources:
           handler: handleTimerStopped
         - event: Withdraw(indexed address,indexed address,address,uint256)
           handler: handleWithdraw
+        # TODO
+        # - event: NewBondingCurve(indexed address,indexed address)
+        #   handler: handleNewBondingCurve
       file: ./src/modules/crowdsalefixedpricemodule.ts
 # ====== Template - ShardedWallet ============================================
 templates:
@@ -151,6 +154,8 @@ templates:
           handler: handleApproval
         - event: Execute(indexed address,uint256,bytes)
           handler: handleExecute
+        - event: GovernanceUpdated(indexed address,indexed address)
+          handler: handleGovernanceUpdated
         - event: ModuleExecute(indexed address,indexed address,uint256,bytes)
           handler: handleModuleExecute
         - event: OwnershipTransferred(indexed address,indexed address)

@@ -6,6 +6,7 @@ import {
 	Approval             as ApprovalEvent,
 	Execute              as ExecuteEvent,
 	ModuleExecute        as ModuleExecuteEvent,
+	GovernanceUpdated    as GovernanceUpdatedEvent,
 	OwnershipTransferred as OwnershipTransferredEvent,
 	Received             as ReceivedEvent,
 	Transfer             as TransferEvent,
@@ -13,12 +14,14 @@ import {
 
 import {
 	Account,
+	Governance,
 	Module,
 	OwnershipTransferred,
 	Approval,
 	Transfer,
 	Execute,
 	ModuleExecute,
+	GovernanceUpdated,
 } from '../../../generated/schema'
 
 import {
@@ -143,6 +146,21 @@ export function handleModuleExecute(event: ModuleExecuteEvent): void {
 	ev.to          = to.id
 	ev.value       = value.id
 	ev.data        = event.params.data.subarray(0, 2048) as Bytes
+	ev.save()
+}
+
+export function handleGovernanceUpdated(event: GovernanceUpdatedEvent): void {
+	let wallet          = fetchShardedWallet(event.address)
+	let governance      = new Governance(event.params.newGovernance.toHex())
+	wallet.governance   = governance.id
+	wallet.save()
+	governance.save()
+
+	let ev = new GovernanceUpdated(events.id(event))
+	ev.transaction = transactions.log(event).id
+	ev.timestamp   = event.block.timestamp
+	ev.wallet      = wallet.id
+	ev.governance  = governance.id
 	ev.save()
 }
 

@@ -35,6 +35,8 @@ type ShardedWallet @entity {
 	# Executions
 	executions:                   [Execute!]! @derivedFrom(field: "wallet")
 	moduleExecutions:             [ModuleExecute!]! @derivedFrom(field: "wallet")
+	# Administration
+	GovernanceUpdates:            [GovernanceUpdated!]! @derivedFrom(field: "wallet")
 	# Modules
 	actions:                      [Action!]! @derivedFrom(field: "wallet")
 	activeBuyout:                 Buyout
@@ -168,6 +170,15 @@ type ModuleExecute implements Event @entity {
 	to:                           Account!
 	value:                        DecimalValue!
 	data:                         Bytes!
+}
+
+type GovernanceUpdated implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	module:                       Module!
+	governance:                   Governance!
 }
 
 type TimerStarted implements Event @entity {
