@@ -3,7 +3,6 @@ import {
 	BuyoutClaimed   as BuyoutClaimedEvent,
 	BuyoutFinalized as BuyoutFinalizedEvent,
 	BuyoutClosed    as BuyoutClosedEvent,
-	BuyoutResetted  as BuyoutResettedEvent,
 } from '../../../generated/BuyoutModule/BuyoutModule'
 
 import {
@@ -13,7 +12,6 @@ import {
 	BuyoutClosed,
 	BuyoutClaimed,
 	BuyoutFinalized,
-	BuyoutResetted,
 } from '../../../generated/schema'
 
 import {
@@ -92,19 +90,5 @@ export function handleBuyoutFinalized(event: BuyoutFinalizedEvent): void {
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.buyout             = wallet.activeBuyout
-	ev.save()
-}
-
-export function handleBuyoutResetted(event: BuyoutResettedEvent): void {
-	let wallet            = fetchShardedWallet(event.params.wallet)
-	let buyout            = new Buyout(wallet.activeBuyout)
-	let ev                = new BuyoutResetted(events.id(event))
-	wallet.activeBuyout   = null
-	buyout.status         = 'RESETTED'
-	ev.transaction        = transactions.log(event).id
-	ev.timestamp          = event.block.timestamp
-	ev.buyout             = buyout.id
-	wallet.save()
-	buyout.save()
 	ev.save()
 }

@@ -86,8 +86,6 @@ dataSources:
           handler: handleBuyoutFinalized
         - event: BuyoutOpened(indexed address,address,uint256)
           handler: handleBuyoutOpened
-        - event: BuyoutResetted(indexed address)
-          handler: handleBuyoutResetted
         - event: TimerReset(indexed bytes32)
           handler: handleTimerReset
         - event: TimerStarted(indexed bytes32,uint256)
