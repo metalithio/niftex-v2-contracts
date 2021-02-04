@@ -12,12 +12,16 @@ contract ShardedWallet is Ownable, ERC20
 {
     using SafeMath for uint256;
 
+    // bytes32 public constant ALLOW_GOVERNANCE_UPGRADE = bytes32(uint256(keccak256("ALLOW_GOVERNANCE_UPGRADE")) - 1);
+    bytes32 public constant ALLOW_GOVERNANCE_UPGRADE = 0xedde61aea0459bc05d70dd3441790ccfb6c17980a380201b00eca6f9ef50452a;
+
     IGovernance public governance;
     address public artistWallet;
 
     event Received(address indexed sender, uint256 value, bytes data);
     event Execute(address indexed to, uint256 value, bytes data);
     event ModuleExecute(address indexed module, address indexed to, uint256 value, bytes data);
+    event GovernanceUpdated(address indexed oldGovernance, address indexed newGovernance);
 
     modifier onlyModule()
     {
@@ -101,6 +105,16 @@ contract ShardedWallet is Ownable, ERC20
     {
         ERC20._burn(msg.sender, Math.max(ERC20.totalSupply(), 1));
         Ownable._setOwner(newOwner);
+    }
+
+    function updateGovernance(address newGovernance)
+    external onlyOwner()
+    {
+        emit GovernanceUpdated(address(governance), newGovernance);
+
+        require(governance.getConfig(address(this), ALLOW_GOVERNANCE_UPGRADE) > 0);
+        require(Address.isContract(newGovernance));
+        governance = IGovernance(newGovernance);
     }
 
     /*************************************************************************

@@ -108,8 +108,6 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             totalSupply = totalSupply.sub(sharesToAdmin);
         }
 
-
-
         // Allocate the premints
         for (uint256 i = 0; i < premints.length; ++i)
         {
