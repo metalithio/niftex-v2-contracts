@@ -10,7 +10,8 @@ contract ActionModule is IModule, ModuleBase, Timers
 {
     string public constant override name = type(ActionModule).name;
 
-    bytes32 public constant ACTION_DURATION_KEY = bytes32(uint256(keccak256("ACTION_DURATION_KEY")) - 1);
+    // bytes32 public constant ACTION_DURATION_KEY = bytes32(uint256(keccak256("ACTION_DURATION_KEY")) - 1);
+		bytes32 public constant ACTION_DURATION_KEY = 0x6a37cc2c94cf66d06643e6dc21aec144736b0fc678ae34185c461f3964937c45;
 
     event ActionScheduled(ShardedWallet indexed wallet, bytes32 indexed uid, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
     event ActionExecuted(ShardedWallet indexed wallet, bytes32 indexed uid, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
