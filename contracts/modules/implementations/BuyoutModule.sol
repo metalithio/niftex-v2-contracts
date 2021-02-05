@@ -14,8 +14,8 @@ contract BuyoutModule is IModule, ModuleBase, Timers
 
     string public constant override name = type(BuyoutModule).name;
 
-		// bytes32 public constant BUYOUT_DURATION = bytes32(uint256(keccak256("BUYOUT_DURATION")) - 1);
-		bytes32 public constant BUYOUT_DURATION = 0x2b0302f2fecc31c4abdae5dbfeb4ffb88f5e75f2102ec01dda9073a9330d6b1c;
+    // bytes32 public constant BUYOUT_DURATION = bytes32(uint256(keccak256("BUYOUT_DURATION")) - 1);
+    bytes32 public constant BUYOUT_DURATION = 0x2b0302f2fecc31c4abdae5dbfeb4ffb88f5e75f2102ec01dda9073a9330d6b1c;
 
     mapping(ShardedWallet => address) internal _proposers;
     mapping(ShardedWallet => uint256) internal _prices;

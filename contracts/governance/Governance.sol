@@ -7,13 +7,13 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "../wallet/ShardedWallet.sol";
 import "./IGovernance.sol";
 
-contract BasicGovernance is IGovernance, AccessControl
+contract Governance is IGovernance, AccessControl
 {
     using SafeMath for uint256;
 
     // bytes32 public constant MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
     bytes32 public constant MODULE_ROLE         = 0x5098275140f5753db46c42f6e139939968848633a1298402189fdfdafa69b452;
-		// bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
+    // bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
     bytes32 public constant AUTHORIZATION_RATIO = 0x9f280153bc61a10b7af5e9374ead4471b587c3bdcab2b4ab6bdd38136e8544a1;
     address public constant GLOBAL_CONFIG       = address(0);
 
@@ -22,12 +22,12 @@ contract BasicGovernance is IGovernance, AccessControl
     mapping(address => mapping(bytes4  => address)) internal _staticcalls;
     mapping(bytes32 => bool) internal _globalOnlyKeys;
 
-		event ModuleDisabled(address wallet, address indexed module, bool disabled);
-		event ModuleSet(bytes4 indexed sig, address indexed value, address indexed wallet);
-		event GlobalModuleSet(bytes4 indexed sig, address indexed value);
-		event ConfigSet(bytes32 indexed key, uint256 indexed value, address indexed wallet);
-		event GlobalConfigSet(bytes32 indexed key, uint256 indexed value);
-		event GlobalKeySet(bytes32 indexed key, bool indexed value);
+    event ModuleDisabled(address wallet, address indexed module, bool disabled);
+    event ModuleSet(bytes4 indexed sig, address indexed value, address indexed wallet);
+    event GlobalModuleSet(bytes4 indexed sig, address indexed value);
+    event ConfigSet(bytes32 indexed key, uint256 indexed value, address indexed wallet);
+    event GlobalConfigSet(bytes32 indexed key, uint256 indexed value);
+    event GlobalKeySet(bytes32 indexed key, bool indexed value);
 
     function initialize()
     public
@@ -112,7 +112,7 @@ contract BasicGovernance is IGovernance, AccessControl
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
         _globalOnlyKeys[key] = value;
-				emit GlobalKeySet(key, value);
+        emit GlobalKeySet(key, value);
     }
 
     function getNiftexWallet() public view override returns(address) {

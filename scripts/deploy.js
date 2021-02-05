@@ -11,7 +11,7 @@ async function main() {
   console.log(`Factory address: ${factory.address}`);
 
   // Deploy Governance
-  const Governance = await ethers.getContractFactory("BasicGovernance");
+  const Governance = await ethers.getContractFactory("Governance");
   // const governance = await Governance.deploy();
   const governance = await upgrades.deployProxy(Governance);
   await governance.deployed();
@@ -64,15 +64,15 @@ async function main() {
   console.log("Configuring governance");
   for ([ key, value ] of Object.entries({
     [ await governance.AUTHORIZATION_RATIO()            ]: ethers.utils.parseEther('0.01'),
-    [ await modules.action.ACTION_DURATION()        ]: 50400,
-    [ await modules.buyout.BUYOUT_DURATION()        ]: 50400,
-    [ await modules.crowdsale.CURVE_TEMPLATE()      ]: bondingcurve.address,
+    [ await modules.action.ACTION_DURATION()            ]: 50400,
+    [ await modules.buyout.BUYOUT_DURATION()            ]: 50400,
+    [ await modules.crowdsale.CURVE_TEMPLATE()          ]: bondingcurve.address,
     [ await modules.crowdsale.PCT_SHARDS_NIFTEX()       ]: ethers.utils.parseEther('0.0'),
     [ await modules.crowdsale.PCT_MIN_PROVIDED_SHARDS() ]: ethers.utils.parseEther('0.08'),
     [ await modules.crowdsale.PCT_ETH_TO_CURVE()        ]: ethers.utils.parseEther('0.20'),
-    [ await bondingcurve.PCT_FEE_NIFTEX()            ]: ethers.utils.parseEther('0.001'),
-    [ await bondingcurve.PCT_FEE_ARTIST()            ]: ethers.utils.parseEther('0.001'),
-    [ await bondingcurve.PCT_FEE_SUPPLIERS()         ]: ethers.utils.parseEther('0.003'),
+    [ await bondingcurve.PCT_FEE_NIFTEX()               ]: ethers.utils.parseEther('0.001'),
+    [ await bondingcurve.PCT_FEE_ARTIST()               ]: ethers.utils.parseEther('0.001'),
+    [ await bondingcurve.PCT_FEE_SUPPLIERS()            ]: ethers.utils.parseEther('0.003'),
     [ await bondingcurve.LIQUIDITY_TIMELOCK()           ]: 100800,
   }))
   {
