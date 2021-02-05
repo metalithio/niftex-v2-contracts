@@ -133,8 +133,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 		});
 	});
 
@@ -162,10 +162,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.070'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('70'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('70'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 
@@ -193,13 +193,13 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('70'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('30'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('70'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('30'));
 		});
 
-		// Not necessary, all shares have been sold.
+		// Not necessary, all shards have been sold.
 		it('Move till end of crowdsale', async function () {
 			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 50400 ], id: 0 }, () => {});
 		});
@@ -228,10 +228,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('930'));;
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('30'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('30'));
 		});
 	});
 
@@ -260,10 +260,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('900'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 
@@ -292,10 +292,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('80'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 
@@ -320,10 +320,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 

@@ -21,41 +21,41 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     mapping(ShardedWallet => uint256) internal _prices;
     mapping(ShardedWallet => uint256) public _deposit;
 
-    event BuyoutOpened(ShardedWallet indexed wallet, address proposer, uint256 pricePerShare);
+    event BuyoutOpened(ShardedWallet indexed wallet, address proposer, uint256 pricePerShard);
     event BuyoutClosed(ShardedWallet indexed wallet, address closer);
     event BuyoutClaimed(ShardedWallet indexed wallet, address user);
     event BuyoutFinalized(ShardedWallet indexed wallet);
 
-    function openBuyout(ShardedWallet wallet, uint256 pricePerShare)
+    function openBuyout(ShardedWallet wallet, uint256 pricePerShard)
     external payable onlyAuthorized(wallet, msg.sender) onlyBeforeTimer(bytes32(uint256(address(wallet))))
     {
         uint256 decimals    = wallet.decimals();
-        uint256 ownedshares = wallet.balanceOf(msg.sender);
-        uint256 buyoutprice = wallet.totalSupply().sub(ownedshares).mul(pricePerShare).div(10**decimals);
+        uint256 ownedshards = wallet.balanceOf(msg.sender);
+        uint256 buyoutprice = wallet.totalSupply().sub(ownedshards).mul(pricePerShard).div(10**decimals);
 
         Timers._startTimer(bytes32(uint256(address(wallet))), wallet.governance().getConfig(address(wallet), BUYOUT_DURATION));
         _proposers[wallet] = msg.sender;
-        _prices[wallet] = pricePerShare;
+        _prices[wallet] = pricePerShard;
         _deposit[wallet] = buyoutprice;
 
         wallet.moduleTransferOwnership(address(this));
-        wallet.moduleTransfer(msg.sender, address(this), ownedshares);
+        wallet.moduleTransfer(msg.sender, address(this), ownedshards);
         Address.sendValue(msg.sender, msg.value.sub(buyoutprice));
 
-        emit BuyoutOpened(wallet, msg.sender, pricePerShare);
+        emit BuyoutOpened(wallet, msg.sender, pricePerShard);
     }
 
     function closeBuyout(ShardedWallet wallet)
     external payable onlyAuthorized(wallet, msg.sender) onlyDuringTimer(bytes32(uint256(address(wallet))))
     {
         uint256 decimals      = wallet.decimals();
-        uint256 pricepershare = _prices[wallet];
-        uint256 lockedshares  = wallet.balanceOf(address(this));
-        uint256 buyshares     = msg.value.mul(10**decimals).div(pricepershare).min(lockedshares);
-        uint256 buyprice      = buyshares.mul(pricepershare).div(10**decimals);
+        uint256 pricePerShard = _prices[wallet];
+        uint256 lockedShards  = wallet.balanceOf(address(this));
+        uint256 buyShards     = msg.value.mul(10**decimals).div(pricePerShard).min(lockedShards);
+        uint256 buyprice      = buyShards.mul(pricePerShard).div(10**decimals);
         _deposit[wallet]      = _deposit[wallet].add(buyprice);
 
-        if (buyshares == lockedshares)
+        if (buyShards == lockedShards)
         {
             Timers._stopTimer(bytes32(uint256(address(wallet))));
             wallet.renounceOwnership();
@@ -68,7 +68,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
             emit BuyoutClosed(wallet, msg.sender);
         }
 
-        wallet.transfer(msg.sender, buyshares);
+        wallet.transfer(msg.sender, buyShards);
         Address.sendValue(msg.sender, msg.value.sub(buyprice));
     }
 
@@ -76,11 +76,11 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
         uint256 decimals      = wallet.decimals();
-        uint256 pricepershare = _prices[wallet];
-        uint256 shares        = wallet.balanceOf(msg.sender);
-        uint256 value         = shares.mul(pricepershare).div(10**decimals);
+        uint256 pricePerShard = _prices[wallet];
+        uint256 shards        = wallet.balanceOf(msg.sender);
+        uint256 value         = shards.mul(pricePerShard).div(10**decimals);
 
-        wallet.moduleBurn(msg.sender, shares);
+        wallet.moduleBurn(msg.sender, shards);
         Address.sendValue(payable(msg.sender), value);
 
         emit BuyoutClaimed(wallet, msg.sender);
@@ -90,11 +90,11 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
         uint256 decimals      = wallet.decimals();
-        uint256 pricepershare = _prices[wallet];
-        uint256 shares        = wallet.balanceOf(msg.sender);
-        uint256 value         = shares.mul(pricepershare).div(10**decimals);
+        uint256 pricePerShard = _prices[wallet];
+        uint256 shards        = wallet.balanceOf(msg.sender);
+        uint256 value         = shards.mul(pricePerShard).div(10**decimals);
 
-        wallet.burnFrom(msg.sender, shares);
+        wallet.burnFrom(msg.sender, shards);
         Address.sendValue(payable(msg.sender), value);
 
         emit BuyoutClaimed(wallet, msg.sender);
@@ -103,7 +103,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     function finalizeBuyout(ShardedWallet wallet)
     external onlyAfterTimer(bytes32(uint256(address(wallet))))
     {
-        // Warning: do NOT burn the locked shares, this would allow the last holder to retrieve ownership of the wallet
+        // Warning: do NOT burn the locked shards, this would allow the last holder to retrieve ownership of the wallet
         require(_proposers[wallet] != address(0));
         wallet.transferOwnership(_proposers[wallet]);
         delete _proposers[wallet];

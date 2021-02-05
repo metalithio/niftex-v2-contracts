@@ -137,7 +137,7 @@ contract('Workflow', function (accounts) {
 	describe('Buy shard', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.buy(instance.address, other1, { from: other1, value: web3.utils.toWei('0.01')})
-			expectEvent(receipt, 'SharesBought', { wallet: instance.address, from: other1, to: other1, count: web3.utils.toWei('1') });
+			expectEvent(receipt, 'ShardsBought', { wallet: instance.address, from: other1, to: other1, count: web3.utils.toWei('1') });
 		});
 
 		after(async function () {
@@ -187,7 +187,7 @@ contract('Workflow', function (accounts) {
 	describe('redeem', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.redeem(instance.address, other1, { from: other1 });
-			expectEvent(receipt, 'SharesRedeemedFailure', { wallet: instance.address, from: other1, to: other1, count: web3.utils.toWei('1') });
+			expectEvent(receipt, 'ShardsRedeemedFailure', { wallet: instance.address, from: other1, to: other1, count: web3.utils.toWei('1') });
 			// expectEvent(receipt, 'Transfer', { from: instance.address, to: other1, value: '1' });
 		});
 

@@ -115,12 +115,12 @@ dataSources:
       eventHandlers:
         - event: OwnershipReclaimed(indexed address,indexed address,address)
           handler: handleOwnershipReclaimed
-        - event: SharesBought(indexed address,indexed address,address,uint256)
-          handler: handleSharesBought
-        - event: SharesRedeemedFailure(indexed address,indexed address,address,uint256)
-          handler: handleSharesRedeemedFailure
-        - event: SharesRedeemedSuccess(indexed address,indexed address,address,uint256)
-          handler: handleSharesRedeemedSuccess
+        - event: ShardsBought(indexed address,indexed address,address,uint256)
+          handler: handleShardsBought
+        - event: ShardsRedeemedFailure(indexed address,indexed address,address,uint256)
+          handler: handleShardsRedeemedFailure
+        - event: ShardsRedeemedSuccess(indexed address,indexed address,address,uint256)
+          handler: handleShardsRedeemedSuccess
         - event: TimerReset(indexed bytes32)
           handler: handleTimerReset
         - event: TimerStarted(indexed bytes32,uint256)
