@@ -7,7 +7,7 @@ import {
 	TimerStarted           as TimerStartedEvent,
 	TimerStopped           as TimerStoppedEvent,
 	Withdraw               as WithdrawEvent,
-} from '../../../generated/CrowdsaleFixedPriceModule/CrowdsaleFixedPriceModule'
+} from '../../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
 
 import {
 	Account,

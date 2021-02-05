@@ -95,12 +95,12 @@ dataSources:
       file: ./src/modules/buyoutmodule.ts
   # ====== Module - CrowdsaleFixedPrice ======================================
   - kind: ethereum/contract
-    name: CrowdsaleFixedPriceModule
+    name: FixedPriceSaleModule
     network: mainnet
     source:
       # address: '0x'
       # startBlock: 0
-      abi: CrowdsaleFixedPriceModule
+      abi: FixedPriceSaleModule
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
@@ -108,8 +108,8 @@ dataSources:
       entities:
         - Transaction
       abis:
-        - name: CrowdsaleFixedPriceModule
-          file: ../artifacts/contracts/modules/implementations/CrowdsaleFixedPriceModule.sol/CrowdsaleFixedPriceModule.json
+        - name: FixedPriceSaleModule
+          file: ../artifacts/contracts/modules/implementations/FixedPriceSaleModule.sol/FixedPriceSaleModule.json
         - name: Timers
           file: ../artifacts/contracts/utils/Timers.sol/Timers.json
       eventHandlers:
@@ -132,7 +132,7 @@ dataSources:
         # TODO
         # - event: NewBondingCurve(indexed address,indexed address)
         #   handler: handleNewBondingCurve
-      file: ./src/modules/crowdsalefixedpricemodule.ts
+      file: ./src/modules/fixedpricesalemodule.ts
 # ====== Template - ShardedWallet ============================================
 templates:
   - name: ShardedWallet

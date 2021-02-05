@@ -15,11 +15,11 @@ struct Allocation
     uint256 amount;
 }
 
-contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
+contract FixedPriceSaleModule is IModule, ModuleBase, Timers
 {
     using SafeMath for uint256;
 
-    string public constant override name = type(CrowdsaleFixedPriceModule).name;
+    string public constant override name = type(FixedPriceSaleModule).name;
 
     // address public constant CURVE_PREMINT_RESERVE   = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
     address public constant CURVE_PREMINT_RESERVE   = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;

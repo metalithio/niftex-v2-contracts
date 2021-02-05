@@ -7,11 +7,11 @@ contract('Workflow', function (accounts) {
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 	const Governance           = artifacts.require('BasicGovernance');
 	const Modules = {
-		Action:        { artifact: artifacts.require('ActionModule')              },
-		Buyout:        { artifact: artifacts.require('BuyoutModule')              },
-		Crowdsale:     { artifact: artifacts.require('CrowdsaleFixedPriceModule') },
-		Multicall:     { artifact: artifacts.require('MulticallModule')           },
-		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')       },
+		Action:        { artifact: artifacts.require('ActionModule')         },
+		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
+		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
+		Multicall:     { artifact: artifacts.require('MulticallModule')      },
+		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },

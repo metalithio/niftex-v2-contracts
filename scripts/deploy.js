@@ -26,7 +26,7 @@ async function main() {
   const modules = await Object.entries({
     "action":        "ActionModule",
     "buyout":        "BuyoutModule",
-    "crowdsale":     "CrowdsaleFixedPriceModule",
+    "crowdsale":     "FixedPriceSaleModule",
     "multicall":     "MulticallModule",
     "tokenreceiver": "TokenReceiverModule",
   }).reduce(
