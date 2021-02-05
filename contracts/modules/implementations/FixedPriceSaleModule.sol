@@ -103,9 +103,9 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         }
 
         {
-            uint256 shardsToAdmin = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARDS_NIFTEX)).div(10**18);
-            premintShards[wallet][wallet.governance().getNiftexWallet()] = shardsToAdmin;
-            totalSupply = totalSupply.sub(shardsToAdmin);
+            uint256 shardsToNiftex = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARDS_NIFTEX)).div(10**18);
+            premintShards[wallet][wallet.governance().getNiftexWallet()] = shardsToNiftex;
+            totalSupply = totalSupply.sub(shardsToNiftex);
         }
 
         // Allocate the premints
