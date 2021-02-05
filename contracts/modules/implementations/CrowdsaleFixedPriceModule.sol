@@ -80,7 +80,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         ShardedWallet         wallet,
         address               recipient,
         uint256               price,
-        uint256               duration, // !TODO sth governed by Governance.sol
+        uint256               duration, // !TODO controlled by Governance.sol possibly? 
         uint256               totalSupply,
         Allocation[] calldata premints)
     external onlyBeforeTimer(bytes32(uint256(address(wallet)))) onlyOwner(wallet, msg.sender)

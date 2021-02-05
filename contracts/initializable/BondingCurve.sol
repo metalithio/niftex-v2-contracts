@@ -18,7 +18,6 @@ contract BondingCurve {
 
 	uint256 internal _x;
 	uint256 internal _k; // k = totalSupply^2 * initial price
-	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
 
 	// bytes32 public constant PCT_FEE_TO_NIFTEX    = bytes32(uint256(keccak256("PCT_FEE_TO_NIFTEX")) - 1);
 	bytes32 public constant PCT_FEE_TO_NIFTEX    = 0x7145253e522281154ff5a4858195caf5383bff763db0241d79f1fb5c74db4f26;
