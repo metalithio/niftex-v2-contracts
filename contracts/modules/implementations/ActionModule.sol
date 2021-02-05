@@ -10,8 +10,8 @@ contract ActionModule is IModule, ModuleBase, Timers
 {
     string public constant override name = type(ActionModule).name;
 
-    // bytes32 public constant ACTION_DURATION_KEY = bytes32(uint256(keccak256("ACTION_DURATION_KEY")) - 1);
-		bytes32 public constant ACTION_DURATION_KEY = 0x6a37cc2c94cf66d06643e6dc21aec144736b0fc678ae34185c461f3964937c45;
+		// bytes32 public constant ACTION_DURATION = bytes32(uint256(keccak256("ACTION_DURATION")) - 1);
+		bytes32 public constant ACTION_DURATION = 0x05f91198c37cc2578c2915e1614db3bf5c90e3387bd106bdfbb0da82514418dd;
 
     event ActionScheduled(ShardedWallet indexed wallet, bytes32 indexed uid, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
     event ActionExecuted(ShardedWallet indexed wallet, bytes32 indexed uid, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
@@ -25,7 +25,7 @@ contract ActionModule is IModule, ModuleBase, Timers
         bytes32 id  = keccak256(abi.encode(to, value, data));
         bytes32 uid = keccak256(abi.encode(wallet, id));
 
-        Timers._startTimer(uid, wallet.governance().getConfig(address(wallet), ACTION_DURATION_KEY));
+        Timers._startTimer(uid, wallet.governance().getConfig(address(wallet), ACTION_DURATION));
 
         for (uint256 i = 0; i < to.length; ++i) {
             emit ActionScheduled(wallet, uid, id, i, to[i], value[i], data[i]);

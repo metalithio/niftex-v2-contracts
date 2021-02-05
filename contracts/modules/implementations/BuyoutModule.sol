@@ -14,8 +14,8 @@ contract BuyoutModule is IModule, ModuleBase, Timers
 
     string public constant override name = type(BuyoutModule).name;
 
-    // bytes32 public constant BUYOUT_DURATION_KEY = bytes32(uint256(keccak256("BUYOUT_DURATION_KEY")) - 1);
-		bytes32 public constant BUYOUT_DURATION_KEY = 0x532f099f21e4247c0f085bfece37231ec1c7f42635746fab10599000a435144a;
+		// bytes32 public constant BUYOUT_DURATION = bytes32(uint256(keccak256("BUYOUT_DURATION")) - 1);
+		bytes32 public constant BUYOUT_DURATION = 0x2b0302f2fecc31c4abdae5dbfeb4ffb88f5e75f2102ec01dda9073a9330d6b1c;
 
     mapping(ShardedWallet => address) internal _proposers;
     mapping(ShardedWallet => uint256) internal _prices;
@@ -33,7 +33,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
         uint256 ownedshares = wallet.balanceOf(msg.sender);
         uint256 buyoutprice = wallet.totalSupply().sub(ownedshares).mul(pricePerShare).div(10**decimals);
 
-        Timers._startTimer(bytes32(uint256(address(wallet))), wallet.governance().getConfig(address(wallet), BUYOUT_DURATION_KEY));
+        Timers._startTimer(bytes32(uint256(address(wallet))), wallet.governance().getConfig(address(wallet), BUYOUT_DURATION));
         _proposers[wallet] = msg.sender;
         _prices[wallet] = pricePerShare;
         _deposit[wallet] = buyoutprice;

@@ -40,9 +40,9 @@ contract('Workflow', function (accounts) {
 		}
 		// set config
 		await this.governance.setGlobalConfig(await this.governance.AUTHORIZATION_RATIO(),               web3.utils.toWei('0.01'));
-		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION_KEY(),           50400);
-		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(),           50400);
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(),         this.modules.bondingcurve.address);
+		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION(),           50400);
+		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION(),           50400);
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE(),         this.modules.bondingcurve.address);
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARES_TO_ADMIN(),        web3.utils.toWei('0.0')); // 0% eth to niftex
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),           web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve

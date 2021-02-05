@@ -27,8 +27,8 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     bytes32 public constant PCT_ETH_TO_CURVE        = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
     // bytes32 public constant PCT_SHARES_TO_ADMIN     = bytes32(uint256(keccak256("PCT_SHARES_TO_ADMIN")) - 1);
     bytes32 public constant PCT_SHARES_TO_ADMIN     = 0x60c9fbb8e18a8add8713ae81c9af0e91eba23c5b3fd626736d35962bbb23748f;
-    // bytes32 public constant CURVE_TEMPLATE_KEY      = bytes32(uint256(keccak256("CURVE_TEMPLATE_KEY")) - 1);
-    bytes32 public constant CURVE_TEMPLATE_KEY      = 0xa54b8f5412e457a4cf09be0c646e265f0357e8fca2d539fe7302c431422cd77d;
+    // bytes32 public constant CURVE_TEMPLATE          = bytes32(uint256(keccak256("CURVE_TEMPLATE")) - 1);
+    bytes32 public constant CURVE_TEMPLATE          = 0x3cec7c13345ae32e688f81840d184c63978bb776762e026e7e61d891bb2dd84b;
     // bytes32 public constant PCT_MIN_PROVIDED_SHARDS = bytes32(uint256(keccak256("PCT_MIN_PROVIDED_SHARDS")) - 1);
     bytes32 public constant PCT_MIN_PROVIDED_SHARDS = 0x2886806cfaeaffef9ad015d45f6f2b865c8f2e4478c1c1fa88f385940fd06a09;
 
@@ -80,7 +80,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
         ShardedWallet         wallet,
         address               recipient,
         uint256               price,
-        uint256               duration, // !TODO controlled by Governance.sol possibly? 
+        uint256               duration, // !TODO controlled by Governance.sol possibly?
         uint256               totalSupply,
         Allocation[] calldata premints)
     external onlyBeforeTimer(bytes32(uint256(address(wallet)))) onlyOwner(wallet, msg.sender)
@@ -167,7 +167,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
     internal returns (address)
     {
         IGovernance governance = wallet.governance();
-        address     template   = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_KEY)));
+        address     template   = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE)));
 
         if (template != address(0)) {
             address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
