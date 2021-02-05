@@ -23,7 +23,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
     // address public constant CURVE_PREMINT_RESERVE   = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
     address public constant CURVE_PREMINT_RESERVE   = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
-    // bytes32 public constant PCT_SHARES_TO_CURVE     = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
+    // bytes32 public constant PCT_ETH_TO_CURVE     = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
     bytes32 public constant PCT_ETH_TO_CURVE        = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
     // bytes32 public constant PCT_SHARDS_NIFTEX     = bytes32(uint256(keccak256("PCT_SHARDS_NIFTEX")) - 1);
     bytes32 public constant PCT_SHARDS_NIFTEX     = 0xfbbd159a3fa06a90e6706a184ef085e653f08384af107f1a8507ee0e3b341aa6;

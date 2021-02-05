@@ -67,12 +67,12 @@ async function main() {
     [ await modules.action.ACTION_DURATION_KEY()        ]: 50400,
     [ await modules.buyout.BUYOUT_DURATION_KEY()        ]: 50400,
     [ await modules.crowdsale.CURVE_TEMPLATE_KEY()      ]: bondingcurve.address,
-    [ await modules.crowdsale.PCT_SHARES_TO_ADMIN()     ]: ethers.utils.parseEther('0.0'),
+    [ await modules.crowdsale.PCT_SHARDS_NIFTEX()       ]: ethers.utils.parseEther('0.0'),
     [ await modules.crowdsale.PCT_MIN_PROVIDED_SHARDS() ]: ethers.utils.parseEther('0.08'),
     [ await modules.crowdsale.PCT_ETH_TO_CURVE()        ]: ethers.utils.parseEther('0.20'),
-    [ await bondingcurve.PCT_FEE_TO_NIFTEX()            ]: ethers.utils.parseEther('0.001'),
-    [ await bondingcurve.PCT_FEE_TO_ARTIST()            ]: ethers.utils.parseEther('0.001'),
-    [ await bondingcurve.PCT_FEE_TO_SUPPLIERS()         ]: ethers.utils.parseEther('0.003'),
+    [ await bondingcurve.PCT_FEE_NIFTEX()            ]: ethers.utils.parseEther('0.001'),
+    [ await bondingcurve.PCT_FEE_ARTIST()            ]: ethers.utils.parseEther('0.001'),
+    [ await bondingcurve.PCT_FEE_SUPPLIERS()         ]: ethers.utils.parseEther('0.003'),
     [ await bondingcurve.LIQUIDITY_TIMELOCK()           ]: 100800,
   }))
   {
