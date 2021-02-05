@@ -12,8 +12,8 @@ contract BasicGovernance is IGovernance, AccessControl
     using SafeMath for uint256;
 
     // bytes32 public constant MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
-    // bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
     bytes32 public constant MODULE_ROLE         = 0x5098275140f5753db46c42f6e139939968848633a1298402189fdfdafa69b452;
+		// bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
     bytes32 public constant AUTHORIZATION_RATIO = 0x9f280153bc61a10b7af5e9374ead4471b587c3bdcab2b4ab6bdd38136e8544a1;
     address public constant GLOBAL_CONFIG       = address(0);
 
