@@ -46,9 +46,9 @@ contract('Workflow', function (accounts) {
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARES_TO_ADMIN(),        web3.utils.toWei('0.0')); // 0% eth to niftex
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),           web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),       web3.utils.toWei('0.001')); // 0% to niftex initially
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),       web3.utils.toWei('0.001')); // 0.1% to artist initially
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(),    web3.utils.toWei('0.003')); // 0.3% to providers initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_NIFTEX(),       web3.utils.toWei('0.001')); // 0% to niftex initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_ARTIST(),       web3.utils.toWei('0.001')); // 0.1% to artist initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_SUPPLIERS(),    web3.utils.toWei('0.003')); // 0.3% to providers initially
 		await this.governance.setGlobalConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(),      100800); // timelock for 1 month
 
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
