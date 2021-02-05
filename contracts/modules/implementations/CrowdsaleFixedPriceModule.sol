@@ -41,7 +41,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
 
     event SharesBought(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event SharesRedeemedSuccess(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
-    event SharesRedeemedFaillure(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
+    event SharesRedeemedFailure(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event OwnershipReclaimed(ShardedWallet indexed wallet, address indexed from, address to);
     event Withdraw(ShardedWallet indexed wallet, address indexed from, address to, uint256 value);
     event NewBondingCurve(ShardedWallet indexed wallet, address indexed curve);
@@ -159,7 +159,7 @@ contract CrowdsaleFixedPriceModule is IModule, ModuleBase, Timers
             uint256 value = bought.mul(prices[wallet]).div(10**decimals);
             balance[wallet] = balance[wallet].sub(value);
             Address.sendValue(payable(to), value);
-            emit SharesRedeemedFaillure(wallet, msg.sender, to, bought);
+            emit SharesRedeemedFailure(wallet, msg.sender, to, bought);
         }
     }
 

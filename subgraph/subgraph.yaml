@@ -117,8 +117,8 @@ dataSources:
           handler: handleOwnershipReclaimed
         - event: SharesBought(indexed address,indexed address,address,uint256)
           handler: handleSharesBought
-        - event: SharesRedeemedFaillure(indexed address,indexed address,address,uint256)
-          handler: handleSharesRedeemedFaillure
+        - event: SharesRedeemedFailure(indexed address,indexed address,address,uint256)
+          handler: handleSharesRedeemedFailure
         - event: SharesRedeemedSuccess(indexed address,indexed address,address,uint256)
           handler: handleSharesRedeemedSuccess
         - event: TimerReset(indexed bytes32)

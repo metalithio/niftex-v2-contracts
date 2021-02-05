@@ -1,7 +1,7 @@
 import {
 	OwnershipReclaimed     as OwnershipReclaimedEvent,
 	SharesBought           as SharesBoughtEvent,
-	SharesRedeemedFaillure as SharesRedeemedFaillureEvent,
+	SharesRedeemedFailure  as SharesRedeemedFailureEvent,
 	SharesRedeemedSuccess  as SharesRedeemedSuccessEvent,
 	TimerReset             as TimerResetEvent,
 	TimerStarted           as TimerStartedEvent,
@@ -37,7 +37,7 @@ export function handleSharesBought(event: SharesBoughtEvent): void {
 	//TODO
 }
 
-export function handleSharesRedeemedFaillure(event: SharesRedeemedFaillureEvent): void {
+export function handleSharesRedeemedFailure(event: SharesRedeemedFailureEvent): void {
 	//TODO
 }
 
