@@ -22,6 +22,13 @@ contract BasicGovernance is IGovernance, AccessControl
     mapping(address => mapping(bytes4  => address)) internal _staticcalls;
     mapping(bytes32 => bool) internal _globalOnlyKeys;
 
+		event ModuleDisabled(address wallet, address indexed module, bool disabled);
+		event ModuleSet(bytes4 indexed sig, address indexed value, address indexed wallet);
+		event GlobalModuleSet(bytes4 indexed sig, address indexed value);
+		event ConfigSet(bytes32 indexed key, uint256 indexed value, address indexed wallet);
+		event GlobalConfigSet(bytes32 indexed key, uint256 indexed value);
+		event GlobalKeySet(bytes32 indexed key, bool indexed value);
+
     function initialize()
     public
     {
@@ -39,7 +46,7 @@ contract BasicGovernance is IGovernance, AccessControl
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
         _disabled[wallet][module] = disabled;
-        // TODO: emit
+        emit ModuleDisabled(wallet, module, disabled);
     }
 
     function isAuthorized(address wallet, address user)
@@ -60,7 +67,7 @@ contract BasicGovernance is IGovernance, AccessControl
     public
     {
         _staticcalls[msg.sender][sig] = value;
-        // TODO: emit
+        emit ModuleSet(sig, value, msg.sender);
     }
 
     function setGlobalModule(bytes4 sig, address value)
@@ -68,7 +75,7 @@ contract BasicGovernance is IGovernance, AccessControl
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
         _staticcalls[GLOBAL_CONFIG][sig] = value;
-        // TODO: emit
+        emit GlobalModuleSet(sig, value);
     }
 
     function getConfig(address wallet, bytes32 key)
@@ -83,7 +90,7 @@ contract BasicGovernance is IGovernance, AccessControl
     public
     {
         _config[msg.sender][key] = value;
-        // TODO: emit
+        emit ConfigSet(key, value, msg.sender);
     }
 
     function setGlobalConfig(bytes32 key, uint256 value)
@@ -91,7 +98,7 @@ contract BasicGovernance is IGovernance, AccessControl
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
         _config[GLOBAL_CONFIG][key] = value;
-        // TODO: emit
+        emit GlobalConfigSet(key, value);
     }
 
     function getGlobalOnlyKey(bytes32 key)
@@ -105,6 +112,7 @@ contract BasicGovernance is IGovernance, AccessControl
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
         _globalOnlyKeys[key] = value;
+				emit GlobalKeySet(key, value);
     }
 
     function getNiftexWallet() public view override returns(address) {
