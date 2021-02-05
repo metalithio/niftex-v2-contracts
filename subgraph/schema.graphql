@@ -110,7 +110,7 @@ type Buyout @entity {
 	status:                       BuyoutStatus!
 	wallet:                       ShardedWallet!
 	proposer:                     Account!
-	pricePerShare:                BigInt!
+	pricePerShard:                BigInt!
 	timer:                        Timer!
 	openEvents:                   [BuyoutOpened!]! @derivedFrom(field: "buyout")
 	closeEvents:                  [BuyoutClosed!]! @derivedFrom(field: "buyout")

@@ -40,7 +40,7 @@ export function handleBuyoutOpened(event: BuyoutOpenedEvent): void {
 	buyout.status         = 'RUNNING'
 	buyout.wallet         = wallet.id
 	buyout.proposer       = proposer.id
-	buyout.pricePerShare  = event.params.pricePerShare
+	buyout.pricePerShard  = event.params.pricePerShard
 	buyout.timer          = event.address.toHex().concat('-').concat(wallet.id) // TODO, cast wallet.id to bytes32 hex
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp

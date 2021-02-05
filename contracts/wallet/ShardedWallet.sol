@@ -22,6 +22,7 @@ contract ShardedWallet is Ownable, ERC20
     event Execute(address indexed to, uint256 value, bytes data);
     event ModuleExecute(address indexed module, address indexed to, uint256 value, bytes data);
     event GovernanceUpdated(address indexed oldGovernance, address indexed newGovernance);
+    event ArtistUpdated(address indexed oldArtist, address indexed newArtist);
 
     modifier onlyModule()
     {
@@ -110,16 +111,6 @@ contract ShardedWallet is Ownable, ERC20
         Ownable._setOwner(newOwner);
     }
 
-    function updateGovernance(address newGovernance)
-    external onlyOwner()
-    {
-        emit GovernanceUpdated(address(governance), newGovernance);
-
-        require(governance.getConfig(address(this), ALLOW_GOVERNANCE_UPGRADE) > 0);
-        require(Address.isContract(newGovernance));
-        governance = IGovernance(newGovernance);
-    }
-
     /*************************************************************************
      *                          Module interactions                          *
      *************************************************************************/
@@ -159,5 +150,23 @@ contract ShardedWallet is Ownable, ERC20
     external onlyModule()
     {
         Ownable._setOwner(to);
+    }
+
+    function updateGovernance(address newGovernance)
+    external onlyModule()
+    {
+        emit GovernanceUpdated(address(governance), newGovernance);
+
+        require(governance.getConfig(address(this), ALLOW_GOVERNANCE_UPGRADE) > 0);
+        require(Address.isContract(newGovernance));
+        governance = IGovernance(newGovernance);
+    }
+
+    function updateArtistWallet(address newArtistWallet)
+    external onlyModule()
+    {
+        emit ArtistUpdated(artistWallet, newArtistWallet);
+
+        artistWallet = newArtistWallet;
     }
 }

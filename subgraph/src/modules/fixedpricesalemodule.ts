@@ -1,13 +1,13 @@
 import {
 	OwnershipReclaimed     as OwnershipReclaimedEvent,
-	SharesBought           as SharesBoughtEvent,
-	SharesRedeemedFaillure as SharesRedeemedFaillureEvent,
-	SharesRedeemedSuccess  as SharesRedeemedSuccessEvent,
+	ShardsBought           as ShardsBoughtEvent,
+	ShardsRedeemedFailure  as ShardsRedeemedFailureEvent,
+	ShardsRedeemedSuccess  as ShardsRedeemedSuccessEvent,
 	TimerReset             as TimerResetEvent,
 	TimerStarted           as TimerStartedEvent,
 	TimerStopped           as TimerStoppedEvent,
 	Withdraw               as WithdrawEvent,
-} from '../../../generated/CrowdsaleFixedPriceModule/CrowdsaleFixedPriceModule'
+} from '../../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
 
 import {
 	Account,
@@ -33,15 +33,15 @@ export function handleOwnershipReclaimed(event: OwnershipReclaimedEvent): void {
 	//TODO
 }
 
-export function handleSharesBought(event: SharesBoughtEvent): void {
+export function handleShardsBought(event: ShardsBoughtEvent): void {
 	//TODO
 }
 
-export function handleSharesRedeemedFaillure(event: SharesRedeemedFaillureEvent): void {
+export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): void {
 	//TODO
 }
 
-export function handleSharesRedeemedSuccess(event: SharesRedeemedSuccessEvent): void {
+export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): void {
 	//TODO
 }
 

@@ -18,16 +18,15 @@ contract BondingCurve {
 
 	uint256 internal _x;
 	uint256 internal _k; // k = totalSupply^2 * initial price
-	// !TODO fee should be retrieved from another contract where NIFTEX DAO governs
 
-	// bytes32 public constant PCT_FEE_TO_NIFTEX    = bytes32(uint256(keccak256("PCT_FEE_TO_NIFTEX")) - 1);
-	bytes32 public constant PCT_FEE_TO_NIFTEX    = 0x7145253e522281154ff5a4858195caf5383bff763db0241d79f1fb5c74db4f26;
-	// bytes32 public constant PCT_FEE_TO_ARTIST    = bytes32(uint256(keccak256("PCT_FEE_TO_ARTIST")) - 1);
-	bytes32 public constant PCT_FEE_TO_ARTIST    = 0x7a685f3ff12f1b7204575ecb08e31b2c40983b278bce2e1efb080f3673b0356d;
-	// bytes32 public constant PCT_FEE_TO_SUPPLIERS = bytes32(uint256(keccak256("PCT_FEE_TO_SUPPLIERS")) - 1);
-	bytes32 public constant PCT_FEE_TO_SUPPLIERS = 0x6de5efbdcfb6f45ae3d7205700e1e3fe90a2441758cdacb2730fe9e4c824340b;
+	// bytes32 public constant PCT_FEE_SUPPLIERS = bytes32(uint256(keccak256("PCT_FEE_SUPPLIERS")) - 1);
+	bytes32 public constant PCT_FEE_SUPPLIERS  = 0xe4f5729eb40e38b5a39dfb36d76ead9f9bc286f06852595980c5078f1af7e8c9;
+	// bytes32 public constant PCT_FEE_ARTIST    = bytes32(uint256(keccak256("PCT_FEE_ARTIST")) - 1);
+	bytes32 public constant PCT_FEE_ARTIST     = 0xdd0618e2e2a17ff193a933618181c8f8909dc169e9707cce1921893a88739ca0;
+	// bytes32 public constant PCT_FEE_NIFTEX    = bytes32(uint256(keccak256("PCT_FEE_NIFTEX")) - 1);
+	bytes32 public constant PCT_FEE_NIFTEX     = 0xcfb1dd89e6f4506eca597e7558fbcfe22dbc7e0b9f2b3956e121d0e344d6f7aa;
 	// bytes32 public constant LIQUIDITY_TIMELOCK   = bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
-	bytes32 public constant LIQUIDITY_TIMELOCK   = 0x4babff57ebd34f251a515a845400ed950a51f0a64c92e803a3e144fc40623fa8;
+	bytes32 public constant LIQUIDITY_TIMELOCK = 0x4babff57ebd34f251a515a845400ed950a51f0a64c92e803a3e144fc40623fa8;
 
 	struct ethSuppliers {
 		uint256 _totalSuppliedEthPlusFeesToSuppliers;
@@ -121,9 +120,9 @@ contract BondingCurve {
 			// pause if someone else reclaimed the ownership of shardedWallet
 			require(owner == address(0) || governance.isModule(_shardedWalletDetails.wallet, owner));
 
-			fees[0] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_SUPPLIERS);
-			fees[1] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX);
-			fees[2] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST);
+			fees[0] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_SUPPLIERS);
+			fees[1] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_NIFTEX);
+			fees[2] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_ARTIST);
 		}
 
 		bool hasArtistWallet = ShardedWallet(payable(_shardedWalletDetails.wallet)).artistWallet() != address(0);
@@ -190,9 +189,9 @@ contract BondingCurve {
 		require(owner == address(0) || governance.isModule(_shardedWalletDetails.wallet, owner));
 
 		uint256[3] memory fees;
-		fees[0] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_SUPPLIERS);
-		fees[1] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_NIFTEX);
-		fees[2] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_TO_ARTIST);
+		fees[0] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_SUPPLIERS);
+		fees[1] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_NIFTEX);
+		fees[2] = governance.getConfig(_shardedWalletDetails.wallet, PCT_FEE_ARTIST);
 
 		bool hasArtistWallet = ShardedWallet(payable(_shardedWalletDetails.wallet)).artistWallet() != address(0);
 

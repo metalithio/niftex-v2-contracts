@@ -5,13 +5,13 @@ contract('Workflow', function (accounts) {
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
-	const Governance           = artifacts.require('BasicGovernance');
+	const Governance           = artifacts.require('Governance');
 	const Modules = {
-		Action:        { artifact: artifacts.require('ActionModule')              },
-		Buyout:        { artifact: artifacts.require('BuyoutModule')              },
-		Crowdsale:     { artifact: artifacts.require('CrowdsaleFixedPriceModule') },
-		Multicall:     { artifact: artifacts.require('MulticallModule')           },
-		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')       },
+		Action:        { artifact: artifacts.require('ActionModule')         },
+		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
+		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
+		Multicall:     { artifact: artifacts.require('MulticallModule')      },
+		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -34,8 +34,8 @@ contract('Workflow', function (accounts) {
 		}
 		// set config
 		await this.governance.setGlobalConfig(await this.governance.AUTHORIZATION_RATIO(), web3.utils.toWei('0.01'));
-		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION_KEY(), 50400);
-		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(), 50400);
+		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION(), 50400);
+		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION(), 50400);
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
 			await this.governance.setGlobalModule(funcSig, this.modules.tokenreceiver.address);
@@ -137,7 +137,7 @@ contract('Workflow', function (accounts) {
 	describe('Buy shard', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.buy(instance.address, other1, { from: other1, value: web3.utils.toWei('0.01')})
-			expectEvent(receipt, 'SharesBought', { wallet: instance.address, from: other1, to: other1, count: web3.utils.toWei('1') });
+			expectEvent(receipt, 'ShardsBought', { wallet: instance.address, from: other1, to: other1, count: web3.utils.toWei('1') });
 		});
 
 		after(async function () {
@@ -187,7 +187,7 @@ contract('Workflow', function (accounts) {
 	describe('redeem', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.redeem(instance.address, other1, { from: other1 });
-			expectEvent(receipt, 'SharesRedeemedFaillure', { wallet: instance.address, from: other1, to: other1, count: web3.utils.toWei('1') });
+			expectEvent(receipt, 'ShardsRedeemedFailure', { wallet: instance.address, from: other1, to: other1, count: web3.utils.toWei('1') });
 			// expectEvent(receipt, 'Transfer', { from: instance.address, to: other1, value: '1' });
 		});
 

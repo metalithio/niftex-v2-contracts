@@ -5,13 +5,13 @@ contract('Workflow', function (accounts) {
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
-	const Governance           = artifacts.require('BasicGovernance');
+	const Governance           = artifacts.require('Governance');
 	const Modules = {
-		Action:        { artifact: artifacts.require('ActionModule')         },
-		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
-		Crowdsale:     { artifact: artifacts.require('CrowdsaleBasicModule') },
-		Multicall:     { artifact: artifacts.require('MulticallModule')      },
-		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
+		Action:        { artifact: artifacts.require('ActionModule')            },
+		Buyout:        { artifact: artifacts.require('BuyoutModule')            },
+		Crowdsale:     { artifact: artifacts.require('BasicDistributionModule') },
+		Multicall:     { artifact: artifacts.require('MulticallModule')         },
+		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')     },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -34,8 +34,8 @@ contract('Workflow', function (accounts) {
 		}
 		// set config
 		await this.governance.setGlobalConfig(await this.governance.AUTHORIZATION_RATIO(), web3.utils.toWei('0.01'));
-		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION_KEY(), 50400);
-		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(), 50400);
+		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION(), 50400);
+		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION(), 50400);
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
 			await this.governance.setGlobalModule(funcSig, this.modules.tokenreceiver.address);

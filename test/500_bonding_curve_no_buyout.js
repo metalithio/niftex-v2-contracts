@@ -9,14 +9,14 @@ contract('Workflow', function (accounts) {
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
-	const Governance           = artifacts.require('BasicGovernance');
+	const Governance           = artifacts.require('Governance');
 	const Modules = {
-		Action:        { artifact: artifacts.require('ActionModule')              },
-		Buyout:        { artifact: artifacts.require('BuyoutModule')              },
-		Crowdsale:     { artifact: artifacts.require('CrowdsaleFixedPriceModule') },
-		Multicall:     { artifact: artifacts.require('MulticallModule')           },
-		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')       },
-		BondingCurve:  { artifact: artifacts.require('BondingCurve')              },
+		Action:        { artifact: artifacts.require('ActionModule')         },
+		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
+		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
+		Multicall:     { artifact: artifacts.require('MulticallModule')      },
+		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
+		BondingCurve:  { artifact: artifacts.require('BondingCurve')         },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -40,15 +40,15 @@ contract('Workflow', function (accounts) {
 		}
 		// set config
 		await this.governance.setGlobalConfig(await this.governance.AUTHORIZATION_RATIO(),               web3.utils.toWei('0.01'));
-		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION_KEY(),           50400);
-		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION_KEY(),           50400);
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE_KEY(),         this.modules.bondingcurve.address);
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARES_TO_ADMIN(),        web3.utils.toWei('0.0')); // 0% eth to niftex
+		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION(),           50400);
+		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION(),           50400);
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE(),         this.modules.bondingcurve.address);
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARDS_NIFTEX(),        web3.utils.toWei('0.0')); // 0% eth to niftex
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),           web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_NIFTEX(),       web3.utils.toWei('0.001')); // 0% to niftex initially
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_ARTIST(),       web3.utils.toWei('0.001')); // 0.1% to artist initially
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_TO_SUPPLIERS(),    web3.utils.toWei('0.003')); // 0.3% to providers initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_NIFTEX(),       web3.utils.toWei('0.001')); // 0% to niftex initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_ARTIST(),       web3.utils.toWei('0.001')); // 0.1% to artist initially
+		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_SUPPLIERS(),    web3.utils.toWei('0.003')); // 0.3% to providers initially
 		await this.governance.setGlobalConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(),      100800); // timelock for 1 month
 
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
@@ -133,8 +133,8 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 		});
 	});
 
@@ -162,10 +162,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.070'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('70'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('70'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 
@@ -193,13 +193,13 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('1000'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('70'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('30'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('70'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('30'));
 		});
 
-		// Not necessary, all shares have been sold.
+		// Not necessary, all shards have been sold.
 		it('Move till end of crowdsale', async function () {
 			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 50400 ], id: 0 }, () => {});
 		});
@@ -228,10 +228,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('930'));;
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('30'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('30'));
 		});
 	});
 
@@ -260,10 +260,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('900'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('820'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('820'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 
@@ -292,10 +292,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('80'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 
@@ -320,10 +320,10 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('0'));
 			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, nftOwner),              web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShares(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer1),                web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.boughtShares(instance.address, cBuyer2),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
 	});
 
