@@ -110,16 +110,6 @@ contract ShardedWallet is Ownable, ERC20
         Ownable._setOwner(newOwner);
     }
 
-    function updateGovernance(address newGovernance)
-    external onlyOwner()
-    {
-        emit GovernanceUpdated(address(governance), newGovernance);
-
-        require(governance.getConfig(address(this), ALLOW_GOVERNANCE_UPGRADE) > 0);
-        require(Address.isContract(newGovernance));
-        governance = IGovernance(newGovernance);
-    }
-
     /*************************************************************************
      *                          Module interactions                          *
      *************************************************************************/
@@ -160,4 +150,14 @@ contract ShardedWallet is Ownable, ERC20
     {
         Ownable._setOwner(to);
     }
+
+		function updateGovernance(address newGovernance)
+		external onlyModule()
+		{
+				emit GovernanceUpdated(address(governance), newGovernance);
+
+				require(governance.getConfig(address(this), ALLOW_GOVERNANCE_UPGRADE) > 0);
+				require(Address.isContract(newGovernance));
+				governance = IGovernance(newGovernance);
+		}
 }
