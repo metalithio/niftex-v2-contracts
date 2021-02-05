@@ -11,9 +11,9 @@ struct Allocation
     uint256 amount;
 }
 
-contract CrowdsaleBasicModule is IModule, ModuleBase
+contract BasicDistributionModule is IModule, ModuleBase
 {
-    string public constant override name = type(CrowdsaleBasicModule).name;
+    string public constant override name = type(BasicDistributionModule).name;
 
     function setup(ShardedWallet wallet, Allocation[] calldata mints)
     external onlyOwner(wallet, msg.sender)
