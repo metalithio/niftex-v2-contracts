@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../wallet/ShardedWallet.sol";
 import "../governance/IGovernance.sol";
+import "../libraries/AdvMath.sol";
 
 
 contract BondingCurve {
@@ -49,6 +50,7 @@ contract BondingCurve {
 		address recipient;
 		uint256 timelockDeadline;
 		uint256 decimals;
+		uint256 initialPriceInWei;
 	}
 
 	ethSuppliers internal _ethSuppliers;
@@ -76,6 +78,7 @@ contract BondingCurve {
 		_shardedWalletDetails.recipient = recipient;
 		_shardedWalletDetails.timelockDeadline = block.timestamp.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, LIQUIDITY_TIMELOCK));
 		_shardedWalletDetails.decimals = ShardedWallet(payable(_shardedWalletDetails.wallet)).decimals();
+		_shardedWalletDetails.initialPriceInWei = initialPriceInWei;
 		// can create the bonding curve without transferring shards.
 		if (suppliedShards > 0) {
 			ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), suppliedShards);
@@ -427,6 +430,30 @@ contract BondingCurve {
 
 		_shardSuppliers._mappingShardLPTokens[address(this)] = 0;
 		_ethSuppliers._mappingEthLPTokens[address(this)] = 0;
+	}
+
+	// useful when sharded wallet mint/burn tokens (totalSupply changes)
+	// maintain current market price, simply increase k and update x
+	// will not affect LP mechanisms
+	function rebaseWhenTotalSupplyChange() public {
+		uint256 newK;
+		uint256 curMarketPrice;
+		uint256 newX;
+		{
+			uint256 totalSupply = ShardedWallet(payable(_shardedWalletDetails.wallet)).totalSupply();
+			newK = totalSupply.mul(totalSupply).mul(_shardedWalletDetails.initialPriceInWei).div(10**_shardedWalletDetails.decimals);
+		}
+		
+		{
+			uint256 y = _k.div(_x);
+			curMarketPrice = y.mul(10**_shardedWalletDetails.decimals).div(_x);
+		}
+
+		newX = AdvMath.sqrt(newK.mul(10**_shardedWalletDetails.decimals).div(curMarketPrice));
+		_k = newK;
+		_x = newX;
+		assert(_k > 0);
+		assert(_x > 0);
 	}
 
 	function getCurrentPrice() external view returns (uint256) {
