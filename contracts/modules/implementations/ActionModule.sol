@@ -3,22 +3,33 @@
 pragma solidity ^0.7.0;
 pragma abicoder v2;
 
+import "@openzeppelin/contracts/math/Math.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
 
 contract ActionModule is IModule, ModuleBase, Timers
 {
+    using SafeMath for uint256;
+
     string public constant override name = type(ActionModule).name;
 
     // bytes32 public constant ACTION_DURATION = bytes32(uint256(keccak256("ACTION_DURATION")) - 1);
     bytes32 public constant ACTION_DURATION = 0x05f91198c37cc2578c2915e1614db3bf5c90e3387bd106bdfbb0da82514418dd;
+    // bytes32 public constant ACTION_AUTH_RATIO = bytes32(uint256(keccak256("ACTION_AUTH_RATIO")) - 1);
+    bytes32 public constant ACTION_AUTH_RATIO = 0x3c3813978ff64b4dbcec0d1ea3c72ec1393a708e0a785f2797bac1f61c3d7e09;
 
     event ActionScheduled(ShardedWallet indexed wallet, bytes32 indexed uid, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
     event ActionExecuted(ShardedWallet indexed wallet, bytes32 indexed uid, bytes32 indexed id, uint256 i, address to, uint256 value, bytes data);
     event ActionCancelled(ShardedWallet indexed wallet, bytes32 indexed uid, bytes32 indexed id);
 
+    modifier actionAuthorized(ShardedWallet wallet, address user)
+    {
+        require(wallet.balanceOf(user) >= Math.max(wallet.totalSupply().mul(wallet.governance().getConfig(address(wallet), ACTION_AUTH_RATIO)).div(10**18), 1));
+        _;
+    }
+
     function schedule(ShardedWallet wallet, address[] memory to, uint256[] memory value, bytes[] memory data)
-    public onlyAuthorized(wallet, msg.sender) returns (bytes32)
+    public actionAuthorized(wallet, msg.sender) returns (bytes32)
     {
         require(to.length == value.length);
         require(to.length == data.length);
@@ -35,7 +46,7 @@ contract ActionModule is IModule, ModuleBase, Timers
     }
 
     function execute(ShardedWallet wallet, address[] memory to, uint256[] memory value, bytes[] memory data)
-    public onlyAuthorized(wallet, msg.sender) returns (bool)
+    public actionAuthorized(wallet, msg.sender) returns (bool)
     {
         require(wallet.owner() == address(0)); // buyout takes over ownership
         require(to.length == value.length);
@@ -54,7 +65,7 @@ contract ActionModule is IModule, ModuleBase, Timers
     }
 
     function cancel(ShardedWallet wallet, bytes32 id)
-    public onlyAuthorized(wallet, msg.sender) returns (bool)
+    public actionAuthorized(wallet, msg.sender) returns (bool)
     {
         bytes32 uid = keccak256(abi.encode(wallet, id));
 

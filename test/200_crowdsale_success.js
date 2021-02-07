@@ -33,7 +33,8 @@ contract('Workflow', function (accounts) {
 			await this.governance.grantRole(await this.governance.MODULE_ROLE(), address);
 		}
 		// set config
-		await this.governance.setGlobalConfig(await this.governance.AUTHORIZATION_RATIO(), web3.utils.toWei('0.01'));
+		await this.governance.setGlobalConfig(await this.modules.action.ACTION_AUTH_RATIO(), web3.utils.toWei('0.01'));
+		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_AUTH_RATIO(), web3.utils.toWei('0.01'));
 		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION(), 50400);
 		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION(), 50400);
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
