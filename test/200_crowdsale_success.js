@@ -5,7 +5,7 @@ contract('Workflow', function (accounts) {
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
-	const Governance           = artifacts.require('BasicGovernance');
+	const Governance           = artifacts.require('Governance');
 	const Modules = {
 		Action:        { artifact: artifacts.require('ActionModule')         },
 		Buyout:        { artifact: artifacts.require('BuyoutModule')         },

@@ -9,7 +9,7 @@ contract('Workflow', function (accounts) {
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
-	const Governance           = artifacts.require('BasicGovernance');
+	const Governance           = artifacts.require('Governance');
 	const Modules = {
 		Action:        { artifact: artifacts.require('ActionModule')         },
 		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
@@ -45,7 +45,6 @@ contract('Workflow', function (accounts) {
 		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION(),            50400);
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE(),          this.modules.bondingcurve.address);
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARDS_NIFTEX(),       web3.utils.toWei('0.0')); // 0% eth to niftex
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_MIN_PROVIDED_SHARDS(), web3.utils.toWei('0.08')); // 8% shards of total supply to bonding curve
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),        web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
 		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_NIFTEX(),       web3.utils.toWei('0.001')); // 0% to niftex initially
 		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_ARTIST(),       web3.utils.toWei('0.001')); // 0.1% to artist initially
@@ -66,11 +65,11 @@ contract('Workflow', function (accounts) {
 	describe('Initialize', function () {
 		it('perform', async function () {
 			const { receipt } = await this.factory.mintWallet(
-				this.governance.address,      // governance_
-				nftOwner,                        // owner_
-				'Tokenized NFT',              // name_
-				'TNFT',                       // symbol_
-				constants.ZERO_ADDRESS,                            // artistWallet_
+				this.governance.address, // governance_
+				nftOwner,                // owner_
+				'Tokenized NFT',         // name_
+				'TNFT',                  // symbol_
+				constants.ZERO_ADDRESS,  // artistWallet_
 				{ from: nftOwner }
 			);
 			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewInstance').args.instance);
@@ -117,7 +116,10 @@ contract('Workflow', function (accounts) {
 				web3.utils.toWei('0.001'),
 				50400,
 				web3.utils.toWei('1000'),
-				[[ nftOwner, web3.utils.toWei('900') ]],
+				[
+					[ nftOwner,                                             web3.utils.toWei('820') ],
+					[ await this.modules.crowdsale.CURVE_PREMINT_RESERVE(), web3.utils.toWei('80')  ],
+				],
 				{ from: nftOwner }
 			);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);

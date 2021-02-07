@@ -23,14 +23,12 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
 
     // address public constant CURVE_PREMINT_RESERVE   = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
     address public constant CURVE_PREMINT_RESERVE   = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
-    // bytes32 public constant PCT_ETH_TO_CURVE     = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
+    // bytes32 public constant PCT_ETH_TO_CURVE        = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
     bytes32 public constant PCT_ETH_TO_CURVE        = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
-    // bytes32 public constant PCT_SHARDS_NIFTEX     = bytes32(uint256(keccak256("PCT_SHARDS_NIFTEX")) - 1);
-    bytes32 public constant PCT_SHARDS_NIFTEX     = 0xfbbd159a3fa06a90e6706a184ef085e653f08384af107f1a8507ee0e3b341aa6;
+    // bytes32 public constant PCT_SHARDS_NIFTEX       = bytes32(uint256(keccak256("PCT_SHARDS_NIFTEX")) - 1);
+    bytes32 public constant PCT_SHARDS_NIFTEX       = 0xfbbd159a3fa06a90e6706a184ef085e653f08384af107f1a8507ee0e3b341aa6;
     // bytes32 public constant CURVE_TEMPLATE          = bytes32(uint256(keccak256("CURVE_TEMPLATE")) - 1);
     bytes32 public constant CURVE_TEMPLATE          = 0x3cec7c13345ae32e688f81840d184c63978bb776762e026e7e61d891bb2dd84b;
-    // bytes32 public constant PCT_MIN_PROVIDED_SHARDS = bytes32(uint256(keccak256("PCT_MIN_PROVIDED_SHARDS")) - 1);
-    bytes32 public constant PCT_MIN_PROVIDED_SHARDS = 0x2886806cfaeaffef9ad015d45f6f2b865c8f2e4478c1c1fa88f385940fd06a09;
 
     mapping(ShardedWallet => address)                     public recipients;
     mapping(ShardedWallet => uint256)                     public prices;
@@ -91,17 +89,6 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
 
         Timers._startTimer(bytes32(uint256(address(wallet))), duration);
 
-        // Allocate a fraction of the total supply to Niftex. Dedicated block
-        // to avoid stack to deep issues.
-        // Compute the number of shards that should be reserved for the bonding
-        // curve. If too many shards are reserved to the bonding curve, the
-        // crowdsale ETH wouldn't be enough to setup the bonding curve
-        {
-            uint256 shardsToCurve = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_MIN_PROVIDED_SHARDS)).div(10**18);
-            require(shardsToCurve <= totalSupply);
-            premintShards[wallet][CURVE_PREMINT_RESERVE] = shardsToCurve;
-        }
-
         {
             uint256 shardsToNiftex = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARDS_NIFTEX)).div(10**18);
             premintShards[wallet][wallet.governance().getNiftexWallet()] = shardsToNiftex;
@@ -115,9 +102,9 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
             totalSupply = totalSupply.sub(premints[i].amount);
         }
 
-        {
-            premintShards[wallet][recipient] = premintShards[wallet][recipient].sub(premintShards[wallet][CURVE_PREMINT_RESERVE]);
-        }
+        // Sanity check, guaranties that the crowdsale will get enought value
+        // to initialize the bounding curve
+        require(premintShards[wallet][CURVE_PREMINT_RESERVE] <= totalSupply);
 
         recipients[wallet] = recipient;
         prices[wallet] = price;
