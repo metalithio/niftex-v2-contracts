@@ -1,7 +1,5 @@
-/* solhint-disable no-mix-tabs-and-spaces */
-/* solhint-disable indent */
+// SPDX-License-Identifier: MIT
 
-// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
