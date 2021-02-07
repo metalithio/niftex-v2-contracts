@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
-pragma abicoder v2;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/math/Math.sol";
@@ -10,14 +9,13 @@ import "../ModuleBase.sol";
 
 contract BuyoutModule is IModule, ModuleBase, Timers
 {
-    using Math     for uint256;
     using SafeMath for uint256;
 
     string public constant override name = type(BuyoutModule).name;
 
     // bytes32 public constant BUYOUT_DURATION = bytes32(uint256(keccak256("BUYOUT_DURATION")) - 1);
     bytes32 public constant BUYOUT_DURATION = 0x2b0302f2fecc31c4abdae5dbfeb4ffb88f5e75f2102ec01dda9073a9330d6b1c;
-		// bytes32 public constant BUYOUT_AUTH_RATIO = bytes32(uint256(keccak256("BUYOUT_AUTH_RATIO")) - 1);
+    // bytes32 public constant BUYOUT_AUTH_RATIO = bytes32(uint256(keccak256("BUYOUT_AUTH_RATIO")) - 1);
     bytes32 public constant BUYOUT_AUTH_RATIO = 0xfe28b1c1d768c9fc13cde756c61b63ec3a40333a8bb3cd2e556327781fbea03c;
 
     mapping(ShardedWallet => address) internal _proposers;
@@ -29,11 +27,11 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     event BuyoutClaimed(ShardedWallet indexed wallet, address user);
     event BuyoutFinalized(ShardedWallet indexed wallet);
 
-		modifier buyoutAuthorized(ShardedWallet wallet, address user)
-		{
-				require(wallet.balanceOf(user) >= Math.max(wallet.totalSupply().mul(wallet.governance().getConfig(address(wallet), BUYOUT_AUTH_RATIO)).div(10**18), 1));
-				_;
-		}
+    modifier buyoutAuthorized(ShardedWallet wallet, address user)
+    {
+        require(wallet.balanceOf(user) >= Math.max(wallet.totalSupply().mul(wallet.governance().getConfig(address(wallet), BUYOUT_AUTH_RATIO)).div(10**18), 1));
+        _;
+    }
 
     function openBuyout(ShardedWallet wallet, uint256 pricePerShard)
     external payable buyoutAuthorized(wallet, msg.sender) onlyBeforeTimer(bytes32(uint256(address(wallet))))
@@ -60,7 +58,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
         uint256 decimals      = wallet.decimals();
         uint256 pricePerShard = _prices[wallet];
         uint256 lockedShards  = wallet.balanceOf(address(this));
-        uint256 buyShards     = msg.value.mul(10**decimals).div(pricePerShard).min(lockedShards);
+        uint256 buyShards     = Math.min(msg.value.mul(10**decimals).div(pricePerShard), lockedShards);
         uint256 buyprice      = buyShards.mul(pricePerShard).div(10**decimals);
         _deposit[wallet]      = _deposit[wallet].add(buyprice);
 
