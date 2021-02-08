@@ -1,0 +1,167 @@
+specVersion: 0.0.2
+description: Niftex-V2
+repository: https://github.com/metalithio/niftex-v2-contracts
+schema:
+  file: ./schema.graphql
+dataSources:
+  # ====== FACTORY ===========================================================
+  - kind: ethereum/contract
+    name: ShardedWalletFactory
+    network: mainnet
+    source:
+      # address: '0x'
+      # startBlock: 0
+      abi: ShardedWalletFactory
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: ShardedWalletFactory
+          file: ../artifacts/contracts/wallet/ShardedWalletFactory.sol/ShardedWalletFactory.json
+      eventHandlers:
+        - event: NewInstance(address)
+          handler: handleNewInstance
+      file: ./src/wallet/shardedwalletfactory.ts
+  # ====== Module - Action ===================================================
+  - kind: ethereum/contract
+    name: ActionModule
+    network: mainnet
+    source:
+      # address: '0x'
+      # startBlock: 0
+      abi: ActionModule
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: ActionModule
+          file: ../artifacts/contracts/modules/implementations/ActionModule.sol/ActionModule.json
+        - name: Timers
+          file: ../artifacts/contracts/utils/Timers.sol/Timers.json
+      eventHandlers:
+        - event: ActionCancelled(indexed address,indexed bytes32,indexed bytes32)
+          handler: handleActionCancelled
+        - event: ActionExecuted(indexed address,indexed bytes32,indexed bytes32,uint256,address,uint256,bytes)
+          handler: handleActionExecuted
+        - event: ActionScheduled(indexed address,indexed bytes32,indexed bytes32,uint256,address,uint256,bytes)
+          handler: handleActionScheduled
+        - event: TimerReset(indexed bytes32)
+          handler: handleTimerReset
+        - event: TimerStarted(indexed bytes32,uint256)
+          handler: handleTimerStarted
+        - event: TimerStopped(indexed bytes32)
+          handler: handleTimerStopped
+      file: ./src/modules/actionmodule.ts
+  # ====== Module - Buyout ===================================================
+  - kind: ethereum/contract
+    name: BuyoutModule
+    network: mainnet
+    source:
+      # address: '0x'
+      # startBlock: 0
+      abi: BuyoutModule
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: BuyoutModule
+          file: ../artifacts/contracts/modules/implementations/BuyoutModule.sol/BuyoutModule.json
+        - name: Timers
+          file: ../artifacts/contracts/utils/Timers.sol/Timers.json
+      eventHandlers:
+        - event: BuyoutClaimed(indexed address,address)
+          handler: handleBuyoutClaimed
+        - event: BuyoutClosed(indexed address,address)
+          handler: handleBuyoutClosed
+        - event: BuyoutFinalized(indexed address)
+          handler: handleBuyoutFinalized
+        - event: BuyoutOpened(indexed address,address,uint256)
+          handler: handleBuyoutOpened
+        - event: TimerReset(indexed bytes32)
+          handler: handleTimerReset
+        - event: TimerStarted(indexed bytes32,uint256)
+          handler: handleTimerStarted
+        - event: TimerStopped(indexed bytes32)
+          handler: handleTimerStopped
+      file: ./src/modules/buyoutmodule.ts
+  # ====== Module - CrowdsaleFixedPrice ======================================
+  - kind: ethereum/contract
+    name: FixedPriceSaleModule
+    network: mainnet
+    source:
+      # address: '0x'
+      # startBlock: 0
+      abi: FixedPriceSaleModule
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: FixedPriceSaleModule
+          file: ../artifacts/contracts/modules/implementations/FixedPriceSaleModule.sol/FixedPriceSaleModule.json
+        - name: Timers
+          file: ../artifacts/contracts/utils/Timers.sol/Timers.json
+      eventHandlers:
+        - event: OwnershipReclaimed(indexed address,indexed address,address)
+          handler: handleOwnershipReclaimed
+        - event: ShardsBought(indexed address,indexed address,address,uint256)
+          handler: handleShardsBought
+        - event: ShardsRedeemedFailure(indexed address,indexed address,address,uint256)
+          handler: handleShardsRedeemedFailure
+        - event: ShardsRedeemedSuccess(indexed address,indexed address,address,uint256)
+          handler: handleShardsRedeemedSuccess
+        - event: TimerReset(indexed bytes32)
+          handler: handleTimerReset
+        - event: TimerStarted(indexed bytes32,uint256)
+          handler: handleTimerStarted
+        - event: TimerStopped(indexed bytes32)
+          handler: handleTimerStopped
+        - event: Withdraw(indexed address,indexed address,address,uint256)
+          handler: handleWithdraw
+        # TODO
+        # - event: NewBondingCurve(indexed address,indexed address)
+        #   handler: handleNewBondingCurve
+      file: ./src/modules/fixedpricesalemodule.ts
+# ====== Template - ShardedWallet ============================================
+templates:
+  - name: ShardedWallet
+    kind: ethereum/contract
+    network: mainnet
+    source:
+      abi: ShardedWallet
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: ShardedWallet
+          file: ../artifacts/contracts/wallet/ShardedWallet.sol/ShardedWallet.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,uint256)
+          handler: handleApproval
+        - event: Execute(indexed address,uint256,bytes)
+          handler: handleExecute
+        - event: GovernanceUpdated(indexed address,indexed address)
+          handler: handleGovernanceUpdated
+        - event: ModuleExecute(indexed address,indexed address,uint256,bytes)
+          handler: handleModuleExecute
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: Received(indexed address,uint256,bytes)
+          handler: handleReceived
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/wallet/shardedwallet.ts

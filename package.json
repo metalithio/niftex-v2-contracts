@@ -1,0 +1,38 @@
+{
+  "name": "niftex-v2-contracts",
+  "version": "2.0.0-alpha.0",
+  "description": "proposal for a v2 of niftex",
+  "author": "Hadrien Croubois (@Amxx)",
+  "license": "MIT",
+  "scripts": {
+    "build": "hardhat compile",
+    "subgraph:schema": "concat -o subgraph/schema.graphql subgraph/src/schema.gql node_modules/@amxx/graphprotocol-utils/schema.graphql",
+    "subgraph:codegen": "graph codegen subgraph/subgraph.yaml",
+    "subgraph:build": "graph build subgraph/subgraph.yaml",
+    "subgraph": "yarn subgraph:schema && yarn subgraph:codegen && yarn subgraph:build",
+    "coverage": "hardhat coverage",
+    "test": "hardhat test",
+    "lint": "hardhat check",
+    "clean": "rimraf artifacts cache coverage"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.4.0-solc-0.7"
+  },
+  "devDependencies": {
+    "@amxx/graphprotocol-utils": "0.0.7",
+    "@graphprotocol/graph-cli": "^0.19.0",
+    "@graphprotocol/graph-ts": "^0.19.0",
+    "@nomiclabs/hardhat-ethers": "^2.0.1",
+    "@nomiclabs/hardhat-solhint": "^2.0.0",
+    "@nomiclabs/hardhat-truffle5": "^2.0.0",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/hardhat-upgrades": "^1.6.0",
+    "@openzeppelin/test-helpers": "^0.5.9",
+    "concat": "^1.0.3",
+    "ethers": "^5.0.29",
+    "ganache-cli": "^6.12.1",
+    "hardhat": "^2.0.4",
+    "solidity-coverage": "^0.7.13",
+    "truffle": "^5.1.56"
+  }
+}

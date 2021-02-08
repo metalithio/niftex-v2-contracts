@@ -1,0 +1,262 @@
+# ================================= Ethereum ==================================
+type Account @entity {
+	id:                           ID!
+	wallets:                      [ShardedWallet!]! @derivedFrom(field: "owner")
+	balances:                     [Balance!]! @derivedFrom(field: "account")
+	transfersFrom:                [Transfer!]! @derivedFrom(field: "from")
+	transfersTo:                  [Transfer!]! @derivedFrom(field: "to")
+	approvalsOwner:               [Approval!]! @derivedFrom(field: "owner")
+	approvalsSpender:             [Approval!]! @derivedFrom(field: "spender")
+	executions:                   [Execute!]! @derivedFrom(field: "to")
+	calls:                        [ActionCall!]! @derivedFrom(field: "to")
+}
+
+type Module @entity {
+	id:                           ID!
+	executions:                   [ModuleExecute!]! @derivedFrom(field: "module")
+}
+
+# =============================== ShardedWallet ===============================
+type Governance @entity {
+	id:                           ID!
+	wallets:                      [ShardedWallet!]! @derivedFrom(field: "governance")
+}
+
+type ShardedWallet @entity {
+	id:                           ID!
+	owner:                        Account!
+	governance:                   Governance!
+	# ERC20
+	name:                         String!
+	symbol:                       String!
+	decimals:                     Int!
+	totalSupply:                  DecimalValue!
+	balances:                     [Balance!]! @derivedFrom(field: "wallet")
+	# Executions
+	executions:                   [Execute!]! @derivedFrom(field: "wallet")
+	moduleExecutions:             [ModuleExecute!]! @derivedFrom(field: "wallet")
+	# Administration
+	GovernanceUpdates:            [GovernanceUpdated!]! @derivedFrom(field: "wallet")
+	# Modules
+	actions:                      [Action!]! @derivedFrom(field: "wallet")
+	activeBuyout:                 Buyout
+	buyouts:                      [Buyout!]! @derivedFrom(field: "wallet")
+}
+
+type Balance @entity {
+	id:                           ID!
+	wallet:                       ShardedWallet!
+	account:                      Account!
+	amount:                       DecimalValue!
+	transfersFrom:                [Transfer!]! @derivedFrom(field: "fromBalance")
+	transfersTo:                  [Transfer!]! @derivedFrom(field: "toBalance")
+}
+
+# ================================== Timers ===================================
+enum TimerStatus {
+	STARTED,
+	STOPPED,
+	RESETTED,
+}
+
+type Timer @entity {
+	id:                           ID!
+	status:                       TimerStatus!
+	start:                        BigInt!
+	stop:                         BigInt!
+	startEvents:                  [TimerStarted!]! @derivedFrom(field: "timer")
+	stopEvents:                   [TimerStopped!]! @derivedFrom(field: "timer")
+	resetEvents:                  [TimerReset!]! @derivedFrom(field: "timer")
+}
+
+# ================================== Actions ==================================
+enum ActionStatus {
+	SCHEDULED,
+	EXECUTED,
+	CANCELLED,
+}
+
+type Action @entity {
+	id:                           ID!
+	status:                       ActionStatus!
+	wallet:                       ShardedWallet!
+	identifier:                   String!
+	timer:                        Timer!
+	calls:                        [ActionCall!]! @derivedFrom(field: "action")
+	scheduledEvents:              [ActionScheduled!]! @derivedFrom(field: "action")
+	executedEvents:               [ActionExecuted!]! @derivedFrom(field: "action")
+	cancelledEvents:              [ActionCancelled!]! @derivedFrom(field: "action")
+}
+
+type ActionCall @entity {
+	id:                           ID!
+	action:                       Action!
+	index:                        BigInt!
+	to:                           Account!
+	value:                        DecimalValue!
+	data:                         Bytes!
+}
+
+# ================================== Buyout ===================================
+enum BuyoutStatus {
+	RUNNING,
+	CANCELLED,
+	SUCCESSFULL,
+	RESETTED,
+}
+
+type Buyout @entity {
+	id:                           ID!
+	status:                       BuyoutStatus!
+	wallet:                       ShardedWallet!
+	proposer:                     Account!
+	pricePerShard:                BigInt!
+	timer:                        Timer!
+	openEvents:                   [BuyoutOpened!]! @derivedFrom(field: "buyout")
+	closeEvents:                  [BuyoutClosed!]! @derivedFrom(field: "buyout")
+	claimEvents:                  [BuyoutClaimed!]! @derivedFrom(field: "buyout")
+	finalizeEvents:               [BuyoutFinalized!]! @derivedFrom(field: "buyout")
+	resetEvents:                  [BuyoutResetted!]! @derivedFrom(field: "buyout")
+}
+
+# ================================== Events ===================================
+type OwnershipTransferred implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	from:                         Account!
+	to:                           Account!
+}
+
+type Approval implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	owner:                        Account!
+	spender:                      Account!
+	amount:                       DecimalValue!
+}
+
+type Transfer implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	from:                         Account!
+	fromBalance:                  Balance!
+	to:                           Account!
+	toBalance:                    Balance!
+	amount:                       DecimalValue!
+}
+
+type Execute implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	to:                           Account!
+	value:                        DecimalValue!
+	data:                         Bytes!
+}
+
+type ModuleExecute implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	module:                       Module!
+	to:                           Account!
+	value:                        DecimalValue!
+	data:                         Bytes!
+}
+
+type GovernanceUpdated implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	module:                       Module!
+	governance:                   Governance!
+}
+
+type TimerStarted implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	timer:                        Timer!
+}
+
+type TimerStopped implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	timer:                        Timer!
+}
+
+type TimerReset implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	timer:                        Timer!
+}
+
+type ActionScheduled implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	action:                       Action!
+}
+
+type ActionExecuted implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	action:                       Action!
+}
+
+type ActionCancelled implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	action:                       Action!
+}
+
+type BuyoutOpened implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
+	proposer:                     Account!
+}
+
+type BuyoutClosed implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
+	closer:                       Account!
+}
+
+type BuyoutClaimed implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
+	user:                         Account!
+}
+
+type BuyoutFinalized implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
+}
+
+type BuyoutResetted implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	buyout:                       Buyout!
+}
