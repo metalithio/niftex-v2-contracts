@@ -5,8 +5,8 @@ pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../governance/IGovernance.sol";
-import "./initializable/Ownable.sol";
-import "./initializable/ERC20.sol";
+import "../initializable/Ownable.sol";
+import "../initializable/ERC20.sol";
 
 contract ShardedWallet is Ownable, ERC20
 {

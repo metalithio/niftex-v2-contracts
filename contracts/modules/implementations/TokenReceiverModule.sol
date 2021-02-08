@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
-pragma abicoder v2;
 
 import "@openzeppelin/contracts/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
