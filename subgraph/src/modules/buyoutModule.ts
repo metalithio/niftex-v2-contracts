@@ -15,7 +15,6 @@ import {
 } from '../../../generated/schema'
 
 import {
-	decimals,
 	events,
 	transactions,
 } from '@amxx/graphprotocol-utils'

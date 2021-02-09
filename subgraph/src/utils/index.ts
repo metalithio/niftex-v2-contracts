@@ -49,6 +49,7 @@ export function fetchBalance(wallet: ShardedWallet, account: Account): Balance {
 		balance.wallet    = wallet.id
 		balance.account   = account.id
 		balance.amount    = balancesupply.id
+		balance.save()
 	}
 	return balance as Balance
 }

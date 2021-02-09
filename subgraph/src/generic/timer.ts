@@ -18,7 +18,7 @@ import {
 
 export function handleTimerStarted(event: TimerStartedEvent): void {
 	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
-	timer.status = 'SCHEDULED'
+	timer.status = 'STARTED'
 	timer.start  = event.block.timestamp
 	timer.stop   = event.params.deadline
 	timer.save()
@@ -32,7 +32,7 @@ export function handleTimerStarted(event: TimerStartedEvent): void {
 
 export function handleTimerStopped(event: TimerStoppedEvent): void {
 	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
-	timer.status = 'EXECUTED'
+	timer.status = 'STOPPED'
 	timer.save()
 
 	let ev = new TimerStopped(events.id(event))
@@ -44,7 +44,7 @@ export function handleTimerStopped(event: TimerStoppedEvent): void {
 
 export function handleTimerReset(event: TimerResetEvent): void {
 	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
-	timer.status = 'CANCELLED'
+	timer.status = 'RESET'
 	timer.save()
 
 	let ev = new TimerReset(events.id(event))

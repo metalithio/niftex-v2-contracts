@@ -10,17 +10,17 @@ import {
 } from '../../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
 
 import {
-	Account,
+	// Account,
 } from '../../../generated/schema'
 
 import {
-	decimals,
-	events,
-	transactions,
+	// decimals,
+	// events,
+	// transactions,
 } from '@amxx/graphprotocol-utils'
 
 import {
-	fetchShardedWallet,
+	// fetchShardedWallet,
 } from '../utils'
 
 export {
@@ -42,18 +42,6 @@ export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): 
 }
 
 export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): void {
-	//TODO
-}
-
-export function handleTimerReset(event: TimerResetEvent): void {
-	//TODO
-}
-
-export function handleTimerStarted(event: TimerStartedEvent): void {
-	//TODO
-}
-
-export function handleTimerStopped(event: TimerStoppedEvent): void {
 	//TODO
 }
 
