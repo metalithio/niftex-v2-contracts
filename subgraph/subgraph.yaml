@@ -164,4 +164,6 @@ templates:
           handler: handleReceived
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
+        - event: ArtistUpdated(indexed address,indexed address)
+          handler: handleArtistUpdated
       file: ./src/wallet/shardedWallet.ts

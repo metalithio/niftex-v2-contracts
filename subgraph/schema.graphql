@@ -22,10 +22,16 @@ type Governance @entity {
 	wallets:                      [ShardedWallet!]! @derivedFrom(field: "governance")
 }
 
+type Artist @entity {
+	id:														ID!
+	wallets:											[ShardedWallet!]! @derivedFrom(field: "artist")
+}
+
 type ShardedWallet @entity {
 	id:                           ID!
 	owner:                        Account!
 	governance:                   Governance!
+	artist:												Artist!
 	# ERC20
 	name:                         String!
 	symbol:                       String!
@@ -179,6 +185,15 @@ type GovernanceUpdated implements Event @entity {
 	wallet:                       ShardedWallet!
 	module:                       Module!
 	governance:                   Governance!
+}
+
+type ArtistUpdated implements Event @entity {
+	id: 													ID!
+	transaction: 									Transaction!
+	timestamp:										BigInt!
+	wallet:												ShardedWallet!
+	module:												Module!
+	artist:												Artist!
 }
 
 type TimerStarted implements Event @entity {
