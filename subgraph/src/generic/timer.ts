@@ -2,14 +2,14 @@ import {
 	TimerReset      as TimerResetEvent,
 	TimerStarted    as TimerStartedEvent,
 	TimerStopped    as TimerStoppedEvent,
-} from '../../../generated/ActionModule/Timers'
+} from '../../generated/ActionModule/Timers'
 
 import {
 	Timer,
 	TimerStarted,
 	TimerStopped,
 	TimerReset,
-} from '../../../generated/schema'
+} from '../../generated/schema'
 
 import {
 	events,

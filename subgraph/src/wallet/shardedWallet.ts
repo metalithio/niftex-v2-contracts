@@ -10,7 +10,7 @@ import {
 	OwnershipTransferred as OwnershipTransferredEvent,
 	Received             as ReceivedEvent,
 	Transfer             as TransferEvent,
-} from '../../../generated/templates/ShardedWallet/ShardedWallet'
+} from '../../generated/templates/ShardedWallet/ShardedWallet'
 
 import {
 	Account,
@@ -22,7 +22,7 @@ import {
 	Execute,
 	ModuleExecute,
 	GovernanceUpdated,
-} from '../../../generated/schema'
+} from '../../generated/schema'
 
 import {
 	constants,

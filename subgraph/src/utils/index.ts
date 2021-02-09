@@ -4,14 +4,14 @@ import {
 
 import {
 	ShardedWallet as ShardedWalletContract,
-} from '../../../generated/templates/ShardedWallet/ShardedWallet'
+} from '../../generated/templates/ShardedWallet/ShardedWallet'
 
 import {
 	Account,
 	Governance,
 	ShardedWallet,
 	Balance,
-} from '../../../generated/schema'
+} from '../../generated/schema'
 
 import {
 	decimals,
