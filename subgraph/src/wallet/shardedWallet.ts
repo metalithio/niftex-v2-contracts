@@ -11,12 +11,11 @@ import {
 	Received             as ReceivedEvent,
 	Transfer             as TransferEvent,
 	ArtistUpdated        as ArtistUpdatedEvent,
-} from '../../generated/templates/ShardedWallet/ShardedWallet'
+} from '../../../generated/templates/ShardedWallet/ShardedWallet'
 
 import {
 	Account,
 	Governance,
-	Artist,
 	Module,
 	OwnershipTransferred,
 	Approval,
@@ -25,7 +24,7 @@ import {
 	ModuleExecute,
 	GovernanceUpdated,
 	ArtistUpdated,
-} from '../../generated/schema'
+} from '../../../generated/schema'
 
 import {
 	constants,
@@ -169,8 +168,8 @@ export function handleGovernanceUpdated(event: GovernanceUpdatedEvent): void {
 
 export function handleArtistUpdated(event: ArtistUpdatedEvent): void {
 	let wallet          = fetchShardedWallet(event.address)
-	let artist      		= new Artist(event.params.newArtist.toHex())
-	wallet.artist   		= artist.id
+	let artist          = new Account(event.params.newArtist.toHex())
+	wallet.artist       = artist.id
 	wallet.save()
 	artist.save()
 

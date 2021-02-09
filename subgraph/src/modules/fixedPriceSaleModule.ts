@@ -7,11 +7,11 @@ import {
 	TimerStarted           as TimerStartedEvent,
 	TimerStopped           as TimerStoppedEvent,
 	Withdraw               as WithdrawEvent,
-} from '../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
+} from '../../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
 
 import {
 	Account,
-} from '../../generated/schema'
+} from '../../../generated/schema'
 
 import {
 	decimals,

@@ -3,7 +3,7 @@ import {
 	BuyoutClaimed   as BuyoutClaimedEvent,
 	BuyoutFinalized as BuyoutFinalizedEvent,
 	BuyoutClosed    as BuyoutClosedEvent,
-} from '../../generated/BuyoutModule/BuyoutModule'
+} from '../../../generated/BuyoutModule/BuyoutModule'
 
 import {
 	Account,
@@ -12,7 +12,7 @@ import {
 	BuyoutClosed,
 	BuyoutClaimed,
 	BuyoutFinalized,
-} from '../../generated/schema'
+} from '../../../generated/schema'
 
 import {
 	decimals,

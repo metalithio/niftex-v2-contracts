@@ -6,7 +6,7 @@ import {
 	ActionCancelled as ActionCancelledEvent,
 	ActionExecuted  as ActionExecutedEvent,
 	ActionScheduled as ActionScheduledEvent,
-} from '../../generated/ActionModule/ActionModule'
+} from '../../../generated/ActionModule/ActionModule'
 
 import {
 	Account,
@@ -15,7 +15,7 @@ import {
 	ActionScheduled,
 	ActionExecuted,
 	ActionCancelled,
-} from '../../generated/schema'
+} from '../../../generated/schema'
 
 import {
 	decimals,

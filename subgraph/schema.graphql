@@ -2,6 +2,7 @@
 type Account @entity {
 	id:                           ID!
 	wallets:                      [ShardedWallet!]! @derivedFrom(field: "owner")
+	walletsAsArtist:              [ShardedWallet!]! @derivedFrom(field: "artist")
 	balances:                     [Balance!]! @derivedFrom(field: "account")
 	transfersFrom:                [Transfer!]! @derivedFrom(field: "from")
 	transfersTo:                  [Transfer!]! @derivedFrom(field: "to")
@@ -22,16 +23,11 @@ type Governance @entity {
 	wallets:                      [ShardedWallet!]! @derivedFrom(field: "governance")
 }
 
-type Artist @entity {
-	id:														ID!
-	wallets:											[ShardedWallet!]! @derivedFrom(field: "artist")
-}
-
 type ShardedWallet @entity {
 	id:                           ID!
 	owner:                        Account!
 	governance:                   Governance!
-	artist:												Artist!
+	artist:                       Account!
 	# ERC20
 	name:                         String!
 	symbol:                       String!
@@ -183,17 +179,15 @@ type GovernanceUpdated implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	wallet:                       ShardedWallet!
-	module:                       Module!
 	governance:                   Governance!
 }
 
 type ArtistUpdated implements Event @entity {
-	id: 													ID!
-	transaction: 									Transaction!
-	timestamp:										BigInt!
-	wallet:												ShardedWallet!
-	module:												Module!
-	artist:												Artist!
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	wallet:                       ShardedWallet!
+	artist:                       Account!
 }
 
 type TimerStarted implements Event @entity {
