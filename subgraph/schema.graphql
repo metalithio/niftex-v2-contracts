@@ -147,9 +147,9 @@ type Transfer implements Event @entity {
 	timestamp:                    BigInt!
 	wallet:                       ShardedWallet!
 	from:                         Account!
-	fromBalance:                  Balance!
+	fromBalance:                  Balance # can be null (in case of mint)
 	to:                           Account!
-	toBalance:                    Balance!
+	toBalance:                    Balance # can be null (in case of burn)
 	amount:                       DecimalValue!
 }
 
