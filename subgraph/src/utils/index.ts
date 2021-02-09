@@ -28,6 +28,8 @@ export function fetchShardedWallet(address: Address): ShardedWallet {
 		wallet.decimals     = contract.decimals()
 		let walletsupply    = new decimals.Value(id.concat('-totalSupply'), wallet.decimals)
 		wallet.totalSupply  = walletsupply.id;
+		wallet.governance		= contract.governance() as String 
+		wallet.artist				= contract.artistWallet() as String
 	}
 	return wallet as ShardedWallet
 }

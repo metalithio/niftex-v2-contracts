@@ -9,8 +9,8 @@ dataSources:
     name: ShardedWalletFactory
     network: rinkeby
     source:
-      # address: '0x'
-      # startBlock: 0
+      address: '0xfd47fe739CB48B67BDc04d3F7303B1Ac03232abd'
+      startBlock: 8001872
       abi: ShardedWalletFactory
     mapping:
       kind: ethereum/events
@@ -31,7 +31,7 @@ dataSources:
     network: rinkeby
     source:
       # address: '0x'
-      # startBlock: 0
+      startBlock: 8001872
       abi: ActionModule
     mapping:
       kind: ethereum/events
@@ -64,7 +64,7 @@ dataSources:
     network: rinkeby
     source:
       # address: '0x'
-      # startBlock: 0
+      startBlock: 8001872
       abi: BuyoutModule
     mapping:
       kind: ethereum/events
@@ -99,7 +99,7 @@ dataSources:
     network: rinkeby
     source:
       # address: '0x'
-      # startBlock: 0
+      startBlock: 8001872
       abi: FixedPriceSaleModule
     mapping:
       kind: ethereum/events
