@@ -109,6 +109,8 @@ export function handleShardsPrebuy(event: ShardsPrebuyEvent): void {
 	fixedpricesaleprebuy.amount         = amount.id
 	fixedpricesaleprebuy.redeemed       = false;
 	fixedpricesaleprebuy.save()
+
+	// TODO: track event ?
 }
 
 export function handleShardsBought(event: ShardsBoughtEvent): void {
@@ -147,6 +149,8 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 		fixedpricesale.status = 'SUCCESS'
 		fixedpricesale.save()
 	}
+
+	// TODO: track event ?
 }
 
 export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): void {
@@ -165,6 +169,8 @@ export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): 
 		fixedpricesalebuy.redeemed = true;
 		fixedpricesalebuy.save()
 	}
+
+	// TODO: track event ?
 }
 
 export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): void {
@@ -186,12 +192,25 @@ export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): 
 
 	fixedpricesale.status = 'FAILURE'
 	fixedpricesale.save()
+
+	// TODO: track event ?
 }
 
 export function handleWithdraw(event: WithdrawEvent): void {
-	// TODO: mark withdrawn + mark finish and success
+	let wallet               = fetchShardedWallet(event.params.wallet)
+	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
+	fixedpricesale.withdrawn = true
+	fixedpricesale.save()
+
+	// TODO: track event ?
 }
 
 export function handleOwnershipReclaimed(event: OwnershipReclaimedEvent): void {
-	// TODO: mark withdrawn + mark finish and failure
+	let wallet               = fetchShardedWallet(event.params.wallet)
+	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
+	fixedpricesale.withdrawn = true
+	fixedpricesale.status    = 'FAILURE'
+	fixedpricesale.save()
+
+	// TODO: track event ?
 }
