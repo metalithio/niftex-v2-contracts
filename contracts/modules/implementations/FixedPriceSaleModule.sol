@@ -37,6 +37,7 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     mapping(ShardedWallet => mapping(address => uint256)) public premintShards;
     mapping(ShardedWallet => mapping(address => uint256)) public boughtShards;
 
+    event ShardsPrebuy(ShardedWallet indexed wallet, address indexed receiver, uint256 count);
     event ShardsBought(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event ShardsRedeemedSuccess(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
     event ShardsRedeemedFailure(ShardedWallet indexed wallet, address indexed from, address to, uint256 count);
@@ -90,9 +91,11 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         Timers._startTimer(bytes32(uint256(address(wallet))), duration);
 
         {
-            uint256 shardsToNiftex = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARDS_NIFTEX)).div(10**18);
-            premintShards[wallet][wallet.governance().getNiftexWallet()] = shardsToNiftex;
-            totalSupply = totalSupply.sub(shardsToNiftex);
+            uint256 amount = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARDS_NIFTEX)).div(10**18);
+            address niftex = wallet.governance().getNiftexWallet();
+            premintShards[wallet][niftex] = amount;
+            totalSupply = totalSupply.sub(amount);
+            emit ShardsPrebuy(wallet, niftex, amount);
         }
 
         // Allocate the premints
@@ -100,6 +103,7 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         {
             premintShards[wallet][premints[i].receiver] = premints[i].amount;
             totalSupply = totalSupply.sub(premints[i].amount);
+            emit ShardsPrebuy(wallet, premints[i].receiver, premints[i].amount);
         }
 
         // Sanity check, guaranties that the crowdsale will get enought value
