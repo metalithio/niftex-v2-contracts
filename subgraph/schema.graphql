@@ -10,6 +10,9 @@ type Account @entity {
 	approvalsSpender:             [Approval!]! @derivedFrom(field: "spender")
 	executions:                   [Execute!]! @derivedFrom(field: "to")
 	calls:                        [ActionCall!]! @derivedFrom(field: "to")
+	recipient:                    [FixedPriceSale!]! @derivedFrom(field: "recipient")
+	prebuys:                      [FixedPriceSalePrebuy!]! @derivedFrom(field: "recipient")
+	buys:                         [FixedPriceSaleBuy!]! @derivedFrom(field: "recipient")
 }
 
 type Module @entity {
@@ -43,6 +46,8 @@ type ShardedWallet @entity {
 	actions:                      [Action!]! @derivedFrom(field: "wallet")
 	activeBuyout:                 Buyout
 	buyouts:                      [Buyout!]! @derivedFrom(field: "wallet")
+	# crowdsale
+	crowdsales:                   [FixedPriceSale!]! @derivedFrom(field: "wallet")
 }
 
 type Balance @entity {
@@ -119,6 +124,47 @@ type Buyout @entity {
 	claimEvents:                  [BuyoutClaimed!]! @derivedFrom(field: "buyout")
 	finalizeEvents:               [BuyoutFinalized!]! @derivedFrom(field: "buyout")
 	resetEvents:                  [BuyoutResetted!]! @derivedFrom(field: "buyout")
+}
+
+# ============================== FixedPriceSale ===============================
+enum FixedPriceSaleStatus {
+	INITIATED,
+	SUCCESS,
+	FAILURE,
+	RESET,
+}
+
+type FixedPriceSale @entity {
+	id:                           ID!
+	index:                        Int!
+	wallet:                       ShardedWallet!
+	recipient:                    Account!
+	balance:                      DecimalValue!
+	price:                        DecimalValue!
+	remainingShards:              DecimalValue!
+	timer:                        Timer!
+	status:                       FixedPriceSaleStatus!
+	withdrawn:                    Boolean!
+	prebuys:                      [FixedPriceSalePrebuy!]! @derivedFrom(field: "fixedpricesale")
+	buys:                         [FixedPriceSaleBuy!]! @derivedFrom(field: "fixedpricesale")
+}
+
+type FixedPriceSalePrebuy @entity {
+	id:                           ID!
+	index:                        Int!
+	fixedpricesale:               FixedPriceSale!
+	recipient:                    Account!
+	amount:                       DecimalValue!
+	redeemed:                     Boolean!
+}
+
+type FixedPriceSaleBuy @entity {
+	id:                           ID!
+	index:                        Int!
+	fixedpricesale:               FixedPriceSale!
+	recipient:                    Account!
+	amount:                       DecimalValue!
+	redeemed:                     Boolean!
 }
 
 # ================================== Events ===================================

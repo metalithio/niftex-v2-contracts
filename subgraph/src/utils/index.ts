@@ -1,5 +1,6 @@
 import {
 	Address,
+	Bytes,
 } from '@graphprotocol/graph-ts'
 
 import {
@@ -16,6 +17,22 @@ import {
 import {
 	decimals,
 } from '@amxx/graphprotocol-utils'
+
+export function bytesToAddress(bytes: Bytes): Address {
+	return bytes.subarray(12, 40) as Address;
+}
+
+// TODO
+// export function addressToBytes(bytes: Bytes): Address {
+// }
+
+export function addressStringToBytesString(address: string): string {
+	return "0x000000000000000000000000".concat(address.substr(2, 40))
+}
+
+export function bytesStringToAddressString(address: string): string {
+	return "0x".concat(address.substr(26, 40))
+}
 
 export function fetchShardedWallet(address: Address): ShardedWallet {
 	let id = address.toHex()

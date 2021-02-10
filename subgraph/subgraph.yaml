@@ -9,8 +9,8 @@ dataSources:
     name: ShardedWalletFactory
     network: rinkeby
     source:
-      address: '0xfd47fe739CB48B67BDc04d3F7303B1Ac03232abd'
-      startBlock: 8001872
+      address: '0xfd07fc2CE2D40A15D3A2A90005CAFF2E8e9a35D4'
+      startBlock: 8048839
       abi: ShardedWalletFactory
     mapping:
       kind: ethereum/events
@@ -25,13 +25,16 @@ dataSources:
         - event: NewInstance(address)
           handler: handleNewInstance
       file: ./src/wallet/shardedWalletFactory.ts
+  # ====== Governance ========================================================
+  # address: 0x8245e3F7E409daBa8e32bA125fc7C6eDD92762eF
+  # startBlock: 8048839
   # ====== Module - Action ===================================================
   - kind: ethereum/contract
     name: ActionModule
     network: rinkeby
     source:
-      # address: '0x'
-      startBlock: 8001872
+      address: '0x53588b839E036d1269C8251204de2Fb068Beb401'
+      startBlock: 8048839
       abi: ActionModule
     mapping:
       kind: ethereum/events
@@ -63,8 +66,8 @@ dataSources:
     name: BuyoutModule
     network: rinkeby
     source:
-      # address: '0x'
-      startBlock: 8001872
+      address: '0xFd62d07cd3D54C905D61A017DedFAfd9E7048224'
+      startBlock: 8048839
       abi: BuyoutModule
     mapping:
       kind: ethereum/events
@@ -98,8 +101,8 @@ dataSources:
     name: FixedPriceSaleModule
     network: rinkeby
     source:
-      # address: '0x'
-      startBlock: 8001872
+      address: '0xc15C24f8a44A6B36D8810f0d8DaE9423E87B574d'
+      startBlock: 8048839
       abi: FixedPriceSaleModule
     mapping:
       kind: ethereum/events
@@ -115,6 +118,8 @@ dataSources:
       eventHandlers:
         - event: OwnershipReclaimed(indexed address,indexed address,address)
           handler: handleOwnershipReclaimed
+        - event: ShardsPrebuy(indexed address,indexed address,uint256)
+          handler: handleShardsPrebuy
         - event: ShardsBought(indexed address,indexed address,address,uint256)
           handler: handleShardsBought
         - event: ShardsRedeemedFailure(indexed address,indexed address,address,uint256)
