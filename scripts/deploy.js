@@ -22,7 +22,9 @@ async function main() {
   const bondingcurve = await BondingCurve.deploy();
   console.log(`BondingCurve address: ${bondingcurve.address}`);
 
-  // Deploy modules
+  // Deploy and whitelist modules
+  console.log("Deploying modules:");
+  const MODULE_ROLE = await governance.MODULE_ROLE();
   const modules = await Object.entries({
     "action":        "ActionModule",
     "buyout":        "BuyoutModule",
@@ -34,17 +36,12 @@ async function main() {
       const acc    = await accAsPromise;
       const Module = await ethers.getContractFactory(name);
       const module = await Module.deploy();
-      return Object.assign(acc, { [ key ]: module })
+      await governance.grantRole(MODULE_ROLE, module.address);
+      console.log(` - ${name}: ${module.address}`);
+      return Object.assign(acc, { [ key ]: module });
     },
     Promise.resolve({})
   );
-  console.log("Modules deployed:");
-  for ([name, { address }] of Object.entries(modules)) { console.log(` - ${name}: ${address}`); }
-
-  // Whitelist modules
-  const MODULE_ROLE = await governance.MODULE_ROLE();
-  await Promise.all(Object.values(modules).map(({ address }) => governance.grantRole(MODULE_ROLE, address)));
-  console.log("Modules whitelisted");
 
   // Link static methods
   console.log("Linking static methods");
