@@ -30,10 +30,11 @@ async function main() {
     "multicall":     "MulticallModule",
     "tokenreceiver": "TokenReceiverModule",
   }).reduce(
-    async (acc, [key, name ]) => {
+    async (accAsPromise, [key, name ]) => {
+      const acc    = await accAsPromise;
       const Module = await ethers.getContractFactory(name);
       const module = await Module.deploy();
-      return Object.assign(await acc, { [ key ]: module })
+      return Object.assign(acc, { [ key ]: module })
     },
     Promise.resolve({})
   );
