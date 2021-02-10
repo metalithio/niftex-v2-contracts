@@ -99,8 +99,8 @@ export function handleShardsPrebuy(event: ShardsPrebuyEvent): void {
 	let wallet               = fetchShardedWallet(event.params.wallet)
 	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
 	let recipient            = new Account(event.params.receiver.toHex())
-	let fixedpricesaleprebuy = new FixedPriceSalePrebuy(wallet.id.concat('-').concat(recipient.id))
-	let amount               = new decimals.Value(fixedpricesaleprebuy.id.concat('-prebuy-').concat(BigInt.fromI32(fixedpricesale.index).toString()), wallet.decimals)
+	let fixedpricesaleprebuy = new FixedPriceSalePrebuy(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
+	let amount               = new decimals.Value(fixedpricesaleprebuy.id.concat('-prebuy'), wallet.decimals)
 	amount.set(event.params.count)
 
 	fixedpricesaleprebuy.index          = fixedpricesale.index;
@@ -117,8 +117,8 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 	let wallet               = fetchShardedWallet(event.params.wallet)
 	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
 	let recipient            = new Account(event.params.to.toHex())
-	let fixedpricesalebuy    = new FixedPriceSaleBuy(wallet.id.concat('-').concat(recipient.id))
-	let amount               = new decimals.Value(fixedpricesalebuy.id.concat('-buy-').concat(BigInt.fromI32(fixedpricesale.index).toString()), wallet.decimals)
+	let fixedpricesalebuy    = new FixedPriceSaleBuy(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
+	let amount               = new decimals.Value(fixedpricesalebuy.id.concat('-buy'), wallet.decimals)
 	amount.set(event.params.count)
 
 	fixedpricesalebuy.index          = fixedpricesale.index;
@@ -158,13 +158,13 @@ export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): 
 	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
 	let recipient            = new Account(event.params.to.toHex())
 
-	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id))
+	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesaleprebuy != null && fixedpricesale.index == fixedpricesaleprebuy.index) {
 		fixedpricesaleprebuy.redeemed = true;
 		fixedpricesaleprebuy.save()
 	}
 
-	let fixedpricesalebuy = FixedPriceSaleBuy.load(wallet.id.concat('-').concat(recipient.id))
+	let fixedpricesalebuy = FixedPriceSaleBuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesalebuy != null && fixedpricesale.index == fixedpricesalebuy.index) {
 		fixedpricesalebuy.redeemed = true;
 		fixedpricesalebuy.save()
