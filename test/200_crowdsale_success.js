@@ -113,6 +113,8 @@ contract('Workflow', function (accounts) {
 				[[ user1, web3.utils.toWei('8') ], [ user2, web3.utils.toWei('2') ]],
 				{ from: user1 }
 			);
+			expectEvent(receipt, 'ShardsPrebuy', { wallet: instance.address, receiver: user1, count: web3.utils.toWei('8') });
+			expectEvent(receipt, 'ShardsPrebuy', { wallet: instance.address, receiver: user2, count: web3.utils.toWei('2') });
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 		});
 

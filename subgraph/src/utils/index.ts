@@ -1,5 +1,6 @@
 import {
 	Address,
+	Bytes,
 } from '@graphprotocol/graph-ts'
 
 import {
@@ -17,6 +18,22 @@ import {
 	decimals,
 } from '@amxx/graphprotocol-utils'
 
+export function bytesToAddress(bytes: Bytes): Address {
+	return bytes.subarray(12, 40) as Address;
+}
+
+// TODO
+// export function addressToBytes(bytes: Bytes): Address {
+// }
+
+export function addressStringToBytesString(address: string): string {
+	return "0x000000000000000000000000".concat(address.substr(2, 40))
+}
+
+export function bytesStringToAddressString(address: string): string {
+	return "0x".concat(address.substr(26, 40))
+}
+
 export function fetchShardedWallet(address: Address): ShardedWallet {
 	let id = address.toHex()
 	let wallet = ShardedWallet.load(id)
@@ -28,6 +45,14 @@ export function fetchShardedWallet(address: Address): ShardedWallet {
 		wallet.decimals     = contract.decimals()
 		let walletsupply    = new decimals.Value(id.concat('-totalSupply'), wallet.decimals)
 		wallet.totalSupply  = walletsupply.id;
+
+		let governance      = new Governance(contract.governance().toHex())
+		wallet.governance   = governance.id
+		governance.save()
+
+		let artist          = new Account(contract.artistWallet().toHex())
+		wallet.artist       = artist.id
+		artist.save()
 	}
 	return wallet as ShardedWallet
 }
@@ -41,6 +66,7 @@ export function fetchBalance(wallet: ShardedWallet, account: Account): Balance {
 		balance.wallet    = wallet.id
 		balance.account   = account.id
 		balance.amount    = balancesupply.id
+		balance.save()
 	}
 	return balance as Balance
 }

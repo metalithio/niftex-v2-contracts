@@ -7,10 +7,10 @@ dataSources:
   # ====== FACTORY ===========================================================
   - kind: ethereum/contract
     name: ShardedWalletFactory
-    network: mainnet
+    network: rinkeby
     source:
-      # address: '0x'
-      # startBlock: 0
+      address: '0xfd07fc2CE2D40A15D3A2A90005CAFF2E8e9a35D4'
+      startBlock: 8048839
       abi: ShardedWalletFactory
     mapping:
       kind: ethereum/events
@@ -24,14 +24,17 @@ dataSources:
       eventHandlers:
         - event: NewInstance(address)
           handler: handleNewInstance
-      file: ./src/wallet/shardedwalletfactory.ts
+      file: ./src/wallet/shardedWalletFactory.ts
+  # ====== Governance ========================================================
+  # address: 0x8245e3F7E409daBa8e32bA125fc7C6eDD92762eF
+  # startBlock: 8048839
   # ====== Module - Action ===================================================
   - kind: ethereum/contract
     name: ActionModule
-    network: mainnet
+    network: rinkeby
     source:
-      # address: '0x'
-      # startBlock: 0
+      address: '0x53588b839E036d1269C8251204de2Fb068Beb401'
+      startBlock: 8048839
       abi: ActionModule
     mapping:
       kind: ethereum/events
@@ -57,14 +60,14 @@ dataSources:
           handler: handleTimerStarted
         - event: TimerStopped(indexed bytes32)
           handler: handleTimerStopped
-      file: ./src/modules/actionmodule.ts
+      file: ./src/modules/actionModule.ts
   # ====== Module - Buyout ===================================================
   - kind: ethereum/contract
     name: BuyoutModule
-    network: mainnet
+    network: rinkeby
     source:
-      # address: '0x'
-      # startBlock: 0
+      address: '0xFd62d07cd3D54C905D61A017DedFAfd9E7048224'
+      startBlock: 8048839
       abi: BuyoutModule
     mapping:
       kind: ethereum/events
@@ -92,14 +95,14 @@ dataSources:
           handler: handleTimerStarted
         - event: TimerStopped(indexed bytes32)
           handler: handleTimerStopped
-      file: ./src/modules/buyoutmodule.ts
+      file: ./src/modules/buyoutModule.ts
   # ====== Module - CrowdsaleFixedPrice ======================================
   - kind: ethereum/contract
     name: FixedPriceSaleModule
-    network: mainnet
+    network: rinkeby
     source:
-      # address: '0x'
-      # startBlock: 0
+      address: '0xc15C24f8a44A6B36D8810f0d8DaE9423E87B574d'
+      startBlock: 8048839
       abi: FixedPriceSaleModule
     mapping:
       kind: ethereum/events
@@ -115,6 +118,8 @@ dataSources:
       eventHandlers:
         - event: OwnershipReclaimed(indexed address,indexed address,address)
           handler: handleOwnershipReclaimed
+        - event: ShardsPrebuy(indexed address,indexed address,uint256)
+          handler: handleShardsPrebuy
         - event: ShardsBought(indexed address,indexed address,address,uint256)
           handler: handleShardsBought
         - event: ShardsRedeemedFailure(indexed address,indexed address,address,uint256)
@@ -132,12 +137,12 @@ dataSources:
         # TODO
         # - event: NewBondingCurve(indexed address,indexed address)
         #   handler: handleNewBondingCurve
-      file: ./src/modules/fixedpricesalemodule.ts
+      file: ./src/modules/fixedPriceSaleModule.ts
 # ====== Template - ShardedWallet ============================================
 templates:
   - name: ShardedWallet
     kind: ethereum/contract
-    network: mainnet
+    network: rinkeby
     source:
       abi: ShardedWallet
     mapping:
@@ -164,4 +169,6 @@ templates:
           handler: handleReceived
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
-      file: ./src/wallet/shardedwallet.ts
+        - event: ArtistUpdated(indexed address,indexed address)
+          handler: handleArtistUpdated
+      file: ./src/wallet/shardedWallet.ts
