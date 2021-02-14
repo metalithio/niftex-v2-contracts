@@ -157,6 +157,7 @@ type FixedPriceSalePrebuy @entity {
 	recipient:                    Account!
 	amount:                       DecimalValue!
 	redeemed:                     Boolean!
+	events:                       [ShardsPrebuy!]! @derivedFrom(field: "fixedpricesaleprebuy")
 }
 
 type FixedPriceSaleBuy @entity {
@@ -166,6 +167,7 @@ type FixedPriceSaleBuy @entity {
 	recipient:                    Account!
 	amount:                       DecimalValue!
 	redeemed:                     Boolean!
+	events:                       [ShardsBought!]! @derivedFrom(field: "fixedpricesalebuy")
 }
 
 # ================================== Events ===================================
@@ -315,4 +317,22 @@ type BuyoutResetted implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	buyout:                       Buyout!
+}
+
+type ShardsPrebuy implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	fixedpricesaleprebuy:         FixedPriceSalePrebuy!
+	index:                        Int!
+	value:                        DecimalValue!
+}
+
+type ShardsBought implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	fixedpricesalebuy:            FixedPriceSaleBuy!
+	index:                        Int!
+	value:                        DecimalValue!
 }

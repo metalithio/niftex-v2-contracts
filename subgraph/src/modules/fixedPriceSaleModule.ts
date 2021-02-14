@@ -27,13 +27,15 @@ import {
 	FixedPriceSale,
 	FixedPriceSalePrebuy,
 	FixedPriceSaleBuy,
+	ShardsPrebuy,
+	ShardsBought,
 } from '../../../generated/schema'
 
 import {
 	constants,
 	decimals,
-	// events,
-	// transactions,
+	events,
+	transactions,
 } from '@amxx/graphprotocol-utils'
 
 import {
@@ -48,7 +50,7 @@ import {
 	handleTimerReset   as genericHandleTimerReset,
 } from '../generic/timer'
 
-export function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, reset: bool = false): FixedPriceSale {
+function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, reset: bool = false): FixedPriceSale {
 	let fixedpricesale = FixedPriceSale.load(wallet.id)
 	if (fixedpricesale == null || reset) {
 		let index                      = fixedpricesale == null ? 0 : fixedpricesale.index
@@ -69,10 +71,54 @@ export function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, rese
 		fixedpricesale.remainingShards = remainingShards.id
 		fixedpricesale.timer           = module.toHex().concat('-').concat(addressStringToBytesString(wallet.id))
 		fixedpricesale.status          = remainingShards._entry.exact.equals(constants.BIGINT_ZERO) ? 'SUCCESS' : 'INITIATED'
-		fixedpricesale.withdrawn       = false;
-		recipient.save();
+		fixedpricesale.withdrawn       = false
+		recipient.save()
 	}
 	return fixedpricesale as FixedPriceSale
+}
+
+function fetchFixedPriceSaleBuy(wallet: ShardedWallet, fixedpricesale: FixedPriceSale, to: Address): FixedPriceSaleBuy {
+	let recipient = new Account(to.toHex())
+	recipient.save()
+
+	let id = wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString())
+
+	let fixedpricesalebuy = FixedPriceSaleBuy.load(id)
+	if (fixedpricesalebuy == null || fixedpricesalebuy.index < fixedpricesale.index) {
+		let amount = new decimals.Value(id.concat('-buy'), wallet.decimals)
+		amount.set(constants.BIGINT_ZERO)
+
+		fixedpricesalebuy = new FixedPriceSaleBuy(id)
+		fixedpricesalebuy.index          = fixedpricesale.index
+		fixedpricesalebuy.fixedpricesale = fixedpricesale.id
+		fixedpricesalebuy.recipient      = recipient.id
+		fixedpricesalebuy.amount         = amount.id
+		fixedpricesalebuy.redeemed       = false
+		fixedpricesalebuy.save()
+	}
+	return fixedpricesalebuy as FixedPriceSaleBuy
+}
+
+function fetchFixedPriceSalePrebuy(wallet: ShardedWallet, fixedpricesale: FixedPriceSale, to: Address): FixedPriceSalePrebuy {
+	let recipient = new Account(to.toHex())
+	recipient.save()
+
+	let id = wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString())
+
+	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(id)
+	if (fixedpricesaleprebuy == null || fixedpricesaleprebuy.index < fixedpricesale.index) {
+		let amount = new decimals.Value(id.concat('-prebuy'), wallet.decimals)
+		amount.set(constants.BIGINT_ZERO)
+
+		fixedpricesaleprebuy = new FixedPriceSalePrebuy(id)
+		fixedpricesaleprebuy.index          = fixedpricesale.index
+		fixedpricesaleprebuy.fixedpricesale = fixedpricesale.id
+		fixedpricesaleprebuy.recipient      = recipient.id
+		fixedpricesaleprebuy.amount         = amount.id
+		fixedpricesaleprebuy.redeemed       = false
+		fixedpricesaleprebuy.save()
+	}
+	return fixedpricesaleprebuy as FixedPriceSalePrebuy
 }
 
 export function handleTimerStarted(event: TimerStartedEvent): void {
@@ -82,7 +128,7 @@ export function handleTimerStarted(event: TimerStartedEvent): void {
 	wallet.save()
 
 	let fixedpricesale = fetchFixedPriceSale(wallet, event.address, true)
-	fixedpricesale.deadline = timer.deadline;
+	fixedpricesale.deadline = timer.deadline
 	fixedpricesale.save()
 }
 
@@ -102,46 +148,37 @@ export function handleTimerReset(event: TimerResetEvent): void {
 export function handleShardsPrebuy(event: ShardsPrebuyEvent): void {
 	let wallet               = fetchShardedWallet(event.params.wallet)
 	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
-	let recipient            = new Account(event.params.receiver.toHex())
-	let fixedpricesaleprebuy = new FixedPriceSalePrebuy(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
-	let amount               = new decimals.Value(fixedpricesaleprebuy.id.concat('-prebuy'), wallet.decimals)
-	amount.set(event.params.count)
-	recipient.save()
+	let fixedpricesaleprebuy = fetchFixedPriceSalePrebuy(wallet, fixedpricesale, event.params.receiver)
+	let prebought            = new decimals.Value(fixedpricesaleprebuy.amount)
+	prebought.increment(event.params.count)
 
-	fixedpricesaleprebuy.index          = fixedpricesale.index;
-	fixedpricesaleprebuy.fixedpricesale = fixedpricesale.id
-	fixedpricesaleprebuy.recipient      = recipient.id
-	fixedpricesaleprebuy.amount         = amount.id
-	fixedpricesaleprebuy.redeemed       = false;
-	fixedpricesaleprebuy.save()
-
-	// TODO: track event ?
+	let ev = new ShardsPrebuy(events.id(event))
+	let value = new decimals.Value(ev.id.concat('-value'), wallet.decimals)
+	value.set(event.params.count)
+	ev.transaction          = transactions.log(event).id
+	ev.timestamp            = event.block.timestamp
+	ev.fixedpricesaleprebuy = fixedpricesaleprebuy.id
+	ev.index                = fixedpricesaleprebuy.index
+	ev.value                = value.id
+	ev.save()
 }
 
 export function handleShardsBought(event: ShardsBoughtEvent): void {
-	let wallet               = fetchShardedWallet(event.params.wallet)
-	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
-	let recipient            = new Account(event.params.to.toHex())
-	let fixedpricesalebuy    = new FixedPriceSaleBuy(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
-	let amount               = new decimals.Value(fixedpricesalebuy.id.concat('-buy'), wallet.decimals)
-	amount.set(event.params.count)
-	recipient.save()
+	let wallet            = fetchShardedWallet(event.params.wallet)
+	let fixedpricesale    = fetchFixedPriceSale(wallet, event.address)
+	let fixedpricesalebuy = fetchFixedPriceSaleBuy(wallet, fixedpricesale, event.params.to)
 
-	fixedpricesalebuy.index          = fixedpricesale.index;
-	fixedpricesalebuy.fixedpricesale = fixedpricesale.id
-	fixedpricesalebuy.recipient      = recipient.id
-	fixedpricesalebuy.amount         = amount.id
-	fixedpricesalebuy.redeemed       = false;
-	fixedpricesalebuy.save()
-
+	let bought          = new decimals.Value(fixedpricesalebuy.amount)
 	let balance         = new decimals.Value(fixedpricesale.balance)
 	let price           = new decimals.Value(fixedpricesale.price)
 	let remainingShards = new decimals.Value(fixedpricesale.remainingShards)
 	// OPTION 1: Read from chain
 	// let contract        = FixedPriceSaleModuleContract.bind(event.address)
+	// bought.increment(event.params.count)
 	// balance.set(contract.balance(event.params.wallet))
 	// remainingShards.set(contract.remainingShards(event.params.wallet))
 	// OPTION 2: Update from storage
+	bought.increment(event.params.count)
 	balance.increment(
 		event.params.count
 		.times(price._entry.exact)
@@ -156,7 +193,15 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 		fixedpricesale.save()
 	}
 
-	// TODO: track event ?
+	let ev = new ShardsBought(events.id(event))
+	let value = new decimals.Value(ev.id.concat('-value'), wallet.decimals)
+	value.set(event.params.count)
+	ev.transaction        = transactions.log(event).id
+	ev.timestamp          = event.block.timestamp
+	ev.fixedpricesalebuy  = fixedpricesalebuy.id
+	ev.index              = fixedpricesalebuy.index
+	ev.value              = value.id
+	ev.save()
 }
 
 export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): void {
@@ -167,13 +212,13 @@ export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): 
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesaleprebuy != null && fixedpricesale.index == fixedpricesaleprebuy.index) {
-		fixedpricesaleprebuy.redeemed = true;
+		fixedpricesaleprebuy.redeemed = true
 		fixedpricesaleprebuy.save()
 	}
 
 	let fixedpricesalebuy = FixedPriceSaleBuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesalebuy != null && fixedpricesale.index == fixedpricesalebuy.index) {
-		fixedpricesalebuy.redeemed = true;
+		fixedpricesalebuy.redeemed = true
 		fixedpricesalebuy.save()
 	}
 
@@ -188,13 +233,13 @@ export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): 
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id))
 	if (fixedpricesaleprebuy != null && fixedpricesale.index == fixedpricesaleprebuy.index) {
-		fixedpricesaleprebuy.redeemed = true;
+		fixedpricesaleprebuy.redeemed = true
 		fixedpricesaleprebuy.save()
 	}
 
 	let fixedpricesalebuy = FixedPriceSaleBuy.load(wallet.id.concat('-').concat(recipient.id))
 	if (fixedpricesalebuy != null && fixedpricesale.index == fixedpricesalebuy.index) {
-		fixedpricesalebuy.redeemed = true;
+		fixedpricesalebuy.redeemed = true
 		fixedpricesalebuy.save()
 	}
 
