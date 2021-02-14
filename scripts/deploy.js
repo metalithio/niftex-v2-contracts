@@ -22,7 +22,9 @@ async function main() {
   const bondingcurve = await BondingCurve.deploy();
   console.log(`BondingCurve address: ${bondingcurve.address}`);
 
-  // Deploy modules
+  // Deploy and whitelist modules
+  console.log("Deploying modules:");
+  const MODULE_ROLE = await governance.MODULE_ROLE();
   const modules = await Object.entries({
     "action":        "ActionModule",
     "buyout":        "BuyoutModule",
@@ -30,20 +32,16 @@ async function main() {
     "multicall":     "MulticallModule",
     "tokenreceiver": "TokenReceiverModule",
   }).reduce(
-    async (acc, [key, name ]) => {
+    async (accAsPromise, [key, name ]) => {
+      const acc    = await accAsPromise;
       const Module = await ethers.getContractFactory(name);
       const module = await Module.deploy();
-      return Object.assign(await acc, { [ key ]: module })
+      await governance.grantRole(MODULE_ROLE, module.address);
+      console.log(` - ${name}: ${module.address}`);
+      return Object.assign(acc, { [ key ]: module });
     },
     Promise.resolve({})
   );
-  console.log("Modules deployed:");
-  for ([name, { address }] of Object.entries(modules)) { console.log(` - ${name}: ${address}`); }
-
-  // Whitelist modules
-  const MODULE_ROLE = await governance.MODULE_ROLE();
-  await Promise.all(Object.values(modules).map(({ address }) => governance.grantRole(MODULE_ROLE, address)));
-  console.log("Modules whitelisted");
 
   // Link static methods
   console.log("Linking static methods");
@@ -63,12 +61,12 @@ async function main() {
   // Set config
   console.log("Configuring governance");
   for ([ key, value ] of Object.entries({
-    [ await governance.AUTHORIZATION_RATIO()            ]: ethers.utils.parseEther('0.01'),
+    [ await modules.action.ACTION_AUTH_RATIO()          ]: ethers.utils.parseEther('0.01'),
+    [ await modules.buyout.BUYOUT_AUTH_RATIO()          ]: ethers.utils.parseEther('0.01'),
     [ await modules.action.ACTION_DURATION()            ]: 50400,
     [ await modules.buyout.BUYOUT_DURATION()            ]: 50400,
     [ await modules.crowdsale.CURVE_TEMPLATE()          ]: bondingcurve.address,
     [ await modules.crowdsale.PCT_SHARDS_NIFTEX()       ]: ethers.utils.parseEther('0.0'),
-    [ await modules.crowdsale.PCT_MIN_PROVIDED_SHARDS() ]: ethers.utils.parseEther('0.08'),
     [ await modules.crowdsale.PCT_ETH_TO_CURVE()        ]: ethers.utils.parseEther('0.20'),
     [ await bondingcurve.PCT_FEE_NIFTEX()               ]: ethers.utils.parseEther('0.001'),
     [ await bondingcurve.PCT_FEE_ARTIST()               ]: ethers.utils.parseEther('0.001'),

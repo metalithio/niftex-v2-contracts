@@ -10,6 +10,7 @@ import {
 	OwnershipTransferred as OwnershipTransferredEvent,
 	Received             as ReceivedEvent,
 	Transfer             as TransferEvent,
+	ArtistUpdated        as ArtistUpdatedEvent,
 } from '../../../generated/templates/ShardedWallet/ShardedWallet'
 
 import {
@@ -22,6 +23,7 @@ import {
 	Execute,
 	ModuleExecute,
 	GovernanceUpdated,
+	ArtistUpdated,
 } from '../../../generated/schema'
 
 import {
@@ -161,6 +163,21 @@ export function handleGovernanceUpdated(event: GovernanceUpdatedEvent): void {
 	ev.timestamp   = event.block.timestamp
 	ev.wallet      = wallet.id
 	ev.governance  = governance.id
+	ev.save()
+}
+
+export function handleArtistUpdated(event: ArtistUpdatedEvent): void {
+	let wallet          = fetchShardedWallet(event.address)
+	let artist          = new Account(event.params.newArtist.toHex())
+	wallet.artist       = artist.id
+	wallet.save()
+	artist.save()
+
+	let ev = new ArtistUpdated(events.id(event))
+	ev.transaction = transactions.log(event).id
+	ev.timestamp   = event.block.timestamp
+	ev.wallet      = wallet.id
+	ev.artist      = artist.id
 	ev.save()
 }
 
