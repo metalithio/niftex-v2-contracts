@@ -21,8 +21,11 @@ import {
 } from '../../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
 
 import {
+	BondingCurve as BondingCurveTemplate,
+} from '../../../generated/templates'
+
+import {
 	Account,
-	Timer,
 	ShardedWallet,
 	FixedPriceSale,
 	FixedPriceSalePrebuy,
@@ -266,4 +269,8 @@ export function handleOwnershipReclaimed(event: OwnershipReclaimedEvent): void {
 	fixedpricesale.save()
 
 	// TODO: track event ?
+}
+
+export function handleNewBondingCurve(event: NewBondingCurveEvent): void {
+	BondingCurveTemplate.create(event.params.curve)
 }

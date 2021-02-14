@@ -134,9 +134,8 @@ dataSources:
           handler: handleTimerStopped
         - event: Withdraw(indexed address,indexed address,address,uint256)
           handler: handleWithdraw
-        # TODO
-        # - event: NewBondingCurve(indexed address,indexed address)
-        #   handler: handleNewBondingCurve
+        - event: NewBondingCurve(indexed address,indexed address)
+          handler: handleNewBondingCurve
       file: ./src/modules/fixedPriceSaleModule.ts
 # ====== Template - ShardedWallet ============================================
 templates:
@@ -172,3 +171,38 @@ templates:
         - event: ArtistUpdated(indexed address,indexed address)
           handler: handleArtistUpdated
       file: ./src/wallet/shardedWallet.ts
+
+  - name: BondingCurve
+    kind: ethereum/contract
+    network: rinkeby
+    source:
+      abi: BondingCurve
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: BondingCurve
+          file: ../artifacts/contracts/initializable/BondingCurve.sol/BondingCurve.json
+      eventHandlers:
+        - event: EtherSupplied(uint256,address)
+          handler: handleEtherSupplied
+        - event: EtherWithdrawn(uint256,uint256,address)
+          handler: handleEtherWithdrawn
+        - event: Initialized(address,address)
+          handler: handleInitialized
+        - event: ShardsBought(uint256,uint256,address)
+          handler: handleShardsBought
+        - event: ShardsSold(uint256,uint256,address)
+          handler: handleShardsSold
+        - event: ShardsSupplied(uint256,address)
+          handler: handleShardsSupplied
+        - event: ShardsWithdrawn(uint256,uint256,address)
+          handler: handleShardsWithdrawn
+        - event: TransferEthLPTokens(address,address,uint256)
+          handler: handleTransferEthLPTokens
+        - event: TransferShardLPTokens(address,address,uint256)
+          handler: handleTransferShardLPTokens
+      file: ./src/initializable/bondingCurve.ts
