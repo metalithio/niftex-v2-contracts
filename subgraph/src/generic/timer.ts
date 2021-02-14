@@ -16,11 +16,11 @@ import {
 	transactions,
 } from '@amxx/graphprotocol-utils'
 
-export function handleTimerStarted(event: TimerStartedEvent): void {
-	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
-	timer.status = 'STARTED'
-	timer.start  = event.block.timestamp
-	timer.stop   = event.params.deadline
+export function handleTimerStarted(event: TimerStartedEvent): Timer {
+	let timer      = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
+	timer.status   = 'STARTED'
+	timer.start    = event.block.timestamp
+	timer.deadline = event.params.deadline
 	timer.save()
 
 	let ev = new TimerStarted(events.id(event))
@@ -28,9 +28,11 @@ export function handleTimerStarted(event: TimerStartedEvent): void {
 	ev.timestamp   = event.block.timestamp
 	ev.timer       = timer.id
 	ev.save()
+
+	return timer;
 }
 
-export function handleTimerStopped(event: TimerStoppedEvent): void {
+export function handleTimerStopped(event: TimerStoppedEvent): Timer {
 	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
 	timer.status = 'STOPPED'
 	timer.save()
@@ -40,9 +42,11 @@ export function handleTimerStopped(event: TimerStoppedEvent): void {
 	ev.timestamp   = event.block.timestamp
 	ev.timer       = timer.id
 	ev.save()
+
+	return timer;
 }
 
-export function handleTimerReset(event: TimerResetEvent): void {
+export function handleTimerReset(event: TimerResetEvent): Timer {
 	let timer    = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
 	timer.status = 'RESET'
 	timer.save()
@@ -52,4 +56,6 @@ export function handleTimerReset(event: TimerResetEvent): void {
 	ev.timestamp   = event.block.timestamp
 	ev.timer       = timer.id
 	ev.save()
+
+	return timer;
 }

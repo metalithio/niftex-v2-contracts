@@ -70,7 +70,7 @@ type Timer @entity {
 	id:                           ID!
 	status:                       TimerStatus!
 	start:                        BigInt!
-	stop:                         BigInt!
+	deadline:                     BigInt!
 	startEvents:                  [TimerStarted!]! @derivedFrom(field: "timer")
 	stopEvents:                   [TimerStopped!]! @derivedFrom(field: "timer")
 	resetEvents:                  [TimerReset!]! @derivedFrom(field: "timer")
@@ -143,6 +143,7 @@ type FixedPriceSale @entity {
 	price:                        DecimalValue!
 	remainingShards:              DecimalValue!
 	timer:                        Timer!
+	deadline:                     BigInt!
 	status:                       FixedPriceSaleStatus!
 	withdrawn:                    Boolean!
 	prebuys:                      [FixedPriceSalePrebuy!]! @derivedFrom(field: "fixedpricesale")

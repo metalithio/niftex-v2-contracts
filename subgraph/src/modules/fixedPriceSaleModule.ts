@@ -22,6 +22,7 @@ import {
 
 import {
 	Account,
+	Timer,
 	ShardedWallet,
 	FixedPriceSale,
 	FixedPriceSalePrebuy,
@@ -75,20 +76,23 @@ export function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, rese
 }
 
 export function handleTimerStarted(event: TimerStartedEvent): void {
-	genericHandleTimerStarted(event)
-	let wallet         = fetchShardedWallet(bytesToAddress(event.params.timer))
-	let fixedpricesale = fetchFixedPriceSale(wallet, event.address, true)
+	let timer = genericHandleTimerStarted(event)
+
+	let wallet = fetchShardedWallet(bytesToAddress(event.params.timer))
 	wallet.save()
+
+	let fixedpricesale = fetchFixedPriceSale(wallet, event.address, true)
+	fixedpricesale.deadline = timer.deadline;
 	fixedpricesale.save()
 }
 
 export function handleTimerStopped(event: TimerStoppedEvent): void {
-	genericHandleTimerStopped(event)
+	let timer = genericHandleTimerStopped(event)
 	// Should never be called
 }
 
 export function handleTimerReset(event: TimerResetEvent): void {
-	genericHandleTimerReset(event)
+	let timer = genericHandleTimerReset(event)
 	let wallet            = fetchShardedWallet(bytesToAddress(event.params.timer))
 	let fixedpricesale    = fetchFixedPriceSale(wallet, event.address)
 	fixedpricesale.status = 'RESET'
@@ -102,6 +106,7 @@ export function handleShardsPrebuy(event: ShardsPrebuyEvent): void {
 	let fixedpricesaleprebuy = new FixedPriceSalePrebuy(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	let amount               = new decimals.Value(fixedpricesaleprebuy.id.concat('-prebuy'), wallet.decimals)
 	amount.set(event.params.count)
+	recipient.save()
 
 	fixedpricesaleprebuy.index          = fixedpricesale.index;
 	fixedpricesaleprebuy.fixedpricesale = fixedpricesale.id
@@ -120,6 +125,7 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 	let fixedpricesalebuy    = new FixedPriceSaleBuy(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	let amount               = new decimals.Value(fixedpricesalebuy.id.concat('-buy'), wallet.decimals)
 	amount.set(event.params.count)
+	recipient.save()
 
 	fixedpricesalebuy.index          = fixedpricesale.index;
 	fixedpricesalebuy.fixedpricesale = fixedpricesale.id
