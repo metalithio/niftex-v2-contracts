@@ -237,6 +237,33 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
+	describe('clean prebuy', function () {
+		it('perform', async function () {
+			const { receipt: receipt1 } = await this.modules.crowdsale.redeem(instance.address, user1);
+			const { receipt: receipt2 } = await this.modules.crowdsale.redeem(instance.address, user2);
+			expectEvent(receipt1, 'ShardsRedeemedFailure', { wallet: instance.address, from: admin, to: user1, count: web3.utils.toWei('0') });
+			expectEvent(receipt2, 'ShardsRedeemedFailure', { wallet: instance.address, from: admin, to: user2, count: web3.utils.toWei('0') });
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                    user1);
+			assert.equal(await instance.name(),                                     'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                   'TNFT');
+			assert.equal(await instance.decimals(),                                 '18');
+			assert.equal(await instance.totalSupply(),                              web3.utils.toWei('20'));
+			assert.equal(await instance.balanceOf(instance.address),                '0');
+			assert.equal(await instance.balanceOf(user1),                           '0');
+			assert.equal(await instance.balanceOf(user2),                           '0');
+			assert.equal(await instance.balanceOf(user3),                           '0');
+			assert.equal(await instance.balanceOf(other1),                          '0');
+			assert.equal(await instance.balanceOf(other2),                          '0');
+			assert.equal(await instance.balanceOf(other3),                          '0');
+			assert.equal(await this.mocks.erc721.ownerOf(1),                        instance.address);
+			assert.equal(await web3.eth.getBalance(instance.address),               web3.utils.toWei('0'));
+			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address), web3.utils.toWei('0'));
+		});
+	});
+
 	describe('Cleanup', function () {
 		it('perform', async function () {
 			const { receipt } = await this.modules.crowdsale.cleanup(instance.address);

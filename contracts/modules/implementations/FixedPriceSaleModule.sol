@@ -101,7 +101,7 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         // Allocate the premints
         for (uint256 i = 0; i < premints.length; ++i)
         {
-            premintShards[wallet][premints[i].receiver] = premints[i].amount;
+            premintShards[wallet][premints[i].receiver] += premints[i].amount;
             totalSupply = totalSupply.sub(premints[i].amount);
             emit ShardsPrebuy(wallet, premints[i].receiver, premints[i].amount);
         }
@@ -118,6 +118,8 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     function buy(ShardedWallet wallet, address to)
     external payable onlyCrowdsaleActive(wallet)
     {
+        require(to != CURVE_PREMINT_RESERVE);
+
         uint256 decimals = wallet.decimals();
         uint256 price = prices[wallet];
         uint256 count = Math.min(msg.value.mul(10**decimals).div(price), remainingShards[wallet]);
@@ -149,6 +151,7 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         } else {
             uint256 value = bought.mul(prices[wallet]).div(10**decimals);
             balance[wallet] = balance[wallet].sub(value);
+            remainingShards[wallet] = remainingShards[wallet].add(premint).add(bought);
             Address.sendValue(payable(to), value);
             emit ShardsRedeemedFailure(wallet, msg.sender, to, bought);
         }
@@ -204,8 +207,9 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     function cleanup(ShardedWallet wallet)
     external onlyCrowdsaleFinished(wallet)
     {
-        require(balance[wallet] == 0); // failure + redeems
-        wallet.moduleBurn(address(this), wallet.totalSupply());
+        uint256 totalSupply = wallet.totalSupply();
+        require(remainingShards[wallet] + premintShards[wallet][CURVE_PREMINT_RESERVE] == totalSupply, "Crowdsale dirty, not all allocation have been claimed"); // failure + redeems
+        wallet.moduleBurn(address(this), totalSupply);
         Timers._resetTimer(bytes32(uint256(address(wallet))));
     }
 
