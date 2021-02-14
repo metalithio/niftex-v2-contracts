@@ -163,6 +163,7 @@ export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): 
 	let wallet               = fetchShardedWallet(event.params.wallet)
 	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
 	let recipient            = new Account(event.params.to.toHex())
+	recipient.save()
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesaleprebuy != null && fixedpricesale.index == fixedpricesaleprebuy.index) {
@@ -183,6 +184,7 @@ export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): 
 	let wallet               = fetchShardedWallet(event.params.wallet)
 	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
 	let recipient            = new Account(event.params.to.toHex())
+	recipient.save()
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id))
 	if (fixedpricesaleprebuy != null && fixedpricesale.index == fixedpricesaleprebuy.index) {
