@@ -68,6 +68,8 @@ enum TimerStatus {
 
 type Timer @entity {
 	id:                           ID!
+	emitter:                      Bytes!
+	identifier:                   Bytes!
 	status:                       TimerStatus!
 	start:                        BigInt!
 	deadline:                     BigInt!
@@ -119,6 +121,7 @@ type Buyout @entity {
 	proposer:                     Account!
 	pricePerShard:                BigInt!
 	timer:                        Timer!
+	deadline:                     BigInt!
 	openEvents:                   [BuyoutOpened!]! @derivedFrom(field: "buyout")
 	closeEvents:                  [BuyoutClosed!]! @derivedFrom(field: "buyout")
 	claimEvents:                  [BuyoutClaimed!]! @derivedFrom(field: "buyout")

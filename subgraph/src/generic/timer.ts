@@ -1,3 +1,9 @@
+export {
+	TimerReset,
+	TimerStarted,
+	TimerStopped,
+} from '../../../generated/ActionModule/Timers'
+
 import {
 	TimerReset      as TimerResetEvent,
 	TimerStarted    as TimerStartedEvent,
@@ -17,10 +23,12 @@ import {
 } from '@amxx/graphprotocol-utils'
 
 export function handleTimerStarted(event: TimerStartedEvent): Timer {
-	let timer      = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
-	timer.status   = 'STARTED'
-	timer.start    = event.block.timestamp
-	timer.deadline = event.params.deadline
+	let timer        = new Timer(event.address.toHex().concat('-').concat(event.params.timer.toHex()))
+	timer.status     = 'STARTED'
+	timer.emitter    = event.address
+	timer.identifier = event.params.timer
+	timer.start      = event.block.timestamp
+	timer.deadline   = event.params.deadline
 	timer.save()
 
 	let ev = new TimerStarted(events.id(event))

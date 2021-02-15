@@ -96,7 +96,7 @@ dataSources:
         - event: TimerStopped(indexed bytes32)
           handler: handleTimerStopped
       file: ./src/modules/buyoutModule.ts
-  # ====== Module - CrowdsaleFixedPrice ======================================
+  # ====== Module - FixedPriceSaleModule =====================================
   - kind: ethereum/contract
     name: FixedPriceSaleModule
     network: rinkeby

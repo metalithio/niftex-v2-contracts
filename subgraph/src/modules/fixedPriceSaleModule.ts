@@ -4,12 +4,6 @@ import {
 } from '@graphprotocol/graph-ts'
 
 import {
-	TimerReset      as TimerResetEvent,
-	TimerStarted    as TimerStartedEvent,
-	TimerStopped    as TimerStoppedEvent,
-} from '../../../generated/ActionModule/Timers'
-
-import {
 	FixedPriceSaleModule as FixedPriceSaleModuleContract,
 	OwnershipReclaimed     as OwnershipReclaimedEvent,
 	ShardsPrebuy           as ShardsPrebuyEvent,
@@ -48,6 +42,9 @@ import {
 } from '../utils'
 
 import {
+	TimerReset         as TimerResetEvent,
+	TimerStarted       as TimerStartedEvent,
+	TimerStopped       as TimerStoppedEvent,
 	handleTimerStarted as genericHandleTimerStarted,
 	handleTimerStopped as genericHandleTimerStopped,
 	handleTimerReset   as genericHandleTimerReset,
