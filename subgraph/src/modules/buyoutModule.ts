@@ -16,6 +16,7 @@ import {
 } from '../../../generated/schema'
 
 import {
+	decimals,
 	events,
 	transactions,
 } from '@amxx/graphprotocol-utils'
@@ -52,11 +53,13 @@ export function handleBuyoutOpened(event: BuyoutOpenedEvent): void {
 	let buyout            = new Buyout(events.id(event))
 	let proposer          = new Account(event.params.proposer.toHex())
 	let ev                = new BuyoutOpened(events.id(event))
+	let pricepershard     = new decimals.Value(buyout.id.concat('-pricePerShard'))
+	pricepershard.set(event.params.pricePerShard)
 	wallet.activeBuyout   = buyout.id
 	buyout.status         = 'RUNNING'
 	buyout.wallet         = wallet.id
 	buyout.proposer       = proposer.id
-	buyout.pricePerShard  = event.params.pricePerShard
+	buyout.pricePerShard  = pricepershard.id
 	buyout.timer          = timer.id
 	buyout.deadline       = timer.deadline
 	ev.transaction        = transactions.log(event).id
