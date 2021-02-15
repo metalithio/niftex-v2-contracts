@@ -61,6 +61,7 @@ export function handleBuyoutOpened(event: BuyoutOpenedEvent): void {
 	buyout.proposer       = proposer.id
 	buyout.pricePerShard  = pricepershard.id
 	buyout.timer          = timer.id
+	buyout.start          = timer.start
 	buyout.deadline       = timer.deadline
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp

@@ -121,6 +121,7 @@ type Buyout @entity {
 	proposer:                     Account!
 	pricePerShard:                DecimalValue!
 	timer:                        Timer!
+	start:                        BigInt!
 	deadline:                     BigInt!
 	openEvents:                   [BuyoutOpened!]! @derivedFrom(field: "buyout")
 	closeEvents:                  [BuyoutClosed!]! @derivedFrom(field: "buyout")
@@ -146,6 +147,7 @@ type FixedPriceSale @entity {
 	price:                        DecimalValue!
 	remainingShards:              DecimalValue!
 	timer:                        Timer!
+	start:                        BigInt!
 	deadline:                     BigInt!
 	status:                       FixedPriceSaleStatus!
 	withdrawn:                    Boolean!

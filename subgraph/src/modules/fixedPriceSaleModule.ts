@@ -127,7 +127,8 @@ export function handleTimerStarted(event: TimerStartedEvent): void {
 	let wallet = fetchShardedWallet(bytesToAddress(event.params.timer))
 	wallet.save()
 
-	let fixedpricesale = fetchFixedPriceSale(wallet, event.address, true)
+	let fixedpricesale      = fetchFixedPriceSale(wallet, event.address, true)
+	fixedpricesale.start    = timer.start
 	fixedpricesale.deadline = timer.deadline
 	fixedpricesale.save()
 }
