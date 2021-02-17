@@ -377,8 +377,4 @@ contract BondingCurve2 {
     function decimals() public view returns (uint256) {
         return _decimals;
     }
-
-    function getEthInPool() public view returns (uint256) {
-        return address(this).balance;
-    }
 }
