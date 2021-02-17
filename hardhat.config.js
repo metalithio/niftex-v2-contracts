@@ -13,8 +13,6 @@ const INFURA_URL = process.env.INFURA_URL;
 // Be aware of NEVER putting real Ether into testing accounts
 const NIFTEX_PRIVATE_KEY = process.env.NIFTEX_PRIVATE_KEY;
 
-console.log(INFURA_URL);
-
 module.exports = {
   solidity: "0.7.5",
   settings: {
