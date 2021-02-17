@@ -8,8 +8,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "../wallet/ShardedWallet.sol";
 import "../governance/IGovernance.sol";
 
-contract BoundingCurve2 {
-
+contract BondingCurve2 {
     using SafeMath for uint256;
 
     struct CurveCoordinates {
@@ -19,8 +18,8 @@ contract BoundingCurve2 {
 
     struct Asset {
         uint256 underlyingSupply;
-        uint256 feesToNiftex;
-        uint256 feesToArtist;
+        uint256 feeToNiftex;
+        uint256 feeToArtist;
         uint256 totalSupply;
         mapping (address => uint256) balance;
     }
@@ -34,13 +33,13 @@ contract BoundingCurve2 {
     // bytes32 public constant LIQUIDITY_TIMELOCK   = bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
     bytes32 public constant LIQUIDITY_TIMELOCK = 0x4babff57ebd34f251a515a845400ed950a51f0a64c92e803a3e144fc40623fa8;
 
-    CurveCoordinates  internal _curve;
-    Asset             internal _ethLP;
-    Asset             internal _shardLP;
-    address           internal _wallet;
-    uint256           internal _decimals;
-    address           internal _recipient;
-    uint256           internal _deadline;
+    CurveCoordinates internal _curve;
+    Asset            internal _etherLP;
+    Asset            internal _shardLP;
+    address          internal _wallet;
+    uint256          internal _decimals;
+    address          internal _recipient;
+    uint256          internal _deadline;
 
     event Initialized(address wallet);
     event ShardsBought(address indexed account, uint256 amount, uint256 cost);
@@ -59,13 +58,13 @@ contract BoundingCurve2 {
         uint256 price
     )
     public payable
-   {
-        uint256 totalSupply = ShardedWallet(payable(wallet)).totalSupply();
-        uint256 decimals    = ShardedWallet(payable(wallet)).decimals();
+    {
+        uint256 totalSupply_ = ShardedWallet(payable(wallet)).totalSupply();
+        uint256 decimals_    = ShardedWallet(payable(wallet)).decimals();
 
         // setup params
         _wallet    = wallet;
-        _decimals  = decimals;
+        _decimals  = decimals_;
         _recipient = recipient;
         _deadline  = block.timestamp.add(ShardedWallet(payable(wallet)).governance().getConfig(wallet, LIQUIDITY_TIMELOCK));
         emit Initialized(_wallet);
@@ -76,14 +75,14 @@ contract BoundingCurve2 {
         }
 
         // setup curve
-        _curve.x = totalSupply;
-        _curve.k = totalSupply.mul(totalSupply).mul(price).div(10 ** decimals);
+        _curve.x = totalSupply_;
+        _curve.k = totalSupply_.mul(totalSupply_).mul(price).div(10**decimals_);
 
         // mint liquidity
         _mintShardLP(address(this), supply);
         _mintEthLP(address(this), msg.value);
         _shardLP.underlyingSupply = supply;
-        _ethLP.underlyingSupply    = msg.value;
+        _etherLP.underlyingSupply = msg.value;
         emit ShardsSupplied(address(this), supply);
         emit EtherSupplied(address(this), msg.value);
     }
@@ -102,7 +101,7 @@ contract BoundingCurve2 {
         fees[1] =                            governance.getConfig(_wallet, PCT_FEE_NIFTEX);
         fees[2] = artist == address(0) ? 0 : governance.getConfig(_wallet, PCT_FEE_ARTIST);
 
-        uint256 amountWithFee = amount.mul(uint256(10 ** 18).add(fees[0]).add(fees[1]).add(fees[2])).div(10 ** 18);
+        uint256 amountWithFee = amount.mul(uint256(10**18).add(fees[0]).add(fees[1]).add(fees[2])).div(10**18);
 
         // check curve update
         uint256 newX = _curve.x.sub(amountWithFee);
@@ -111,15 +110,18 @@ contract BoundingCurve2 {
 
         // check cost
         uint256 cost = newY.sub(_curve.k.div(_curve.x));
-        require(cost >= msg.value && cost >= maxCost);
+        require(cost <= msg.value && cost <= maxCost);
+
+        // consistency check
+        require(ShardedWallet(payable(_wallet)).balanceOf(address(this)).sub(_shardLP.feeToNiftex).sub(_shardLP.feeToArtist) >= amountWithFee);
 
         // update curve
         _curve.x = _curve.x.sub(amount.mul(uint256(10**18).add(fees[1]).add(fees[2])).div(10**18));
 
         // update LP supply
         _shardLP.underlyingSupply = _shardLP.underlyingSupply.add(amount.mul(fees[0]).div(10**18));
-        _shardLP.feesToNiftex     = _shardLP.feesToNiftex.add(amount.mul(fees[1]).div(10**18));
-        _shardLP.feesToArtist     = _shardLP.feesToArtist.add(amount.mul(fees[2]).div(10**18));
+        _shardLP.feeToNiftex      = _shardLP.feeToNiftex.add(amount.mul(fees[1]).div(10**18));
+        _shardLP.feeToArtist      = _shardLP.feeToArtist.add(amount.mul(fees[2]).div(10**18));
 
         // transfer
         ShardedWallet(payable(_wallet)).transfer(msg.sender, amount);
@@ -128,13 +130,6 @@ contract BoundingCurve2 {
         }
 
         emit ShardsBought(msg.sender, amount, cost);
-
-        require(
-            ShardedWallet(payable(_wallet)).balanceOf(address(this))
-            ==
-            _shardLP.underlyingSupply.add(_shardLP.feesToNiftex).add(_shardLP.feesToArtist),
-            "consistency"
-        );
     }
 
     function sellShards(uint256 amount, uint256 minPayout) public {
@@ -157,21 +152,22 @@ contract BoundingCurve2 {
 
         // check payout
         uint256 payout = _curve.k.div(_curve.x).sub(newY);
-        require(payout <= address(this).balance.sub(_ethLP.feesToNiftex).sub(_ethLP.feesToArtist) && payout >= minPayout);
+        require(payout <= address(this).balance.sub(_etherLP.feeToNiftex).sub(_etherLP.feeToArtist) && payout >= minPayout);
+        uint256 value = payout.mul(uint256(10**18).sub(fees[0]).sub(fees[1]).sub(fees[2])).div(10**18);
 
         // update curve
         _curve.x = newX;
 
         // update LP supply
-        _ethLP.underlyingSupply = _shardLP.underlyingSupply.add(payout.mul(fees[0]).div(10**18));
-        _ethLP.feesToNiftex     = _shardLP.feesToNiftex.add(payout.mul(fees[1]).div(10**18));
-        _ethLP.feesToArtist     = _shardLP.feesToArtist.add(payout.mul(fees[2]).div(10**18));
+        _etherLP.underlyingSupply = _etherLP.underlyingSupply.add(payout.mul(fees[0]).div(10**18));
+        _etherLP.feeToNiftex      = _etherLP.feeToNiftex.add(payout.mul(fees[1]).div(10**18));
+        _etherLP.feeToArtist      = _etherLP.feeToArtist.add(payout.mul(fees[2]).div(10**18));
 
         // transfer
         require(ShardedWallet(payable(_wallet)).transferFrom(msg.sender, address(this), amount));
-        Address.sendValue(msg.sender, payout.mul(uint256(10**18).sub(fees[0]).sub(fees[1]).sub(fees[2])).div(10**18));
+        Address.sendValue(msg.sender, value);
 
-        emit ShardsSold(msg.sender, amount, payout);
+        emit ShardsSold(msg.sender, amount, value);
     }
 
     function calcNewShardLPTokensToIssue(uint256 amount) public view returns (uint256) {
@@ -182,24 +178,34 @@ contract BoundingCurve2 {
     }
 
     function calcNewEthLPTokensToIssue(uint256 amount) public view returns (uint256) {
-        uint256 pool = _ethLP.underlyingSupply;
+        uint256 pool = _etherLP.underlyingSupply;
         if (pool == 0) { return amount; }
         uint256 proportion = amount.mul(10**18).div(pool.add(amount));
-        return proportion.mul(_ethLP.totalSupply).div(uint256(10**18).sub(proportion));
+        return proportion.mul(_etherLP.totalSupply).div(uint256(10**18).sub(proportion));
     }
 
     function calcShardsForEthSuppliers() public view returns (uint256) {
         uint256 balance = ShardedWallet(payable(_wallet)).balanceOf(address(this))
-            .sub(_shardLP.feesToNiftex)
-            .sub(_shardLP.feesToArtist);
+        .sub(_shardLP.feeToNiftex)
+        .sub(_shardLP.feeToArtist);
         return balance < _shardLP.underlyingSupply ? 0 : balance - _shardLP.underlyingSupply;
     }
 
     function calcEthForShardSuppliers() public view returns (uint256) {
         uint256 balance = address(this).balance
-            .sub(_ethLP.feesToNiftex)
-            .sub(_ethLP.feesToArtist);
-        return balance < _ethLP.underlyingSupply ? 0 : balance - _ethLP.underlyingSupply;
+        .sub(_etherLP.feeToNiftex)
+        .sub(_etherLP.feeToArtist);
+        return balance < _etherLP.underlyingSupply ? 0 : balance - _etherLP.underlyingSupply;
+    }
+
+    function supplyEther() external payable {
+        require(msg.value > 0);
+        require(_curve.k.div(_curve.x).sub(address(this).balance) >= 0);
+
+        _mintEthLP(msg.sender, calcNewEthLPTokensToIssue(msg.value));
+        _etherLP.underlyingSupply = _etherLP.underlyingSupply.add(msg.value);
+
+        emit EtherSupplied(msg.sender, msg.value);
     }
 
     function supplyShards(uint256 amount) public {
@@ -212,30 +218,50 @@ contract BoundingCurve2 {
         emit ShardsSupplied(msg.sender, amount);
     }
 
-    function supplyEther() external payable {
-        require(msg.value > 0);
-        require(_curve.k.div(_curve.x).sub(address(this).balance) >= 0);
+    function withdrawSuppliedEther(uint256 amount) external returns (uint256, uint256) {
+        require(amount > 0);
 
-        _mintEthLP(msg.sender, calcNewEthLPTokensToIssue(msg.value));
-        _ethLP.underlyingSupply = _ethLP.underlyingSupply.add(msg.value);
+        uint256 balance = address(this).balance
+        .sub(_etherLP.feeToNiftex)
+        .sub(_etherLP.feeToArtist);
 
-    	emit EtherSupplied(msg.sender, msg.value);
+        uint256 value = (balance <= _etherLP.underlyingSupply)
+        ? balance.mul(amount).div(_etherLP.totalSupply)
+        : _etherLP.underlyingSupply.mul(amount).div(_etherLP.totalSupply);
+
+        uint256 payout = calcShardsForEthSuppliers()
+        .mul(amount)
+        .div(_etherLP.totalSupply);
+
+        // update balances
+        _etherLP.underlyingSupply = _etherLP.underlyingSupply.mul(_etherLP.totalSupply.sub(amount)).div(_etherLP.totalSupply);
+        _burnEthLP(msg.sender, amount);
+
+        // transfer
+        Address.sendValue(msg.sender, value);
+        if (payout > 0) {
+            ShardedWallet(payable(_wallet)).transfer(msg.sender, payout);
+        }
+
+        emit EtherWithdrawn(msg.sender, value, payout);
+
+        return (value, payout);
     }
 
     function withdrawSuppliedShards(uint256 amount) external returns (uint256, uint256) {
         require(amount > 0);
 
         uint256 balance = ShardedWallet(payable(_wallet)).balanceOf(address(this))
-            .sub(_shardLP.feesToNiftex)
-            .sub(_shardLP.feesToArtist);
+        .sub(_shardLP.feeToNiftex)
+        .sub(_shardLP.feeToArtist);
 
         uint256 shards = (balance <= _shardLP.underlyingSupply)
-            ? balance.mul(amount).div(_shardLP.totalSupply)
-            : _shardLP.underlyingSupply.mul(amount).div(_shardLP.totalSupply);
+        ? balance.mul(amount).div(_shardLP.totalSupply)
+        : _shardLP.underlyingSupply.mul(amount).div(_shardLP.totalSupply);
 
         uint256 payout = calcEthForShardSuppliers()
-            .mul(amount)
-            .div(_shardLP.totalSupply);
+        .mul(amount)
+        .div(_shardLP.totalSupply);
 
         // update balances
         _shardLP.underlyingSupply = _shardLP.underlyingSupply.mul(_shardLP.totalSupply.sub(amount)).div(_shardLP.totalSupply);
@@ -252,87 +278,65 @@ contract BoundingCurve2 {
         return (payout, shards);
     }
 
-    function withdrawSuppliedEther(uint256 amount) external returns (uint256, uint256) {
-        require(amount > 0);
-
-        uint256 balance = address(this).balance
-            .sub(_ethLP.feesToNiftex)
-            .sub(_ethLP.feesToArtist);
-
-        uint256 value = (balance <= _ethLP.underlyingSupply)
-            ? balance.mul(amount).div(_ethLP.totalSupply)
-            : _ethLP.underlyingSupply.mul(amount).div(_ethLP.totalSupply);
-
-        uint256 payout = calcShardsForEthSuppliers()
-            .mul(amount)
-            .div(_ethLP.totalSupply);
-
-        // update balances
-        _ethLP.underlyingSupply = _ethLP.underlyingSupply.mul(_ethLP.totalSupply.sub(amount)).div(_ethLP.totalSupply);
-        _burnEthLP(msg.sender, amount);
-
-        // transfer
-        Address.sendValue(msg.sender, value);
-        if (payout > 0) {
-            ShardedWallet(payable(_wallet)).transfer(msg.sender, payout);
-        }
-
-        emit EtherWithdrawn(msg.sender, value, payout);
-
-    	return (value, payout);
-    }
-
     function withdrawNiftexOrArtistFees(address recipient) public {
+        uint256 etherFees = 0;
         uint256 shardFees = 0;
-        uint256 ethFees   = 0;
 
         if (msg.sender == ShardedWallet(payable(_wallet)).artistWallet()) {
-            shardFees += _shardLP.feesToArtist;
-            ethFees   += _ethLP.feesToArtist;
-            _shardLP.feesToArtist = 0;
-            _ethLP.feesToArtist   = 0;
+            etherFees += _etherLP.feeToArtist;
+            shardFees += _shardLP.feeToArtist;
+            delete _etherLP.feeToArtist;
+            delete _shardLP.feeToArtist;
         }
 
         if (msg.sender == ShardedWallet(payable(_wallet)).governance().getNiftexWallet()) {
-            shardFees += _shardLP.feesToNiftex;
-            ethFees   += _ethLP.feesToNiftex;
-            _shardLP.feesToNiftex = 0;
-            _ethLP.feesToNiftex   = 0;
+            etherFees += _etherLP.feeToNiftex;
+            shardFees += _shardLP.feeToNiftex;
+            delete _etherLP.feeToNiftex;
+            delete _shardLP.feeToNiftex;
         }
 
-        Address.sendValue(payable(recipient), ethFees);
+        Address.sendValue(payable(recipient), etherFees);
         ShardedWallet(payable(_wallet)).transfer(recipient, shardFees);
     }
 
     function transferTimelockLiquidity(address recipient) public {
         require(_recipient == msg.sender && _deadline < block.timestamp);
-        _transferEthLP(address(this), recipient, _ethLP.balance[address(this)]);
-        _transferShardLP(address(this), recipient, _ethLP.balance[address(this)]);
+        _transferEthLP(address(this), recipient, getEthLPTokens(address(this)));
+        _transferShardLP(address(this), recipient, getShardLPTokens(address(this)));
     }
 
-    function transferShardLPTokens(address recipient, uint256 amount) public {
-        _transferEthLP(msg.sender, recipient, amount);
+    function getEthLPTokens(address owner) public view returns (uint256) {
+        return _etherLP.balance[owner];
+    }
+
+    function getShardLPTokens(address owner) public view returns (uint256) {
+        return _shardLP.balance[owner];
     }
 
     function transferEthLPTokens(address recipient, uint256 amount) public {
         _transferShardLP(msg.sender, recipient, amount);
     }
 
+    function transferShardLPTokens(address recipient, uint256 amount) public {
+        _transferEthLP(msg.sender, recipient, amount);
+    }
+
     function _transferEthLP(address sender, address recipient, uint256 amount) internal {
-        _ethLP.balance[sender]    = _ethLP.balance[sender].sub(amount);
-        _ethLP.balance[recipient] = _ethLP.balance[recipient].add(amount);
+        _etherLP.balance[sender]    = _etherLP.balance[sender].sub(amount);
+        _etherLP.balance[recipient] = _etherLP.balance[recipient].add(amount);
         emit TransferEthLPTokens(sender, recipient, amount);
     }
 
     function _mintEthLP(address account, uint256 amount) internal {
-        _ethLP.balance[account] = _ethLP.balance[account].add(amount);
-        _ethLP.totalSupply      = _ethLP.totalSupply.add(amount);
+        _etherLP.balance[account] = _etherLP.balance[account].add(amount);
+        _etherLP.totalSupply      = _etherLP.totalSupply.add(amount);
         emit TransferEthLPTokens(address(0), account, amount);
     }
 
     function _burnEthLP(address account, uint256 amount) internal {
-        _ethLP.balance[account] = _ethLP.balance[account].sub(amount);
-        _ethLP.totalSupply      = _ethLP.totalSupply.sub(amount);
+        _etherLP.balance[account] = _etherLP.balance[account].sub(amount);
+        _etherLP.totalSupply      = _etherLP.totalSupply.sub(amount);
         emit TransferEthLPTokens(account, address(0), amount);
     }
 
@@ -353,68 +357,28 @@ contract BoundingCurve2 {
         _shardLP.totalSupply      = _shardLP.totalSupply.sub(amount);
         emit TransferShardLPTokens(account, address(0), amount);
     }
+
+    function getCurrentPrice() external view returns (uint256) {
+        return _curve.k.mul(10**_decimals).div(_curve.x).div(_curve.x);
+    }
+
+    function getCurveCoordinates() external view returns (uint256, uint256) {
+        return (_curve.x, _curve.k);
+    }
+
+    function getEthSuppliers() external view returns (uint256, uint256, uint256, uint256) {
+        return (_etherLP.underlyingSupply, _etherLP.totalSupply, _etherLP.feeToNiftex, _etherLP.feeToArtist);
+    }
+
+    function getShardSuppliers() external view returns (uint256, uint256, uint256, uint256) {
+        return (_shardLP.underlyingSupply, _shardLP.totalSupply, _shardLP.feeToNiftex, _shardLP.feeToArtist);
+    }
+
+    function decimals() public view returns (uint256) {
+        return _decimals;
+    }
+
+    function getEthInPool() public view returns (uint256) {
+        return address(this).balance;
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // function getCurrentPrice() external view returns (uint256) {
-    // 	return _k.mul(10**_shardedWalletDetails.decimals).div(_x).div(_x);
-    // }
-    //
-    // function getCurveCoordinates() external view returns (uint256, uint256) {
-    // 	return (_x, _k);
-    // }
-    //
-    // function getEthSuppliers() external view returns (uint256, uint256, uint256, uint256) {
-    // 	return (_ethLP.underlyingSupply, _ethLP.totalSupply, _ethLP._ethFeesToNiftex, _ethLP._ethFeesToArtist);
-    // }
-    //
-    // function getShardSuppliers() external view returns (uint256, uint256, uint256, uint256) {
-    // 	return (_shardLP.underlyingSupply, _shardLP.totalSupply, _shardLP._shardFeesToNiftex, _shardLP.feesToArtist);
-    // }
-    //
-    // function getEthLPTokens(address owner) public view returns (uint256) {
-    // 	return _ethLP._mappingEthLPTokens[owner];
-    // }
-    //
-    // function getShardLPTokens(address owner) public view returns (uint256) {
-    // 	return _shardLP._mappingShardLPTokens[owner];
-    // }
-    //
-    // function decimals() public view returns (uint256) {
-    // 	return _shardedWalletDetails.decimals;
-    // }
-    //
-    // function getEthInPool() public view returns (uint256) {
-    // 	return address(this).balance;
-    // }
