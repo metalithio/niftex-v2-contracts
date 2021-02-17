@@ -340,7 +340,7 @@ contract('Workflow', function (accounts) {
 				etherInPool: web3.utils.fromWei(etherInPool),
 				shardInPool: web3.utils.fromWei(shardInPool),
 			});
-		})
+		});
 
 		after(async function () {
 			assert.equal(await instance.owner(),                                 this.modules.crowdsale.address);
@@ -352,7 +352,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
 			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('75'));
 		});
-	})
+	});
 
 	describe('cBuyer1 buy 5 shards', () => {
 		it('perform', async() => {
@@ -370,7 +370,7 @@ contract('Workflow', function (accounts) {
 				etherInPool: web3.utils.fromWei(etherInPool),
 				shardInPool: web3.utils.fromWei(shardInPool),
 			});
-		})
+		});
 
 		after(async function () {
 			assert.equal(await instance.owner(),                                 this.modules.crowdsale.address);
@@ -400,7 +400,7 @@ contract('Workflow', function (accounts) {
 				etherInPool: web3.utils.fromWei(etherInPool),
 				shardInPool: web3.utils.fromWei(shardInPool),
 			});
-		})
+		});
 
 		after(async function () {
 			assert.equal(await instance.owner(),                                 this.modules.crowdsale.address);
@@ -429,7 +429,7 @@ contract('Workflow', function (accounts) {
 				etherInPool: web3.utils.fromWei(etherInPool),
 				shardInPool: web3.utils.fromWei(shardInPool),
 			});
-		})
+		});
 
 		after(async function () {
 			assert.equal(await instance.owner(),                                 this.modules.crowdsale.address);
@@ -460,7 +460,7 @@ contract('Workflow', function (accounts) {
 				etherInPool: web3.utils.fromWei(etherInPool),
 				shardInPool: web3.utils.fromWei(shardInPool),
 			});
-		})
+		});
 
 		after(async function () {
 			assert.equal(await instance.owner(),                                 this.modules.crowdsale.address);
@@ -491,7 +491,7 @@ contract('Workflow', function (accounts) {
 				etherInPool: web3.utils.fromWei(etherInPool),
 				shardInPool: web3.utils.fromWei(shardInPool),
 			});
-		})
+		});
 
 		after(async function () {
 			assert.equal(await instance.owner(),                                 this.modules.crowdsale.address);
@@ -522,7 +522,7 @@ contract('Workflow', function (accounts) {
 				} else {
 					await expectRevert.unspecified(curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]}));
 				}
-			})
+			});
 		}
 
 		for (let i = 0; i < 3; i++) {
@@ -539,7 +539,7 @@ contract('Workflow', function (accounts) {
 				} else {
 					await expectRevert.unspecified(curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]}));
 				}
-			})
+			});
 		}
 
 		it('check if ethInPool and shardsInPool are both the remaining for artist and NIFTEX', async() => {
@@ -566,6 +566,6 @@ contract('Workflow', function (accounts) {
 					feeToArtist:      web3.utils.fromWei(shardSuppliers[3]),
 				},
 			});
-		})
-	})
+		});
+	});
 });
