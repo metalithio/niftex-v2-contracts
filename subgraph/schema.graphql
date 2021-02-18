@@ -145,6 +145,7 @@ type FixedPriceSale @entity {
 	recipient:                    Account!
 	balance:                      DecimalValue!
 	price:                        DecimalValue!
+	offeredShards:                DecimalValue!
 	remainingShards:              DecimalValue!
 	timer:                        Timer!
 	start:                        BigInt!

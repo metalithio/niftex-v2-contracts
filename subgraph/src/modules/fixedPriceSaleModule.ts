@@ -54,20 +54,25 @@ function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, reset: bool
 	let fixedpricesale = FixedPriceSale.load(wallet.id)
 	if (fixedpricesale == null || reset) {
 		let index                      = fixedpricesale == null ? 0 : fixedpricesale.index
+		fixedpricesale                 = new FixedPriceSale(wallet.id)
 		let contract                   = FixedPriceSaleModuleContract.bind(module)
 		let walletAsAddress            = Address.fromString(wallet.id)
-		fixedpricesale                 = new FixedPriceSale(wallet.id)
+		let priceValue                 = contract.prices(walletAsAddress)
+		let remainingShardsValue       = contract.remainingShards(walletAsAddress)
 		let recipient                  = new Account(contract.recipients(walletAsAddress).toHex())
 		let balance                    = new decimals.Value(wallet.id.concat('-balance'), 18) // ETH
 		let price                      = new decimals.Value(wallet.id.concat('-price'), 18) // ETH per Shard
+		let offeredShards              = new decimals.Value(wallet.id.concat('-offered'), wallet.decimals) // Shards
 		let remainingShards            = new decimals.Value(wallet.id.concat('-remaining'), wallet.decimals) // Shards
-		price.set(contract.prices(walletAsAddress))
-		remainingShards.set(contract.remainingShards(walletAsAddress))
+		price.set(priceValue)
+		remainingShards.set(remainingShardsValue)
+		offeredShards.set(remainingShardsValue)
 		fixedpricesale.index           = index
 		fixedpricesale.wallet          = wallet.id
 		fixedpricesale.recipient       = recipient.id
 		fixedpricesale.balance         = balance.id
 		fixedpricesale.price           = price.id
+		fixedpricesale.offeredShards   = offeredShards.id
 		fixedpricesale.remainingShards = remainingShards.id
 		fixedpricesale.timer           = module.toHex().concat('-').concat(addressStringToBytesString(wallet.id))
 		fixedpricesale.status          = remainingShards._entry.exact.equals(constants.BIGINT_ZERO) ? 'SUCCESS' : 'INITIATED'

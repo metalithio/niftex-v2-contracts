@@ -101,7 +101,8 @@ dataSources:
     name: FixedPriceSaleModule
     network: rinkeby
     source:
-      address: '0xc15C24f8a44A6B36D8810f0d8DaE9423E87B574d'
+      # address: '0xc15C24f8a44A6B36D8810f0d8DaE9423E87B574d'
+      address: '0xe4d5FbDB258a7878c1c2cacdd28813f001C296f9'
       startBlock: 8048839
       abi: FixedPriceSaleModule
     mapping:
