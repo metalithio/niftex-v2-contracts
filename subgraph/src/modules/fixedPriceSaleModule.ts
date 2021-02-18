@@ -4,12 +4,6 @@ import {
 } from '@graphprotocol/graph-ts'
 
 import {
-	TimerReset      as TimerResetEvent,
-	TimerStarted    as TimerStartedEvent,
-	TimerStopped    as TimerStoppedEvent,
-} from '../../../generated/ActionModule/Timers'
-
-import {
 	FixedPriceSaleModule as FixedPriceSaleModuleContract,
 	OwnershipReclaimed     as OwnershipReclaimedEvent,
 	ShardsPrebuy           as ShardsPrebuyEvent,
@@ -21,8 +15,11 @@ import {
 } from '../../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
 
 import {
+	BondingCurve as BondingCurveTemplate,
+} from '../../../generated/templates'
+
+import {
 	Account,
-	Timer,
 	ShardedWallet,
 	FixedPriceSale,
 	FixedPriceSalePrebuy,
@@ -45,6 +42,9 @@ import {
 } from '../utils'
 
 import {
+	TimerReset         as TimerResetEvent,
+	TimerStarted       as TimerStartedEvent,
+	TimerStopped       as TimerStoppedEvent,
 	handleTimerStarted as genericHandleTimerStarted,
 	handleTimerStopped as genericHandleTimerStopped,
 	handleTimerReset   as genericHandleTimerReset,
@@ -127,7 +127,8 @@ export function handleTimerStarted(event: TimerStartedEvent): void {
 	let wallet = fetchShardedWallet(bytesToAddress(event.params.timer))
 	wallet.save()
 
-	let fixedpricesale = fetchFixedPriceSale(wallet, event.address, true)
+	let fixedpricesale      = fetchFixedPriceSale(wallet, event.address, true)
+	fixedpricesale.start    = timer.start
 	fixedpricesale.deadline = timer.deadline
 	fixedpricesale.save()
 }
@@ -266,4 +267,8 @@ export function handleOwnershipReclaimed(event: OwnershipReclaimedEvent): void {
 	fixedpricesale.save()
 
 	// TODO: track event ?
+}
+
+export function handleNewBondingCurve(event: NewBondingCurveEvent): void {
+	BondingCurveTemplate.create(event.params.curve)
 }

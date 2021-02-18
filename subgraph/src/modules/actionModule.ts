@@ -27,11 +27,26 @@ import {
 	fetchShardedWallet,
 } from '../utils'
 
-export {
-	handleTimerStarted,
-	handleTimerStopped,
-	handleTimerReset,
+import {
+	TimerReset         as TimerResetEvent,
+	TimerStarted       as TimerStartedEvent,
+	TimerStopped       as TimerStoppedEvent,
+	handleTimerStarted as genericHandleTimerStarted,
+	handleTimerStopped as genericHandleTimerStopped,
+	handleTimerReset   as genericHandleTimerReset,
 } from '../generic/timer'
+
+export function handleTimerStarted(event: TimerStartedEvent): void {
+	let timer = genericHandleTimerStarted(event)
+}
+
+export function handleTimerStopped(event: TimerStoppedEvent): void {
+	let timer = genericHandleTimerStopped(event)
+}
+
+export function handleTimerReset(event: TimerResetEvent): void {
+	let timer = genericHandleTimerReset(event)
+}
 
 export function handleActionScheduled(event: ActionScheduledEvent): void {
 	let wallet        = fetchShardedWallet(event.params.wallet)

@@ -7,6 +7,7 @@ import {
 
 import {
 	Account,
+	Timer,
 	Buyout,
 	BuyoutOpened,
 	BuyoutClosed,
@@ -15,32 +16,53 @@ import {
 } from '../../../generated/schema'
 
 import {
+	decimals,
 	events,
 	transactions,
 } from '@amxx/graphprotocol-utils'
 
 import {
+	addressStringToBytesString,
 	fetchShardedWallet,
 } from '../utils'
 
-export {
-	handleTimerStarted,
-	handleTimerStopped,
-	handleTimerReset,
+import {
+	TimerReset         as TimerResetEvent,
+	TimerStarted       as TimerStartedEvent,
+	TimerStopped       as TimerStoppedEvent,
+	handleTimerStarted as genericHandleTimerStarted,
+	handleTimerStopped as genericHandleTimerStopped,
+	handleTimerReset   as genericHandleTimerReset,
 } from '../generic/timer'
 
+export function handleTimerStarted(event: TimerStartedEvent): void {
+	let timer = genericHandleTimerStarted(event)
+}
+
+export function handleTimerStopped(event: TimerStoppedEvent): void {
+	let timer = genericHandleTimerStopped(event)
+}
+
+export function handleTimerReset(event: TimerResetEvent): void {
+	let timer = genericHandleTimerReset(event)
+}
 
 export function handleBuyoutOpened(event: BuyoutOpenedEvent): void {
 	let wallet            = fetchShardedWallet(event.params.wallet)
+	let timer             = Timer.load(event.address.toHex().concat('-').concat(addressStringToBytesString(wallet.id)))
 	let buyout            = new Buyout(events.id(event))
 	let proposer          = new Account(event.params.proposer.toHex())
 	let ev                = new BuyoutOpened(events.id(event))
+	let pricepershard     = new decimals.Value(buyout.id.concat('-pricePerShard'))
+	pricepershard.set(event.params.pricePerShard)
 	wallet.activeBuyout   = buyout.id
 	buyout.status         = 'RUNNING'
 	buyout.wallet         = wallet.id
 	buyout.proposer       = proposer.id
-	buyout.pricePerShard  = event.params.pricePerShard
-	buyout.timer          = event.address.toHex().concat('-').concat(wallet.id) // TODO, cast wallet.id to bytes32 hex
+	buyout.pricePerShard  = pricepershard.id
+	buyout.timer          = timer.id
+	buyout.start          = timer.start
+	buyout.deadline       = timer.deadline
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.buyout             = buyout.id
