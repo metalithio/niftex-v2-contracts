@@ -129,6 +129,10 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         boughtShards[wallet][to] = boughtShards[wallet][to].add(count);
         remainingShards[wallet] = remainingShards[wallet].sub(count);
 
+        if (remainingShards[wallet] == 0) { // crowdsaleSuccess
+            wallet.renounceOwnership(); // make address(0) owner for actions
+        }
+
         Address.sendValue(msg.sender, msg.value.sub(value));
         emit ShardsBought(wallet, msg.sender, to, count);
     }
