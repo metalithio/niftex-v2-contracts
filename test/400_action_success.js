@@ -136,11 +136,19 @@ contract('Workflow', function (accounts) {
 			const value = '0';
 			const data  = this.mocks.erc721.contract.methods.safeTransferFrom(instance.address, user1, 1).encodeABI();
 
+			id = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+				[ 'address[]', 'uint256[]', 'bytes[]' ],
+				[[ to ], [ value ], [ data ]],
+			));
+			uid = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+				[ 'address', 'bytes32' ],
+				[ instance.address, id ],
+			));
+
 			const { receipt } = await this.modules.action.schedule(instance.address, [ to ], [ value ], [ data ], { from: user1 });
-			expectEvent(receipt, 'TimerStarted');
-			expectEvent(receipt, 'ActionScheduled', { i: '0', to, value, data });
+			expectEvent(receipt, 'TimerStarted', { timer: uid });
+			expectEvent(receipt, 'ActionScheduled', { wallet: instance.address, uid, id, i: '0', to, value, data });
 			deadline = receipt.logs.find(({ event }) => event == 'TimerStarted').args.deadline;
-			id       = receipt.logs.find(({ event }) => event == 'ActionScheduled').args.id;
 		});
 
 		after(async function () {
