@@ -73,10 +73,12 @@ export function handleActionScheduled(event: ActionScheduledEvent): void {
 	ev.transaction = transactions.log(event).id
 	ev.timestamp   = event.block.timestamp
 	ev.action      = action.id
+	ev.wallet      = wallet.id
 	ev.save()
 }
 
 export function handleActionExecuted(event: ActionExecutedEvent): void {
+	let wallet    = fetchShardedWallet(event.params.wallet)
 	let action    = new Action(event.params.uid.toHex())
 	action.status = 'EXECUTED'
 	action.save()
@@ -85,10 +87,12 @@ export function handleActionExecuted(event: ActionExecutedEvent): void {
 	ev.transaction = transactions.log(event).id
 	ev.timestamp   = event.block.timestamp
 	ev.action      = action.id
+	ev.wallet      = wallet.id
 	ev.save()
 }
 
 export function handleActionCancelled(event: ActionCancelledEvent): void {
+	let wallet    = fetchShardedWallet(event.params.wallet)
 	let action    = new Action(event.params.uid.toHex())
 	action.status = 'CANCELLED'
 	action.save()
@@ -97,5 +101,6 @@ export function handleActionCancelled(event: ActionCancelledEvent): void {
 	ev.transaction = transactions.log(event).id
 	ev.timestamp   = event.block.timestamp
 	ev.action      = action.id
+	ev.wallet      = wallet.id
 	ev.save()
 }

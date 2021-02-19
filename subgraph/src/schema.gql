@@ -44,6 +44,9 @@ type ShardedWallet @entity {
 	GovernanceUpdates:            [GovernanceUpdated!]! @derivedFrom(field: "wallet")
 	# Modules
 	actions:                      [Action!]! @derivedFrom(field: "wallet")
+	actionScheduled:              [ActionScheduled!]! @derivedFrom(field: "wallet")
+	actionExecuted:               [ActionExecuted!]! @derivedFrom(field: "wallet")
+	actionCancelled:              [ActionCancelled!]! @derivedFrom(field: "wallet")
 	activeBuyout:                 Buyout
 	buyouts:                      [Buyout!]! @derivedFrom(field: "wallet")
 	# crowdsale
@@ -271,6 +274,7 @@ type ActionScheduled implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	action:                       Action!
+	wallet:                       ShardedWallet!
 }
 
 type ActionExecuted implements Event @entity {
@@ -278,6 +282,7 @@ type ActionExecuted implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	action:                       Action!
+	wallet:                       ShardedWallet!
 }
 
 type ActionCancelled implements Event @entity {
@@ -285,6 +290,7 @@ type ActionCancelled implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	action:                       Action!
+	wallet:                       ShardedWallet!
 }
 
 type BuyoutOpened implements Event @entity {
