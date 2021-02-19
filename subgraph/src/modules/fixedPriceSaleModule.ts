@@ -164,6 +164,7 @@ export function handleShardsPrebuy(event: ShardsPrebuyEvent): void {
 	ev.transaction          = transactions.log(event).id
 	ev.timestamp            = event.block.timestamp
 	ev.fixedpricesaleprebuy = fixedpricesaleprebuy.id
+	ev.wallet               = wallet.id
 	ev.index                = fixedpricesaleprebuy.index
 	ev.value                = value.id
 	ev.save()
@@ -205,6 +206,7 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.fixedpricesalebuy  = fixedpricesalebuy.id
+	ev.wallet             = wallet.id
 	ev.index              = fixedpricesalebuy.index
 	ev.value              = value.id
 	ev.save()

@@ -66,6 +66,7 @@ export function handleBuyoutOpened(event: BuyoutOpenedEvent): void {
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.buyout             = buyout.id
+	ev.wallet             = wallet.id
 	ev.proposer           = proposer.id
 	wallet.save()
 	buyout.save()
@@ -83,6 +84,7 @@ export function handleBuyoutClosed(event: BuyoutClosedEvent): void {
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.buyout             = buyout.id
+	ev.wallet             = wallet.id
 	ev.closer             = closer.id
 	wallet.save()
 	buyout.save()
@@ -99,6 +101,7 @@ export function handleBuyoutClaimed(event: BuyoutClaimedEvent): void {
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.buyout             = buyout.id
+	ev.wallet             = wallet.id
 	ev.user               = user.id
 	buyout.save()
 	user.save()
@@ -111,5 +114,6 @@ export function handleBuyoutFinalized(event: BuyoutFinalizedEvent): void {
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.buyout             = wallet.activeBuyout
+	ev.wallet             = wallet.id
 	ev.save()
 }

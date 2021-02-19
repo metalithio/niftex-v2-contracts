@@ -66,7 +66,8 @@ dataSources:
     name: BuyoutModule
     network: rinkeby
     source:
-      address: '0xFd62d07cd3D54C905D61A017DedFAfd9E7048224'
+      # address: '0xFd62d07cd3D54C905D61A017DedFAfd9E7048224'
+      address: '0x5A2a8758e83F2c8c24b0eb5F6F85A686cea59259'
       startBlock: 8048839
       abi: BuyoutModule
     mapping:
