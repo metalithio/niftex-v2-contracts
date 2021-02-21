@@ -89,11 +89,6 @@ contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
         emit EtherSupplied(address(this), msg.value);
     }
 
-
-
-
-
-
     function buyShards(uint256 amount, uint256 maxCost) public payable {
         uint256 cost = _buyShards(msg.sender, amount, maxCost);
 
