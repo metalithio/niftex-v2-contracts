@@ -55,5 +55,4 @@ abstract contract ERC1363 is ERC20, IERC1363 {
         }
         return true;
     }
-
 }
