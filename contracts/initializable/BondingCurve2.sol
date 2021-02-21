@@ -89,6 +89,11 @@ contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
         emit EtherSupplied(address(this), msg.value);
     }
 
+
+
+
+
+
     function buyShards(uint256 amount, uint256 maxCost) public payable {
         uint256 cost = _buyShards(msg.sender, amount, maxCost);
 
@@ -103,16 +108,45 @@ contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
         _sellShards(msg.sender, amount, minPayout);
     }
 
+    function supplyEther() public payable {
+        _supplyEther(msg.sender, msg.value);
+    }
+
+    function supplyShards(uint256 amount) public {
+        require(ShardedWallet(payable(_wallet)).transferFrom(msg.sender, address(this), amount));
+        _supplyShards(msg.sender, amount);
+    }
+
     function onTransferReceived(address, address from, uint256 amount, bytes calldata data) public override returns (bytes4) {
         require(msg.sender == _wallet, "onTransferReceived restricted to token contract");
-        _sellShards(from, amount, abi.decode(data, (uint256)));
+
+        bytes4 selector = abi.decode(data, (bytes4));
+        if (selector == this.sellShards.selector) {
+            (,uint256 minPayout) = abi.decode(data, (bytes4, uint256));
+            _sellShards(from, amount, minPayout);
+        } else if (selector == this.supplyShards.selector) {
+            _supplyShards(from, amount);
+        } else {
+            revert("invalid selector in onTransferReceived data");
+        }
+
         return this.onTransferReceived.selector;
     }
 
     function onApprovalReceived(address owner, uint256 amount, bytes calldata data) public override returns (bytes4) {
         require(msg.sender == _wallet, "onApprovalReceived restricted to token contract");
         require(ShardedWallet(payable(_wallet)).transferFrom(owner, address(this), amount));
-        _sellShards(owner, amount, abi.decode(data, (uint256)));
+
+        bytes4 selector = abi.decode(data, (bytes4));
+        if (selector == this.sellShards.selector) {
+            (,uint256 minPayout) = abi.decode(data, (bytes4, uint256));
+            _sellShards(owner, amount, minPayout);
+        } else if (selector == this.supplyShards.selector) {
+            _supplyShards(owner, amount);
+        } else {
+            revert("invalid selector in onApprovalReceived data");
+        }
+
         return this.onApprovalReceived.selector;
     }
 
@@ -197,6 +231,25 @@ contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
         return value;
     }
 
+    function _supplyEther(address supplier, uint256 amount) internal {
+        require(_curve.k.div(_curve.x).sub(address(this).balance) >= 0);
+
+        _mintEthLP(supplier, calcNewEthLPTokensToIssue(amount));
+        _etherLP.underlyingSupply = _etherLP.underlyingSupply.add(amount);
+
+        emit EtherSupplied(supplier, amount);
+    }
+
+
+    function _supplyShards(address supplier, uint256 amount) internal {
+        require(_curve.x.sub(_shardLP.underlyingSupply).sub(amount) >= 0);
+
+        _mintShardLP(supplier, calcNewShardLPTokensToIssue(amount));
+        _shardLP.underlyingSupply = _shardLP.underlyingSupply.add(amount);
+
+        emit ShardsSupplied(supplier, amount);
+    }
+
     function calcNewShardLPTokensToIssue(uint256 amount) public view returns (uint256) {
         uint256 pool = _shardLP.underlyingSupply;
         if (pool == 0) { return amount; }
@@ -223,26 +276,6 @@ contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
         .sub(_etherLP.feeToNiftex)
         .sub(_etherLP.feeToArtist);
         return balance < _etherLP.underlyingSupply ? 0 : balance - _etherLP.underlyingSupply;
-    }
-
-    function supplyEther() external payable {
-        require(msg.value > 0);
-        require(_curve.k.div(_curve.x).sub(address(this).balance) >= 0);
-
-        _mintEthLP(msg.sender, calcNewEthLPTokensToIssue(msg.value));
-        _etherLP.underlyingSupply = _etherLP.underlyingSupply.add(msg.value);
-
-        emit EtherSupplied(msg.sender, msg.value);
-    }
-
-    function supplyShards(uint256 amount) public {
-        require(ShardedWallet(payable(_wallet)).transferFrom(msg.sender, address(this), amount));
-        require(_curve.x.sub(_shardLP.underlyingSupply).sub(amount) >= 0);
-
-        _mintShardLP(msg.sender, calcNewShardLPTokensToIssue(amount));
-        _shardLP.underlyingSupply = _shardLP.underlyingSupply.add(amount);
-
-        emit ShardsSupplied(msg.sender, amount);
     }
 
     function withdrawSuppliedEther(uint256 amount) external returns (uint256, uint256) {

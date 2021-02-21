@@ -401,6 +401,29 @@ contract('Workflow', function (accounts) {
 			});
 		});
 
+		// it('perform', async() => {
+		// 	const amount      = web3.utils.toWei("5");
+		// 	const selector    = web3.eth.abi.encodeFunctionSignature('supplyShards(uint256)');
+		// 	const data        = web3.eth.abi.encodeParameters([ 'bytes4' ], [ selector ]);
+		// 	const { receipt } = await instance.methods['approveAndCall(address,uint256,bytes)'](
+		// 		curveInstance.address,
+		// 		amount,
+		// 		data,
+		// 		{ from: cBuyer2 }
+		// 	);
+		// 	console.log('supplyShards gasUsed: ', receipt.gasUsed);
+		//
+		// 	const curve       = await curveInstance.getCurveCoordinates();
+		// 	const etherInPool = await web3.eth.getBalance(curveInstance.address);
+		// 	const shardInPool = await instance.balanceOf(curveInstance.address);
+		// 	console.log({
+		// 		x:           curve[0].toString(),
+		// 		k:           curve[1].toString(),
+		// 		etherInPool: web3.utils.fromWei(etherInPool),
+		// 		shardInPool: web3.utils.fromWei(shardInPool),
+		// 	});
+		// });
+
 		after(async function () {
 			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
 			assert.equal(await instance.name(),                                  'Tokenized NFT');
@@ -446,13 +469,15 @@ contract('Workflow', function (accounts) {
 		it('perform', async() => {
 			const amount      = web3.utils.toWei("5");
 			const minPayout   = web3.utils.toWei("0"); // TODO (.05)
-			const data        = web3.eth.abi.encodeParameters([ 'uint256' ], [ minPayout ]);
+			const selector    = web3.eth.abi.encodeFunctionSignature('sellShards(uint256,uint256)');
+			const data        = web3.eth.abi.encodeParameters([ 'bytes4', 'uint256' ], [ selector, minPayout ]);
 			const { receipt } = await instance.methods['approveAndCall(address,uint256,bytes)'](
 				curveInstance.address,
 				amount,
 				data,
 				{ from: mBuyer1 }
 			);
+			console.log('sellShards gasUsed: ', receipt.gasUsed);
 
 			const curve       = await curveInstance.getCurveCoordinates();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);

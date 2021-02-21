@@ -386,8 +386,14 @@ contract('Workflow', function (accounts) {
 	describe('cBuyer2 supply 30 shards', () => {
 		it('perform', async() => {
 			const amount      = web3.utils.toWei("30");
-			await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: cBuyer2 });
-			const { receipt } = await curveInstance.supplyShards(amount, { from: cBuyer2 });
+			const selector    = web3.eth.abi.encodeFunctionSignature('supplyShards(uint256)');
+			const data        = web3.eth.abi.encodeParameters([ 'bytes4' ], [ selector ]);
+			const { receipt } = await instance.methods['transferAndCall(address,uint256,bytes)'](
+				curveInstance.address,
+				amount,
+				data,
+				{ from: cBuyer2 }
+			);
 			console.log('supplyShards gasUsed: ', receipt.gasUsed);
 
 			const curve       = await curveInstance.getCurveCoordinates();
@@ -446,13 +452,15 @@ contract('Workflow', function (accounts) {
 		it('perform', async() => {
 			const amount      = web3.utils.toWei("5");
 			const minPayout   = web3.utils.toWei("0"); // TODO (.05)
-			const data        = web3.eth.abi.encodeParameters([ 'uint256' ], [ minPayout ]);
+			const selector    = web3.eth.abi.encodeFunctionSignature('sellShards(uint256,uint256)');
+			const data        = web3.eth.abi.encodeParameters([ 'bytes4', 'uint256' ], [ selector, minPayout ]);
 			const { receipt } = await instance.methods['transferAndCall(address,uint256,bytes)'](
 				curveInstance.address,
 				amount,
 				data,
 				{ from: mBuyer1 }
 			);
+			console.log('sellShards gasUsed: ', receipt.gasUsed);
 
 			const curve       = await curveInstance.getCurveCoordinates();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
