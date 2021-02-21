@@ -13,10 +13,12 @@
     "coverage": "hardhat coverage",
     "test": "hardhat test",
     "lint": "hardhat check",
-    "clean": "rimraf artifacts cache coverage"
+    "clean": "rimraf artifacts cache coverage",
+    "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^3.4.0-solc-0.7"
+    "@openzeppelin/contracts": "^3.4.0-solc-0.7",
+    "dotenv": "^8.2.0"
   },
   "devDependencies": {
     "@amxx/graphprotocol-utils": "0.0.7",

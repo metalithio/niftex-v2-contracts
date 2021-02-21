@@ -4,12 +4,6 @@ import {
 } from '@graphprotocol/graph-ts'
 
 import {
-	TimerReset      as TimerResetEvent,
-	TimerStarted    as TimerStartedEvent,
-	TimerStopped    as TimerStoppedEvent,
-} from '../../../generated/ActionModule/Timers'
-
-import {
 	FixedPriceSaleModule as FixedPriceSaleModuleContract,
 	OwnershipReclaimed     as OwnershipReclaimedEvent,
 	ShardsPrebuy           as ShardsPrebuyEvent,
@@ -21,8 +15,11 @@ import {
 } from '../../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
 
 import {
+	BondingCurve as BondingCurveTemplate,
+} from '../../../generated/templates'
+
+import {
 	Account,
-	Timer,
 	ShardedWallet,
 	FixedPriceSale,
 	FixedPriceSalePrebuy,
@@ -45,6 +42,9 @@ import {
 } from '../utils'
 
 import {
+	TimerReset         as TimerResetEvent,
+	TimerStarted       as TimerStartedEvent,
+	TimerStopped       as TimerStoppedEvent,
 	handleTimerStarted as genericHandleTimerStarted,
 	handleTimerStopped as genericHandleTimerStopped,
 	handleTimerReset   as genericHandleTimerReset,
@@ -54,20 +54,25 @@ function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, reset: bool
 	let fixedpricesale = FixedPriceSale.load(wallet.id)
 	if (fixedpricesale == null || reset) {
 		let index                      = fixedpricesale == null ? 0 : fixedpricesale.index
+		fixedpricesale                 = new FixedPriceSale(wallet.id)
 		let contract                   = FixedPriceSaleModuleContract.bind(module)
 		let walletAsAddress            = Address.fromString(wallet.id)
-		fixedpricesale                 = new FixedPriceSale(wallet.id)
+		let priceValue                 = contract.prices(walletAsAddress)
+		let remainingShardsValue       = contract.remainingShards(walletAsAddress)
 		let recipient                  = new Account(contract.recipients(walletAsAddress).toHex())
 		let balance                    = new decimals.Value(wallet.id.concat('-balance'), 18) // ETH
 		let price                      = new decimals.Value(wallet.id.concat('-price'), 18) // ETH per Shard
+		let offeredShards              = new decimals.Value(wallet.id.concat('-offered'), wallet.decimals) // Shards
 		let remainingShards            = new decimals.Value(wallet.id.concat('-remaining'), wallet.decimals) // Shards
-		price.set(contract.prices(walletAsAddress))
-		remainingShards.set(contract.remainingShards(walletAsAddress))
+		price.set(priceValue)
+		remainingShards.set(remainingShardsValue)
+		offeredShards.set(remainingShardsValue)
 		fixedpricesale.index           = index
 		fixedpricesale.wallet          = wallet.id
 		fixedpricesale.recipient       = recipient.id
 		fixedpricesale.balance         = balance.id
 		fixedpricesale.price           = price.id
+		fixedpricesale.offeredShards   = offeredShards.id
 		fixedpricesale.remainingShards = remainingShards.id
 		fixedpricesale.timer           = module.toHex().concat('-').concat(addressStringToBytesString(wallet.id))
 		fixedpricesale.status          = remainingShards._entry.exact.equals(constants.BIGINT_ZERO) ? 'SUCCESS' : 'INITIATED'
@@ -127,7 +132,8 @@ export function handleTimerStarted(event: TimerStartedEvent): void {
 	let wallet = fetchShardedWallet(bytesToAddress(event.params.timer))
 	wallet.save()
 
-	let fixedpricesale = fetchFixedPriceSale(wallet, event.address, true)
+	let fixedpricesale      = fetchFixedPriceSale(wallet, event.address, true)
+	fixedpricesale.start    = timer.start
 	fixedpricesale.deadline = timer.deadline
 	fixedpricesale.save()
 }
@@ -158,6 +164,7 @@ export function handleShardsPrebuy(event: ShardsPrebuyEvent): void {
 	ev.transaction          = transactions.log(event).id
 	ev.timestamp            = event.block.timestamp
 	ev.fixedpricesaleprebuy = fixedpricesaleprebuy.id
+	ev.wallet               = wallet.id
 	ev.index                = fixedpricesaleprebuy.index
 	ev.value                = value.id
 	ev.save()
@@ -199,6 +206,7 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.fixedpricesalebuy  = fixedpricesalebuy.id
+	ev.wallet             = wallet.id
 	ev.index              = fixedpricesalebuy.index
 	ev.value              = value.id
 	ev.save()
@@ -211,13 +219,13 @@ export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): 
 	recipient.save()
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
-	if (fixedpricesaleprebuy != null && fixedpricesale.index == fixedpricesaleprebuy.index) {
+	if (fixedpricesaleprebuy != null) {
 		fixedpricesaleprebuy.redeemed = true
 		fixedpricesaleprebuy.save()
 	}
 
 	let fixedpricesalebuy = FixedPriceSaleBuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
-	if (fixedpricesalebuy != null && fixedpricesale.index == fixedpricesalebuy.index) {
+	if (fixedpricesalebuy != null) {
 		fixedpricesalebuy.redeemed = true
 		fixedpricesalebuy.save()
 	}
@@ -231,14 +239,14 @@ export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): 
 	let recipient            = new Account(event.params.to.toHex())
 	recipient.save()
 
-	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id))
-	if (fixedpricesaleprebuy != null && fixedpricesale.index == fixedpricesaleprebuy.index) {
+	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
+	if (fixedpricesaleprebuy != null) {
 		fixedpricesaleprebuy.redeemed = true
 		fixedpricesaleprebuy.save()
 	}
 
-	let fixedpricesalebuy = FixedPriceSaleBuy.load(wallet.id.concat('-').concat(recipient.id))
-	if (fixedpricesalebuy != null && fixedpricesale.index == fixedpricesalebuy.index) {
+	let fixedpricesalebuy = FixedPriceSaleBuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
+	if (fixedpricesalebuy != null) {
 		fixedpricesalebuy.redeemed = true
 		fixedpricesalebuy.save()
 	}
@@ -266,4 +274,8 @@ export function handleOwnershipReclaimed(event: OwnershipReclaimedEvent): void {
 	fixedpricesale.save()
 
 	// TODO: track event ?
+}
+
+export function handleNewBondingCurve(event: NewBondingCurveEvent): void {
+	BondingCurveTemplate.create(event.params.curve)
 }

@@ -31,6 +31,7 @@ async function main() {
     "crowdsale":     "FixedPriceSaleModule",
     "multicall":     "MulticallModule",
     "tokenreceiver": "TokenReceiverModule",
+    "basicdistribution": "BasicDistributionModule",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;

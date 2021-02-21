@@ -9,10 +9,12 @@ type Account @entity {
 	approvalsOwner:               [Approval!]! @derivedFrom(field: "owner")
 	approvalsSpender:             [Approval!]! @derivedFrom(field: "spender")
 	executions:                   [Execute!]! @derivedFrom(field: "to")
+	moduleExecutions:             [ModuleExecute!]! @derivedFrom(field: "to")
 	calls:                        [ActionCall!]! @derivedFrom(field: "to")
 	recipient:                    [FixedPriceSale!]! @derivedFrom(field: "recipient")
 	prebuys:                      [FixedPriceSalePrebuy!]! @derivedFrom(field: "recipient")
 	buys:                         [FixedPriceSaleBuy!]! @derivedFrom(field: "recipient")
+	buyoutsProposed:              [Buyout!]! @derivedFrom(field: "proposer")
 }
 
 type Module @entity {
@@ -37,17 +39,30 @@ type ShardedWallet @entity {
 	decimals:                     Int!
 	totalSupply:                  DecimalValue!
 	balances:                     [Balance!]! @derivedFrom(field: "wallet")
+	approval:                     [Approval!]! @derivedFrom(field: "wallet")
+	transfer:                     [Transfer!]! @derivedFrom(field: "wallet")
 	# Executions
 	executions:                   [Execute!]! @derivedFrom(field: "wallet")
 	moduleExecutions:             [ModuleExecute!]! @derivedFrom(field: "wallet")
 	# Administration
-	GovernanceUpdates:            [GovernanceUpdated!]! @derivedFrom(field: "wallet")
+	ownershipTransfers:           [OwnershipTransferred!]! @derivedFrom(field: "wallet")
+	governanceUpdates:            [GovernanceUpdated!]! @derivedFrom(field: "wallet")
+	artistUpdates:                [ArtistUpdated!]! @derivedFrom(field: "wallet")
 	# Modules
 	actions:                      [Action!]! @derivedFrom(field: "wallet")
+	actionScheduled:              [ActionScheduled!]! @derivedFrom(field: "wallet")
+	actionExecuted:               [ActionExecuted!]! @derivedFrom(field: "wallet")
+	actionCancelled:              [ActionCancelled!]! @derivedFrom(field: "wallet")
 	activeBuyout:                 Buyout
 	buyouts:                      [Buyout!]! @derivedFrom(field: "wallet")
+	buyoutOpened:                 [BuyoutOpened!]! @derivedFrom(field: "wallet")
+	buyoutClosed:                 [BuyoutClosed!]! @derivedFrom(field: "wallet")
+	buyoutClaimed:                [BuyoutClaimed!]! @derivedFrom(field: "wallet")
+	buyoutFinalized:              [BuyoutFinalized!]! @derivedFrom(field: "wallet")
 	# crowdsale
 	crowdsales:                   [FixedPriceSale!]! @derivedFrom(field: "wallet")
+	shardsPrebuy:                 [ShardsPrebuy!]! @derivedFrom(field: "wallet")
+	shardsBought:                 [ShardsBought!]! @derivedFrom(field: "wallet")
 }
 
 type Balance @entity {
@@ -68,6 +83,8 @@ enum TimerStatus {
 
 type Timer @entity {
 	id:                           ID!
+	emitter:                      Bytes!
+	identifier:                   Bytes!
 	status:                       TimerStatus!
 	start:                        BigInt!
 	deadline:                     BigInt!
@@ -117,13 +134,14 @@ type Buyout @entity {
 	status:                       BuyoutStatus!
 	wallet:                       ShardedWallet!
 	proposer:                     Account!
-	pricePerShard:                BigInt!
+	pricePerShard:                DecimalValue!
 	timer:                        Timer!
+	start:                        BigInt!
+	deadline:                     BigInt!
 	openEvents:                   [BuyoutOpened!]! @derivedFrom(field: "buyout")
 	closeEvents:                  [BuyoutClosed!]! @derivedFrom(field: "buyout")
 	claimEvents:                  [BuyoutClaimed!]! @derivedFrom(field: "buyout")
 	finalizeEvents:               [BuyoutFinalized!]! @derivedFrom(field: "buyout")
-	resetEvents:                  [BuyoutResetted!]! @derivedFrom(field: "buyout")
 }
 
 # ============================== FixedPriceSale ===============================
@@ -141,8 +159,10 @@ type FixedPriceSale @entity {
 	recipient:                    Account!
 	balance:                      DecimalValue!
 	price:                        DecimalValue!
+	offeredShards:                DecimalValue!
 	remainingShards:              DecimalValue!
 	timer:                        Timer!
+	start:                        BigInt!
 	deadline:                     BigInt!
 	status:                       FixedPriceSaleStatus!
 	withdrawn:                    Boolean!
@@ -265,6 +285,7 @@ type ActionScheduled implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	action:                       Action!
+	wallet:                       ShardedWallet!
 }
 
 type ActionExecuted implements Event @entity {
@@ -272,6 +293,7 @@ type ActionExecuted implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	action:                       Action!
+	wallet:                       ShardedWallet!
 }
 
 type ActionCancelled implements Event @entity {
@@ -279,6 +301,7 @@ type ActionCancelled implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	action:                       Action!
+	wallet:                       ShardedWallet!
 }
 
 type BuyoutOpened implements Event @entity {
@@ -286,6 +309,7 @@ type BuyoutOpened implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	buyout:                       Buyout!
+	wallet:                       ShardedWallet!
 	proposer:                     Account!
 }
 
@@ -294,6 +318,7 @@ type BuyoutClosed implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	buyout:                       Buyout!
+	wallet:                       ShardedWallet!
 	closer:                       Account!
 }
 
@@ -302,6 +327,7 @@ type BuyoutClaimed implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	buyout:                       Buyout!
+	wallet:                       ShardedWallet!
 	user:                         Account!
 }
 
@@ -310,13 +336,7 @@ type BuyoutFinalized implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	buyout:                       Buyout!
-}
-
-type BuyoutResetted implements Event @entity {
-	id:                           ID!
-	transaction:                  Transaction!
-	timestamp:                    BigInt!
-	buyout:                       Buyout!
+	wallet:                       ShardedWallet!
 }
 
 type ShardsPrebuy implements Event @entity {
@@ -324,6 +344,7 @@ type ShardsPrebuy implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	fixedpricesaleprebuy:         FixedPriceSalePrebuy!
+	wallet:                       ShardedWallet!
 	index:                        Int!
 	value:                        DecimalValue!
 }
@@ -333,6 +354,7 @@ type ShardsBought implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	fixedpricesalebuy:            FixedPriceSaleBuy!
+	wallet:                       ShardedWallet!
 	index:                        Int!
 	value:                        DecimalValue!
 }

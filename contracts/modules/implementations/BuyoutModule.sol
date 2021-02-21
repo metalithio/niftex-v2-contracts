@@ -53,7 +53,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     }
 
     function closeBuyout(ShardedWallet wallet)
-    external payable buyoutAuthorized(wallet, msg.sender) onlyDuringTimer(bytes32(uint256(address(wallet))))
+    external payable onlyDuringTimer(bytes32(uint256(address(wallet))))
     {
         uint256 decimals      = wallet.decimals();
         uint256 pricePerShard = _prices[wallet];

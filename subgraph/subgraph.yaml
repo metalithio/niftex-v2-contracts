@@ -66,7 +66,8 @@ dataSources:
     name: BuyoutModule
     network: rinkeby
     source:
-      address: '0xFd62d07cd3D54C905D61A017DedFAfd9E7048224'
+      # address: '0xFd62d07cd3D54C905D61A017DedFAfd9E7048224'
+      address: '0x5A2a8758e83F2c8c24b0eb5F6F85A686cea59259'
       startBlock: 8048839
       abi: BuyoutModule
     mapping:
@@ -96,12 +97,13 @@ dataSources:
         - event: TimerStopped(indexed bytes32)
           handler: handleTimerStopped
       file: ./src/modules/buyoutModule.ts
-  # ====== Module - CrowdsaleFixedPrice ======================================
+  # ====== Module - FixedPriceSaleModule =====================================
   - kind: ethereum/contract
     name: FixedPriceSaleModule
     network: rinkeby
     source:
-      address: '0xc15C24f8a44A6B36D8810f0d8DaE9423E87B574d'
+      # address: '0xc15C24f8a44A6B36D8810f0d8DaE9423E87B574d'
+      address: '0xe4d5FbDB258a7878c1c2cacdd28813f001C296f9'
       startBlock: 8048839
       abi: FixedPriceSaleModule
     mapping:
@@ -134,9 +136,8 @@ dataSources:
           handler: handleTimerStopped
         - event: Withdraw(indexed address,indexed address,address,uint256)
           handler: handleWithdraw
-        # TODO
-        # - event: NewBondingCurve(indexed address,indexed address)
-        #   handler: handleNewBondingCurve
+        - event: NewBondingCurve(indexed address,indexed address)
+          handler: handleNewBondingCurve
       file: ./src/modules/fixedPriceSaleModule.ts
 # ====== Template - ShardedWallet ============================================
 templates:
@@ -172,3 +173,38 @@ templates:
         - event: ArtistUpdated(indexed address,indexed address)
           handler: handleArtistUpdated
       file: ./src/wallet/shardedWallet.ts
+
+  - name: BondingCurve
+    kind: ethereum/contract
+    network: rinkeby
+    source:
+      abi: BondingCurve
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: BondingCurve
+          file: ../artifacts/contracts/initializable/BondingCurve.sol/BondingCurve.json
+      eventHandlers:
+        - event: EtherSupplied(uint256,address)
+          handler: handleEtherSupplied
+        - event: EtherWithdrawn(uint256,uint256,address)
+          handler: handleEtherWithdrawn
+        - event: Initialized(address,address)
+          handler: handleInitialized
+        - event: ShardsBought(uint256,uint256,address)
+          handler: handleShardsBought
+        - event: ShardsSold(uint256,uint256,address)
+          handler: handleShardsSold
+        - event: ShardsSupplied(uint256,address)
+          handler: handleShardsSupplied
+        - event: ShardsWithdrawn(uint256,uint256,address)
+          handler: handleShardsWithdrawn
+        - event: TransferEthLPTokens(address,address,uint256)
+          handler: handleTransferEthLPTokens
+        - event: TransferShardLPTokens(address,address,uint256)
+          handler: handleTransferShardLPTokens
+      file: ./src/initializable/bondingCurve.ts
