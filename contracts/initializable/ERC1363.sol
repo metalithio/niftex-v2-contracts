@@ -14,12 +14,13 @@ abstract contract ERC1363 is ERC20, IERC1363 {
 
     function transferAndCall(address to, uint256 value, bytes memory data) public override returns (bool) {
         require(transfer(to, value));
-        require(
-            IERC1363Receiver(to).onTransferReceived(_msgSender(), _msgSender(), value, data)
-            ==
-            IERC1363Receiver(to).onTransferReceived.selector,
-            "ERC1363: onTransferReceived failled"
-        );
+        try IERC1363Receiver(to).onTransferReceived(_msgSender(), _msgSender(), value, data) returns (bytes4 selector) {
+            require(selector == IERC1363Receiver(to).onTransferReceived.selector, "ERC1363: onTransferReceived invalid result");
+        } catch Error(string memory reason) {
+            revert(reason);
+        } catch {
+            revert("ERC1363: onTransferReceived reverted without reason");
+        }
         return true;
     }
 
@@ -30,16 +31,11 @@ abstract contract ERC1363 is ERC20, IERC1363 {
     function transferFromAndCall(address from, address to, uint256 value, bytes memory data) public override returns (bool) {
         require(transferFrom(from, to, value));
         try IERC1363Receiver(to).onTransferReceived(_msgSender(), from, value, data) returns (bytes4 selector) {
-            require(selector == IERC1363Receiver(to).onTransferReceived.selector, "ERC1363: onTransferReceived return bad value");
-        } catch (bytes memory returndata) {
-            if (returndata.length > 0) {
-                assembly {
-                    let returndata_size := mload(returndata)
-                    revert(add(32, returndata), returndata_size)
-                }
-            } else {
-                revert("ERC1363: onTransferReceived failled");
-            }
+            require(selector == IERC1363Receiver(to).onTransferReceived.selector, "ERC1363: onTransferReceived invalid result");
+        } catch Error(string memory reason) {
+            revert(reason);
+        } catch {
+            revert("ERC1363: onTransferReceived reverted without reason");
         }
         return true;
     }
@@ -51,18 +47,12 @@ abstract contract ERC1363 is ERC20, IERC1363 {
     function approveAndCall(address spender, uint256 value, bytes memory data) public override returns (bool) {
         require(approve(spender, value));
         try IERC1363Spender(spender).onApprovalReceived(_msgSender(), value, data) returns (bytes4 selector) {
-            require(selector == IERC1363Spender(spender).onApprovalReceived.selector, "ERC1363: onApprovalReceived return bad value");
-        } catch (bytes memory returndata) {
-            if (returndata.length > 0) {
-                assembly {
-                    let returndata_size := mload(returndata)
-                    revert(add(32, returndata), returndata_size)
-                }
-            } else {
-                revert("ERC1363: onApprovalReceived failled");
-            }
+            require(selector == IERC1363Spender(spender).onApprovalReceived.selector, "ERC1363: onApprovalReceived invalid result");
+        } catch Error(string memory reason) {
+            revert(reason);
+        } catch {
+            revert("ERC1363: onApprovalReceived reverted without reason");
         }
         return true;
     }
-
 }

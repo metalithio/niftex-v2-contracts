@@ -17,8 +17,7 @@
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^3.4.0-solc-0.7",
-    "dotenv": "^8.2.0"
+    "@openzeppelin/contracts": "^3.4.0-solc-0.7"
   },
   "devDependencies": {
     "@amxx/graphprotocol-utils": "0.0.7",
@@ -31,6 +30,7 @@
     "@openzeppelin/hardhat-upgrades": "^1.6.0",
     "@openzeppelin/test-helpers": "^0.5.9",
     "concat": "^1.0.3",
+    "dotenv": "^8.2.0",
     "ethers": "^5.0.29",
     "ganache-cli": "^6.12.1",
     "hardhat": "^2.0.4",

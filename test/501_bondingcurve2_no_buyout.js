@@ -1,6 +1,25 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const BigNumber = require('bignumber.js');
 
+function predictClone(template, salt, deployer) {
+	return web3.utils.toChecksumAddress(
+		web3.utils.keccak256(Buffer.concat([
+			Buffer.from('ff', 'hex'),
+			Buffer.from(web3.utils.padLeft(deployer, 40).substr(2), 'hex'),
+			Buffer.from(web3.utils.padLeft(salt, 64).substr(2), 'hex'),
+			Buffer.from(
+				web3.utils.keccak256(Buffer.concat([
+					Buffer.from('3d602d80600a3d3981f3363d3d373d3d3d363d73', 'hex'),
+					Buffer.from(web3.utils.padLeft(template, 40).substr(2), 'hex'),
+					Buffer.from('5af43d82803e903d91602b57fd5bf3', 'hex'),
+				])).substr(2),
+				'hex'
+			),
+		]))
+		.substr(-40)
+	);
+}
+
 contract('Workflow', function (accounts) {
 	const [ admin, nftOwner, cBuyer1, cBuyer2, mBuyer1, mBuyer2, artist, newAdmin, claimant1, claimant2 ] = accounts;
 	const CURVE_PREMINT_RESERVE = '0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9';
@@ -297,9 +316,14 @@ contract('Workflow', function (accounts) {
 
 	describe('withdraw and trigger bonding curve', function () {
 		it('perform', async function () {
+			const predicted = predictClone(
+				this.modules.bondingcurve.address, // template
+				instance.address,                  // salt
+				this.modules.crowdsale.address,    // deployer
+			);
 			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, { from: nftOwner });
-			expectEvent(receipt, 'NewBondingCurve', { wallet: instance.address });
-			curveInstance = await Modules.BondingCurve.artifact.at(receipt.logs.find(({ event }) => event == 'NewBondingCurve').args.curve);
+			expectEvent(receipt, 'NewBondingCurve', { wallet: instance.address, curve: predicted });
+			curveInstance = await Modules.BondingCurve.artifact.at(predicted);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
 			console.log('curveInstance:', curveInstance.address);
 		});

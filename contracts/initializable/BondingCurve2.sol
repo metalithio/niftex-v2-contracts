@@ -276,20 +276,22 @@ contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
     function withdrawSuppliedEther(uint256 amount) external returns (uint256, uint256) {
         require(amount > 0);
 
+        uint256 etherLPSupply = _etherLP.totalSupply;
+
         uint256 balance = address(this).balance
         .sub(_etherLP.feeToNiftex)
         .sub(_etherLP.feeToArtist);
 
         uint256 value = (balance <= _etherLP.underlyingSupply)
-        ? balance.mul(amount).div(_etherLP.totalSupply)
-        : _etherLP.underlyingSupply.mul(amount).div(_etherLP.totalSupply);
+        ? balance.mul(amount).div(etherLPSupply)
+        : _etherLP.underlyingSupply.mul(amount).div(etherLPSupply);
 
         uint256 payout = calcShardsForEthSuppliers()
         .mul(amount)
-        .div(_etherLP.totalSupply);
+        .div(etherLPSupply);
 
         // update balances
-        _etherLP.underlyingSupply = _etherLP.underlyingSupply.mul(_etherLP.totalSupply.sub(amount)).div(_etherLP.totalSupply);
+        _etherLP.underlyingSupply = _etherLP.underlyingSupply.mul(etherLPSupply.sub(amount)).div(etherLPSupply);
         _burnEthLP(msg.sender, amount);
 
         // transfer
@@ -306,20 +308,22 @@ contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
     function withdrawSuppliedShards(uint256 amount) external returns (uint256, uint256) {
         require(amount > 0);
 
+        uint256 shardLPSupply = _shardLP.totalSupply;
+
         uint256 balance = ShardedWallet(payable(_wallet)).balanceOf(address(this))
         .sub(_shardLP.feeToNiftex)
         .sub(_shardLP.feeToArtist);
 
         uint256 shards = (balance <= _shardLP.underlyingSupply)
-        ? balance.mul(amount).div(_shardLP.totalSupply)
-        : _shardLP.underlyingSupply.mul(amount).div(_shardLP.totalSupply);
+        ? balance.mul(amount).div(shardLPSupply)
+        : _shardLP.underlyingSupply.mul(amount).div(shardLPSupply);
 
         uint256 payout = calcEthForShardSuppliers()
         .mul(amount)
-        .div(_shardLP.totalSupply);
+        .div(shardLPSupply);
 
         // update balances
-        _shardLP.underlyingSupply = _shardLP.underlyingSupply.mul(_shardLP.totalSupply.sub(amount)).div(_shardLP.totalSupply);
+        _shardLP.underlyingSupply = _shardLP.underlyingSupply.mul(shardLPSupply.sub(amount)).div(shardLPSupply);
         _burnShardLP(msg.sender, amount);
 
         // transfer
