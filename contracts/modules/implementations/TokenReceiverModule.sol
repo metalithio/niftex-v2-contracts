@@ -14,9 +14,9 @@ contract TokenReceiverModule is IModule, ERC165, IERC721Receiver, IERC777Recipie
 
     constructor()
     {
-        _registerInterface(IERC721Receiver.onERC721Received.selector);
-        _registerInterface(IERC777Recipient.tokensReceived.selector);
-        _registerInterface(IERC1155Receiver.onERC1155Received.selector ^ IERC1155Receiver.onERC1155BatchReceived.selector);
+        _registerInterface(type(IERC721Receiver).interfaceId);
+        _registerInterface(type(IERC777Recipient).interfaceId);
+        _registerInterface(type(IERC1155Receiver).interfaceId);
     }
 
     function onERC721Received(address, address, uint256, bytes calldata)

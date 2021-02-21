@@ -30,7 +30,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract ERC20 is Context, IERC20 {
+abstract contract ERC20 is Context, IERC20 {
     using SafeMath for uint256;
 
     mapping (address => uint256) private _balances;

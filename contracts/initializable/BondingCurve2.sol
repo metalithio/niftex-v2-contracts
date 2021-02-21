@@ -7,8 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../wallet/ShardedWallet.sol";
 import "../governance/IGovernance.sol";
+import "../interface/IERC1363Receiver.sol";
+import "../interface/IERC1363Spender.sol";
 
-contract BondingCurve2 {
+contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
     using SafeMath for uint256;
 
     struct CurveCoordinates {
@@ -88,6 +90,33 @@ contract BondingCurve2 {
     }
 
     function buyShards(uint256 amount, uint256 maxCost) public payable {
+        uint256 cost = _buyShards(msg.sender, amount, maxCost);
+
+        require(cost <= msg.value);
+        if (msg.value > cost) {
+            Address.sendValue(msg.sender, msg.value.sub(cost));
+        }
+    }
+
+    function sellShards(uint256 amount, uint256 minPayout) public {
+        require(ShardedWallet(payable(_wallet)).transferFrom(msg.sender, address(this), amount));
+        _sellShards(msg.sender, amount, minPayout);
+    }
+
+    function onTransferReceived(address, address from, uint256 amount, bytes calldata data) public override returns (bytes4) {
+        require(msg.sender == _wallet, "onTransferReceived restricted to token contract");
+        _sellShards(from, amount, abi.decode(data, (uint256)));
+        return this.onTransferReceived.selector;
+    }
+
+    function onApprovalReceived(address owner, uint256 amount, bytes calldata data) public override returns (bytes4) {
+        require(msg.sender == _wallet, "onApprovalReceived restricted to token contract");
+        require(ShardedWallet(payable(_wallet)).transferFrom(owner, address(this), amount));
+        _sellShards(owner, amount, abi.decode(data, (uint256)));
+        return this.onApprovalReceived.selector;
+    }
+
+    function _buyShards(address buyer, uint256 amount, uint256 maxCost) internal returns (uint256) {
         IGovernance governance = ShardedWallet(payable(_wallet)).governance();
         address     owner      = ShardedWallet(payable(_wallet)).owner();
         address     artist     = ShardedWallet(payable(_wallet)).artistWallet();
@@ -110,7 +139,7 @@ contract BondingCurve2 {
 
         // check cost
         uint256 cost = newY.sub(_curve.k.div(_curve.x));
-        require(cost <= msg.value && cost <= maxCost);
+        require(cost <= maxCost);
 
         // consistency check
         require(ShardedWallet(payable(_wallet)).balanceOf(address(this)).sub(_shardLP.feeToNiftex).sub(_shardLP.feeToArtist) >= amountWithFee);
@@ -124,15 +153,13 @@ contract BondingCurve2 {
         _shardLP.feeToArtist      = _shardLP.feeToArtist.add(amount.mul(fees[2]).div(10**18));
 
         // transfer
-        ShardedWallet(payable(_wallet)).transfer(msg.sender, amount);
-        if (msg.value > cost) {
-            Address.sendValue(msg.sender, msg.value.sub(cost));
-        }
+        ShardedWallet(payable(_wallet)).transfer(buyer, amount);
 
-        emit ShardsBought(msg.sender, amount, cost);
+        emit ShardsBought(buyer, amount, cost);
+        return cost;
     }
 
-    function sellShards(uint256 amount, uint256 minPayout) public {
+    function _sellShards(address seller, uint256 amount, uint256 minPayout) internal returns (uint256) {
         IGovernance governance = ShardedWallet(payable(_wallet)).governance();
         address     owner      = ShardedWallet(payable(_wallet)).owner();
         address     artist     = ShardedWallet(payable(_wallet)).artistWallet();
@@ -164,10 +191,10 @@ contract BondingCurve2 {
         _etherLP.feeToArtist      = _etherLP.feeToArtist.add(payout.mul(fees[2]).div(10**18));
 
         // transfer
-        require(ShardedWallet(payable(_wallet)).transferFrom(msg.sender, address(this), amount));
-        Address.sendValue(msg.sender, value);
+        Address.sendValue(payable(seller), value);
 
-        emit ShardsSold(msg.sender, amount, value);
+        emit ShardsSold(seller, amount, value);
+        return value;
     }
 
     function calcNewShardLPTokensToIssue(uint256 amount) public view returns (uint256) {

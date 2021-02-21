@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "../governance/IGovernance.sol";
 import "../initializable/Ownable.sol";
 import "../initializable/ERC20.sol";
+import "../initializable/ERC1363.sol";
 
-contract ShardedWallet is Ownable, ERC20
+contract ShardedWallet is Ownable, ERC20, ERC1363
 {
     using SafeMath for uint256;
 
