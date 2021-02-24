@@ -479,7 +479,7 @@ contract('Workflow', function (accounts) {
 
 			const buyShardsTxn = await curveInstance.sellShards(
 				shardAmount,
-				new BigNumber(0.05).times(1e18),
+				new BigNumber(0).times(1e18),
 				{
 					from: mBuyer1,
 				}

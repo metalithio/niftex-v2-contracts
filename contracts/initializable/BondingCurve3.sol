@@ -20,7 +20,7 @@ contract BondingCurve3LP is ERC20 {
     }
 
     function initialize(address controler_, string memory name_, string memory symbol_) public {
-        require(_controler == address(0));
+        require(controler == address(0));
         controler = controler_;
         _initialize(name_, symbol_);
     }
@@ -93,12 +93,14 @@ contract BondingCurve3 is IERC1363Spender {
     public payable
     {
         require(_wallet == address(0));
+        uint256 totalSupply_  = ShardedWallet(payable(wallet)).totalSupply();
+        string memory name_   = ShardedWallet(payable(wallet)).name();
+        string memory symbol_ = ShardedWallet(payable(wallet)).symbol();
+
         etherLPToken = BondingCurve3LP(Clones.clone(address(_template)));
         shardLPToken = BondingCurve3LP(Clones.clone(address(_template)));
-        etherLPToken.initialize(address(this), "EtherLP", "SLP");
-        shardLPToken.initialize(address(this), "ShardLP", "SLP");
-
-        uint256 totalSupply_ = ShardedWallet(payable(wallet)).totalSupply();
+        etherLPToken.initialize(address(this), string(abi.encodePacked(name_, "-EtherLP")), string(abi.encodePacked(symbol_, "-ELP")));
+        shardLPToken.initialize(address(this), string(abi.encodePacked(name_, "-ShardLP")), string(abi.encodePacked(symbol_, "-SLP")));
 
         _wallet    = wallet;
         _recipient = recipient;
