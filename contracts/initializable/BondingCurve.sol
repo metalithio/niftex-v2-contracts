@@ -201,10 +201,6 @@ contract BondingCurve {
 		uint256 weiPayout = y.sub(newY);
 
 		require(
-			weiPayout <= minEthForShardAmount
-		);
-
-		require(
 			weiPayout <= address(this).balance.sub(_ethSuppliers._ethFeesToNiftex).sub(_ethSuppliers._ethFeesToArtist)
 		);
 
@@ -216,13 +212,16 @@ contract BondingCurve {
 			_ethSuppliers._ethFeesToArtist = _ethSuppliers._ethFeesToArtist.add(weiPayout.mul(fees[2]).div(10**18));
 		}
 
-		require(ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), shardAmount));
-
 		weiPayout = weiPayout.mul(uint256(10**18)
 			.sub(fees[0])
 			.sub(getExternalFee(fees[1], fees[2], hasArtistWallet))
 		).div(10**18);
 
+		require(
+			weiPayout >= minEthForShardAmount
+		);
+
+		require(ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), shardAmount));
 		Address.sendValue(msg.sender, weiPayout);
 
 		emit ShardsSold(shardAmount, weiPayout, msg.sender);
