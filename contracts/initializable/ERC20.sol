@@ -41,7 +41,6 @@ abstract contract ERC20 is Context, IERC20 {
 
     string private _name;
     string private _symbol;
-    uint8 private _decimals;
 
     /**
      * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
@@ -55,7 +54,6 @@ abstract contract ERC20 is Context, IERC20 {
     function _initialize(string memory name_, string memory symbol_) internal virtual {
         _name = name_;
         _symbol = symbol_;
-        _decimals = 18;
     }
 
     /**
@@ -86,8 +84,8 @@ abstract contract ERC20 is Context, IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view returns (uint8) {
-        return _decimals;
+    function decimals() public pure returns (uint8) {
+        return 18;
     }
 
     /**
@@ -302,17 +300,6 @@ abstract contract ERC20 is Context, IERC20 {
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Sets {decimals} to a value other than the default one of 18.
-     *
-     * WARNING: This function should only be called from the constructor. Most
-     * applications that interact with token contracts will not expect
-     * {decimals} to ever change, and may work incorrectly if it does.
-     */
-    function _setupDecimals(uint8 decimals_) internal {
-        _decimals = decimals_;
     }
 
     /**
