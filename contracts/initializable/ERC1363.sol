@@ -7,7 +7,7 @@ import "../interface/IERC1363.sol";
 import "../interface/IERC1363Receiver.sol";
 import "../interface/IERC1363Spender.sol";
 
-abstract contract ERC1363 is ERC20, IERC1363 {
+abstract contract ERC1363Transfer is ERC20, IERC1363Transfer {
     function transferAndCall(address to, uint256 value) public override returns (bool) {
         return transferAndCall(to, value, bytes(""));
     }
@@ -39,7 +39,9 @@ abstract contract ERC1363 is ERC20, IERC1363 {
         }
         return true;
     }
+}
 
+abstract contract ERC1363Approve is ERC20, IERC1363Approve {
     function approveAndCall(address spender, uint256 value) public override returns (bool) {
         return approveAndCall(spender, value, bytes(""));
     }
@@ -56,3 +58,5 @@ abstract contract ERC1363 is ERC20, IERC1363 {
         return true;
     }
 }
+
+abstract contract ERC1363 is ERC1363Transfer, ERC1363Approve {}

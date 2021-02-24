@@ -9,7 +9,7 @@ import "../initializable/Ownable.sol";
 import "../initializable/ERC20.sol";
 import "../initializable/ERC1363.sol";
 
-contract ShardedWallet is Ownable, ERC20, ERC1363
+contract ShardedWallet is Ownable, ERC20, ERC1363Approve
 {
     using SafeMath for uint256;
 

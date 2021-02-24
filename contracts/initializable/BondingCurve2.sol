@@ -10,7 +10,7 @@ import "../governance/IGovernance.sol";
 import "../interface/IERC1363Receiver.sol";
 import "../interface/IERC1363Spender.sol";
 
-contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
+contract BondingCurve2 is IERC1363Spender {
     using SafeMath for uint256;
 
     struct CurveCoordinates {
@@ -110,22 +110,6 @@ contract BondingCurve2 is IERC1363Receiver, IERC1363Spender {
     function supplyShards(uint256 amount) public {
         require(ShardedWallet(payable(_wallet)).transferFrom(msg.sender, address(this), amount));
         _supplyShards(msg.sender, amount);
-    }
-
-    function onTransferReceived(address, address from, uint256 amount, bytes calldata data) public override returns (bytes4) {
-        require(msg.sender == _wallet, "onTransferReceived restricted to token contract");
-
-        bytes4 selector = abi.decode(data, (bytes4));
-        if (selector == this.sellShards.selector) {
-            (,uint256 minPayout) = abi.decode(data, (bytes4, uint256));
-            _sellShards(from, amount, minPayout);
-        } else if (selector == this.supplyShards.selector) {
-            _supplyShards(from, amount);
-        } else {
-            revert("invalid selector in onTransferReceived data");
-        }
-
-        return this.onTransferReceived.selector;
     }
 
     function onApprovalReceived(address owner, uint256 amount, bytes calldata data) public override returns (bytes4) {
