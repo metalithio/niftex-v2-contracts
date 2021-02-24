@@ -61,6 +61,7 @@ contract BondingCurve2 is IERC1363Spender {
     )
     public payable
     {
+        require(_wallet == address(0));
         uint256 totalSupply_ = ShardedWallet(payable(wallet)).totalSupply();
         uint256 decimals_    = ShardedWallet(payable(wallet)).decimals();
 

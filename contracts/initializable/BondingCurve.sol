@@ -70,6 +70,7 @@ contract BondingCurve {
 		address recipient, // recipient from crowdsale
 		uint256 initialPriceInWei
 	) public payable {
+		require(_shardedWalletDetails.wallet == address(0));
 		_shardedWalletDetails.wallet = wallet;
 		_shardedWalletDetails.recipient = recipient;
 		_shardedWalletDetails.timelockDeadline = block.timestamp.add(ShardedWallet(payable(_shardedWalletDetails.wallet)).governance().getConfig(_shardedWalletDetails.wallet, LIQUIDITY_TIMELOCK));
