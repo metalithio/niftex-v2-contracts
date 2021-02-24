@@ -11,7 +11,7 @@
     "subgraph:build": "graph build subgraph/subgraph.yaml",
     "subgraph": "yarn subgraph:schema && yarn subgraph:codegen && yarn subgraph:build",
     "coverage": "hardhat coverage",
-    "test": "hardhat test",
+    "test": "hardhat test test/*.test.js",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby"
