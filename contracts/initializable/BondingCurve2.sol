@@ -327,15 +327,15 @@ contract BondingCurve2 is IERC1363Spender {
         uint256 shardFees = 0;
 
         if (msg.sender == ShardedWallet(payable(_wallet)).artistWallet()) {
-            etherFees += _etherLP.feeToArtist;
-            shardFees += _shardLP.feeToArtist;
+            etherFees = etherFees.add(_etherLP.feeToArtist);
+            shardFees = shardFees.add(_shardLP.feeToArtist);
             delete _etherLP.feeToArtist;
             delete _shardLP.feeToArtist;
         }
 
         if (msg.sender == ShardedWallet(payable(_wallet)).governance().getNiftexWallet()) {
-            etherFees += _etherLP.feeToNiftex;
-            shardFees += _shardLP.feeToNiftex;
+            etherFees = etherFees.add(_etherLP.feeToNiftex);
+            shardFees = shardFees.add(_shardLP.feeToNiftex);
             delete _etherLP.feeToNiftex;
             delete _shardLP.feeToNiftex;
         }
