@@ -416,8 +416,10 @@ contract BondingCurve {
 		ShardedWallet(payable(_shardedWalletDetails.wallet)).transfer(recipient, shardFees);
 	}
 
-	function transferTimelockLiquidity(address recipient) public {
-		require(_shardedWalletDetails.recipient == msg.sender && block.timestamp > _shardedWalletDetails.timelockDeadline);
+	function transferTimelockLiquidity() public {
+		address recipient = _shardedWalletDetails.recipient;
+
+		require(block.timestamp > _shardedWalletDetails.timelockDeadline);
 		require(_shardSuppliers._mappingShardLPTokens[address(this)] > 0 || _ethSuppliers._mappingEthLPTokens[address(this)] >0);
 
 		_shardSuppliers._mappingShardLPTokens[recipient] = _shardSuppliers._mappingShardLPTokens[recipient].add(_shardSuppliers._mappingShardLPTokens[address(this)]);

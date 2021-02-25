@@ -384,10 +384,10 @@ contract BondingCurve3 is IERC1363Spender {
         ShardedWallet(payable(_wallet)).transfer(recipient, shardFees);
     }
 
-    function transferTimelockLiquidity(address recipient) public {
-        require(_recipient == msg.sender && _deadline < block.timestamp);
-        etherLPToken.controllerTransfer(address(this), recipient, getEthLPTokens(address(this)));
-        shardLPToken.controllerTransfer(address(this), recipient, getShardLPTokens(address(this)));
+    function transferTimelockLiquidity() public {
+        require(_deadline < block.timestamp);
+        etherLPToken.controllerTransfer(address(this), _recipient, getEthLPTokens(address(this)));
+        shardLPToken.controllerTransfer(address(this), _recipient, getShardLPTokens(address(this)));
     }
 
     function getEthLPTokens(address owner) public view returns (uint256) {
