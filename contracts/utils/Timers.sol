@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.7.0;
-
-import "@openzeppelin/contracts/math/SafeMath.sol";
+pragma solidity ^0.8.0;
 
 contract Timers
 {
-    using SafeMath for uint256;
-
     mapping(bytes32 => uint256) private _deadlines;
 
     event TimerStarted(bytes32 indexed timer, uint256 deadline);
@@ -58,7 +54,7 @@ contract Timers
     internal onlyBeforeTimer(id)
     {
         // solhint-disable-next-line not-rely-on-time
-        uint256 deadline = block.timestamp.add(delay);
+        uint256 deadline = block.timestamp + delay;
         _deadlines[id] = deadline;
         emit TimerStarted(id, deadline);
     }

@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../wallet/ShardedWallet.sol";
 import "../governance/IGovernance.sol";
 
 
 contract BondingCurve {
-
 	using SafeMath for uint256;
 
 	uint256 internal _x;
@@ -103,7 +102,7 @@ contract BondingCurve {
 		return externalFees;
 	}
 
-	// no need to add default fallback non-payable function in Solidity 0.7.0
+	// no need to add default fallback non-payable function in Solidity 0.8.0
 	// address(this).balance will only be updated via specified function in this contract
 
 	function buyShards(
@@ -165,7 +164,7 @@ contract BondingCurve {
 		ShardedWallet(payable(_shardedWalletDetails.wallet)).transfer(msg.sender, shardAmount);
 
 		if (msg.value > weiRequired) {
-			Address.sendValue(msg.sender, msg.value.sub(weiRequired));
+			Address.sendValue(payable(msg.sender), msg.value.sub(weiRequired));
 		}
 
 		emit ShardsBought(shardAmount, weiRequired, msg.sender);
@@ -223,7 +222,7 @@ contract BondingCurve {
 		);
 
 		require(ShardedWallet(payable(_shardedWalletDetails.wallet)).transferFrom(msg.sender, address(this), shardAmount));
-		Address.sendValue(msg.sender, weiPayout);
+		Address.sendValue(payable(msg.sender), weiPayout);
 
 		emit ShardsSold(shardAmount, weiPayout, msg.sender);
 	}
@@ -325,7 +324,7 @@ contract BondingCurve {
 		ShardedWallet(payable(_shardedWalletDetails.wallet)).transfer(msg.sender, shardsToWithdraw);
 
 		if (ethPayout > 0) {
-			Address.sendValue(msg.sender, ethPayout);
+			Address.sendValue(payable(msg.sender), ethPayout);
 		}
 
 		emit ShardsWithdrawn(ethPayout, shardsToWithdraw, msg.sender);
@@ -355,7 +354,7 @@ contract BondingCurve {
 		_ethSuppliers._totalSuppliedEthPlusFeesToSuppliers = _ethSuppliers._totalSuppliedEthPlusFeesToSuppliers.mul(_ethSuppliers._totalEthLPTokens.sub(ethLPTokensAmount)).div(_ethSuppliers._totalEthLPTokens);
 		_ethSuppliers._totalEthLPTokens = _ethSuppliers._totalEthLPTokens.sub(ethLPTokensAmount);
 
-		Address.sendValue(msg.sender, ethToWithdraw);
+		Address.sendValue(payable(msg.sender), ethToWithdraw);
 
 		if (shardPayout > 0) {
 			ShardedWallet(payable(_shardedWalletDetails.wallet)).transfer(msg.sender, shardPayout);

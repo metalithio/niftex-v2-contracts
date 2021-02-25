@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../wallet/ShardedWallet.sol";
 import "./IGovernance.sol";
 
-contract Governance is IGovernance, AccessControl
+contract Governance is IGovernance, AccessControlEnumerable
 {
-    using SafeMath for uint256;
-
     // bytes32 public constant MODULE_ROLE         = bytes32(uint256(keccak256("MODULE_ROLE")) - 1);
     bytes32 public constant MODULE_ROLE         = 0x5098275140f5753db46c42f6e139939968848633a1298402189fdfdafa69b452;
     // bytes32 public constant AUTHORIZATION_RATIO = bytes32(uint256(keccak256("AUTHORIZATION_RATIO")) - 1);
@@ -32,13 +30,13 @@ contract Governance is IGovernance, AccessControl
     function initialize()
     public
     {
-        AccessControl._setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function isModule(address wallet, address module)
     public view override returns (bool)
     {
-        return AccessControl.hasRole(MODULE_ROLE, module) && !_disabled[wallet][module];
+        return hasRole(MODULE_ROLE, module) && !_disabled[wallet][module];
     }
 
     function disableModuleForWallet(address wallet, address module, bool disabled)
@@ -52,7 +50,10 @@ contract Governance is IGovernance, AccessControl
     function isAuthorized(address wallet, address user)
     public view override returns (bool)
     {
-        return ShardedWallet(payable(wallet)).balanceOf(user) >= Math.max(ShardedWallet(payable(wallet)).totalSupply().mul(getConfig(wallet, AUTHORIZATION_RATIO)).div(10**18), 1);
+        return ShardedWallet(payable(wallet)).balanceOf(user) >= Math.max(
+            ShardedWallet(payable(wallet)).totalSupply() * getConfig(wallet, AUTHORIZATION_RATIO) / 10**18,
+            1
+        );
     }
 
     function getModule(address wallet, bytes4 sig)
@@ -116,6 +117,6 @@ contract Governance is IGovernance, AccessControl
     }
 
     function getNiftexWallet() public view override returns(address) {
-        return AccessControl.getRoleMember(DEFAULT_ADMIN_ROLE, 0);
+        return getRoleMember(DEFAULT_ADMIN_ROLE, 0);
     }
 }

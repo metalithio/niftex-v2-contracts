@@ -508,7 +508,7 @@ contract('Workflow', function (accounts) {
 
 	describe('nftOwner transfer timelock', () => {
 		it('perform', async() => {
-			const buyShardsTxn = await curveInstance.transferTimelockLiquidity(nftOwner, { from: nftOwner });
+			const buyShardsTxn = await curveInstance.transferTimelockLiquidity();
 
 			const curve       = await curveInstance.getCurveCoordinates();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);

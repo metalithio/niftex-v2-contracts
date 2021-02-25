@@ -514,12 +514,7 @@ contract('Workflow', function (accounts) {
 		it('perform', async() => {
 			const shardAmount = new BigNumber(5).times(1e18);
 
-			const buyShardsTxn = await curveInstance.transferTimelockLiquidity(
-				nftOwner,
-				{
-					from: nftOwner,
-				}
-			);
+			const buyShardsTxn = await curveInstance.transferTimelockLiquidity();
 
 			const curveCoordinates = await curveInstance.getCurveCoordinates();
 			const ethInPool = await curveInstance.getEthInPool();

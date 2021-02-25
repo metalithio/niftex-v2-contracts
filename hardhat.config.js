@@ -6,7 +6,7 @@ require("solidity-coverage");
 require("dotenv").config();
 
 module.exports = {
-  solidity: "0.7.5",
+  solidity: "0.8.1",
   settings: {
     optimizer: {
       enabled: true,

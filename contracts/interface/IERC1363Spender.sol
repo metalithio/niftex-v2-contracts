@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity ^0.8.0;
 
 /**
  * @title ERC1363Spender interface
@@ -9,8 +9,8 @@ pragma solidity >=0.6.0 <0.8.0;
  */
 interface IERC1363Spender {
   /*
-   * Note: the ERC-165 identifier for this interface is 0x7b04a2d0.
-   * 0x7b04a2d0 === bytes4(keccak256("onApprovalReceived(address,uint256,bytes)"))
+   * Note: the ERC-165 identifier for this interface is 0.8.04a2d0.
+   * 0.8.04a2d0 === bytes4(keccak256("onApprovalReceived(address,uint256,bytes)"))
    */
 
   /**

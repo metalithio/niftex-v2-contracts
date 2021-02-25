@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "../IModule.sol";
 
 contract TokenReceiverModule is IModule, ERC165, IERC721Receiver, IERC777Recipient, IERC1155Receiver
 {
     string public constant override name = type(TokenReceiverModule).name;
 
-    constructor()
-    {
-        _registerInterface(type(IERC721Receiver).interfaceId);
-        _registerInterface(type(IERC777Recipient).interfaceId);
-        _registerInterface(type(IERC1155Receiver).interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+        return interfaceId == type(IERC721Receiver).interfaceId
+            || interfaceId == type(IERC777Recipient).interfaceId
+            || interfaceId == type(IERC1155Receiver).interfaceId
+            || super.supportsInterface(interfaceId);
     }
 
     function onERC721Received(address, address, uint256, bytes calldata)

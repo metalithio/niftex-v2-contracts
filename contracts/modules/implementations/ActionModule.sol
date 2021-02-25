@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
 
 contract ActionModule is IModule, ModuleBase, Timers
 {
-    using SafeMath for uint256;
-
     string public constant override name = type(ActionModule).name;
 
     // bytes32 public constant ACTION_DURATION = bytes32(uint256(keccak256("ACTION_DURATION")) - 1);
@@ -24,7 +22,10 @@ contract ActionModule is IModule, ModuleBase, Timers
 
     modifier actionAuthorized(ShardedWallet wallet, address user)
     {
-        require(wallet.balanceOf(user) >= Math.max(wallet.totalSupply().mul(wallet.governance().getConfig(address(wallet), ACTION_AUTH_RATIO)).div(10**18), 1));
+        require(wallet.balanceOf(user) >= Math.max(
+            wallet.totalSupply() * wallet.governance().getConfig(address(wallet), ACTION_AUTH_RATIO) / 10**18,
+            1
+        ));
         _;
     }
 
