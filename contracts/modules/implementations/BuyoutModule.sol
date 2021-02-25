@@ -62,20 +62,29 @@ contract BuyoutModule is IModule, ModuleBase, Timers
         uint256 buyprice      = buyShards.mul(pricePerShard).div(10**decimals);
         _deposit[wallet]      = _deposit[wallet].add(buyprice);
 
+        // do the transfer (update lockedShards in case of reentrancy attempt)
+        wallet.transfer(msg.sender, buyShards);
+
+        // do the close of all locked shards have been bought
         if (buyShards == lockedShards)
         {
+            // stop buyout timer & reset wallet ownership
             Timers._stopTimer(bytes32(uint256(address(wallet))));
             wallet.renounceOwnership();
-            Address.sendValue(payable(_proposers[wallet]), _deposit[wallet]);
 
+            // transfer funds to proposer
+            address proposer = _proposers[wallet];
+            uint256 deposit  = _deposit[wallet];
             delete _proposers[wallet];
             delete _prices[wallet];
             delete _deposit[wallet];
+            Address.sendValue(payable(proposer), deposit);
 
+            // emit event
             emit BuyoutClosed(wallet, msg.sender);
         }
 
-        wallet.transfer(msg.sender, buyShards);
+        // refund extra value
         Address.sendValue(msg.sender, msg.value.sub(buyprice));
     }
 
