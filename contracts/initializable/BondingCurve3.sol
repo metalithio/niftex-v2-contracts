@@ -19,6 +19,10 @@ contract BondingCurve3LP is ERC20 {
         _;
     }
 
+    constructor() {
+        controler = address(0xdead);
+    }
+
     function initialize(address controler_, string memory name_, string memory symbol_) public {
         require(controler == address(0));
         controler = controler_;
@@ -82,6 +86,7 @@ contract BondingCurve3 is IERC1363Spender {
 
     constructor() {
         _template = new BondingCurve3LP();
+        _wallet = address(0xdead);
     }
 
     function initialize(
