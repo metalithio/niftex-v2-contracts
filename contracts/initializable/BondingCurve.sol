@@ -141,7 +141,7 @@ contract BondingCurve {
 
 		require(
 			maxEthForShardAmount >= weiRequired
-			);
+		);
 
 		require(
 			ShardedWallet(payable(_shardedWalletDetails.wallet)).balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) >= shardAmountAfterFee
@@ -270,8 +270,8 @@ contract BondingCurve {
 		);
 
 		require(
-			_x.sub(shardAmount).sub(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) >= 0
-			);
+			_x >= shardAmount.add(_shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers)
+		);
 
 		uint256 newShardLPTokensToIssue = calcNewShardLPTokensToIssue(shardAmount);
 		_shardSuppliers._mappingShardLPTokens[msg.sender] = _shardSuppliers._mappingShardLPTokens[msg.sender].add(newShardLPTokensToIssue);
@@ -288,8 +288,8 @@ contract BondingCurve {
 			);
 
 		require(
-			(_k.div(_x)).sub(address(this).balance) >= 0
-			);
+			_k.div(_x) >= address(this).balance
+		);
 
 		uint256 newEthLPTokensToIssue = calcNewEthLPTokensToIssue(msg.value);
 		_ethSuppliers._mappingEthLPTokens[msg.sender] = _ethSuppliers._mappingEthLPTokens[msg.sender].add(newEthLPTokensToIssue);
@@ -306,7 +306,7 @@ contract BondingCurve {
 
 		require(
 			_shardSuppliers._mappingShardLPTokens[msg.sender] >= shardLPTokensAmount
-			);
+		);
 
 		uint256 shardsToWithdraw;
 		if (ShardedWallet(payable(_shardedWalletDetails.wallet)).balanceOf(address(this)).sub(_shardSuppliers._shardFeesToNiftex).sub(_shardSuppliers._shardFeesToArtist) <= _shardSuppliers._totalSuppliedShardsPlusFeesToSuppliers) {

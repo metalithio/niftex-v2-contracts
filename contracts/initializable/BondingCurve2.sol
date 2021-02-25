@@ -212,7 +212,7 @@ contract BondingCurve2 is IERC1363Spender {
     }
 
     function _supplyEther(address supplier, uint256 amount) internal {
-        require(_curve.k.div(_curve.x).sub(address(this).balance) >= 0);
+        require(_curve.k.div(_curve.x) >= address(this).balance);
 
         _mintEthLP(supplier, calcNewEthLPTokensToIssue(amount));
         _etherLP.underlyingSupply = _etherLP.underlyingSupply.add(amount);
@@ -222,7 +222,7 @@ contract BondingCurve2 is IERC1363Spender {
 
 
     function _supplyShards(address supplier, uint256 amount) internal {
-        require(_curve.x.sub(_shardLP.underlyingSupply).sub(amount) >= 0);
+        require(_curve.x >= _shardLP.underlyingSupply.add(amount));
 
         _mintShardLP(supplier, calcNewShardLPTokensToIssue(amount));
         _shardLP.underlyingSupply = _shardLP.underlyingSupply.add(amount);
