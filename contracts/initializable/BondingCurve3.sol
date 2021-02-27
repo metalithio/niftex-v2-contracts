@@ -66,12 +66,12 @@ contract BondingCurve3 is IERC1363Spender {
 
     BondingCurve3LP  public   etherLPToken;
     BondingCurve3LP  public   shardLPToken;
-    CurveCoordinates internal _curve;
+    CurveCoordinates public   curve;
     Asset            internal _etherLPExtra;
     Asset            internal _shardLPExtra;
-    address          public _wallet;
-    address          public _recipient;
-    uint256          public _deadline;
+    address          public   wallet;
+    address          public   recipient;
+    uint256          public   deadline;
 
     event Initialized(address wallet);
     event ShardsBought(address indexed account, uint256 amount, uint256 cost);
@@ -83,40 +83,40 @@ contract BondingCurve3 is IERC1363Spender {
 
     constructor() {
         _template = new BondingCurve3LP();
-        _wallet = address(0xdead);
+        wallet = address(0xdead);
     }
 
     function initialize(
         uint256 supply,
-        address wallet,
-        address recipient,
+        address wallet_,
+        address recipient_,
         uint256 price
     )
     public payable
     {
-        require(_wallet == address(0));
-        uint256 totalSupply_  = ShardedWallet(payable(wallet)).totalSupply();
-        string memory name_   = ShardedWallet(payable(wallet)).name();
-        string memory symbol_ = ShardedWallet(payable(wallet)).symbol();
+        require(wallet == address(0));
+        uint256 totalSupply_  = ShardedWallet(payable(wallet_)).totalSupply();
+        string memory name_   = ShardedWallet(payable(wallet_)).name();
+        string memory symbol_ = ShardedWallet(payable(wallet_)).symbol();
 
         etherLPToken = BondingCurve3LP(Clones.clone(address(_template)));
         shardLPToken = BondingCurve3LP(Clones.clone(address(_template)));
         etherLPToken.initialize(address(this), string(abi.encodePacked(name_, "-EtherLP")), string(abi.encodePacked(symbol_, "-ELP")));
         shardLPToken.initialize(address(this), string(abi.encodePacked(name_, "-ShardLP")), string(abi.encodePacked(symbol_, "-SLP")));
 
-        _wallet    = wallet;
-        _recipient = recipient;
-        _deadline  = block.timestamp + ShardedWallet(payable(wallet)).governance().getConfig(wallet, LIQUIDITY_TIMELOCK);
-        emit Initialized(_wallet);
+        wallet    = wallet_;
+        recipient = recipient_;
+        deadline  = block.timestamp + ShardedWallet(payable(wallet_)).governance().getConfig(wallet_, LIQUIDITY_TIMELOCK);
+        emit Initialized(wallet_);
 
         // transfer assets
         if (supply > 0) {
-            require(ShardedWallet(payable(wallet)).transferFrom(msg.sender, address(this), supply));
+            require(ShardedWallet(payable(wallet_)).transferFrom(msg.sender, address(this), supply));
         }
 
         // setup curve
-        _curve.x = totalSupply_;
-        _curve.k = totalSupply_ * totalSupply_ * price / 10**18;
+        curve.x = totalSupply_;
+        curve.k = totalSupply_ * totalSupply_ * price / 10**18;
 
         // mint liquidity
         etherLPToken.controllerMint(address(this), msg.value);
@@ -137,7 +137,7 @@ contract BondingCurve3 is IERC1363Spender {
     }
 
     function sellShards(uint256 amount, uint256 minPayout) public {
-        require(ShardedWallet(payable(_wallet)).transferFrom(msg.sender, address(this), amount));
+        require(ShardedWallet(payable(wallet)).transferFrom(msg.sender, address(this), amount));
         _sellShards(msg.sender, amount, minPayout);
     }
 
@@ -146,13 +146,12 @@ contract BondingCurve3 is IERC1363Spender {
     }
 
     function supplyShards(uint256 amount) public {
-        require(ShardedWallet(payable(_wallet)).transferFrom(msg.sender, address(this), amount));
+        require(ShardedWallet(payable(wallet)).transferFrom(msg.sender, address(this), amount));
         _supplyShards(msg.sender, amount);
     }
 
     function onApprovalReceived(address owner, uint256 amount, bytes calldata data) public override returns (bytes4) {
-        require(msg.sender == _wallet, "onApprovalReceived restricted to token contract");
-        require(ShardedWallet(payable(_wallet)).transferFrom(owner, address(this), amount));
+        require(ShardedWallet(payable(wallet)).transferFrom(owner, address(this), amount));
 
         bytes4 selector = abi.decode(data, (bytes4));
         if (selector == this.sellShards.selector) {
@@ -168,35 +167,35 @@ contract BondingCurve3 is IERC1363Spender {
     }
 
     function _buyShards(address buyer, uint256 amount, uint256 maxCost) internal returns (uint256) {
-        IGovernance governance = ShardedWallet(payable(_wallet)).governance();
-        address     owner      = ShardedWallet(payable(_wallet)).owner();
-        address     artist     = ShardedWallet(payable(_wallet)).artistWallet();
+        IGovernance governance = ShardedWallet(payable(wallet)).governance();
+        address     owner      = ShardedWallet(payable(wallet)).owner();
+        address     artist     = ShardedWallet(payable(wallet)).artistWallet();
 
         // pause if someone else reclaimed the ownership of shardedWallet
-        require(owner == address(0) || governance.isModule(_wallet, owner));
+        require(owner == address(0) || governance.isModule(wallet, owner));
 
         // compute fees
         uint256[3] memory fees;
-        fees[0] =                            governance.getConfig(_wallet, PCT_FEE_SUPPLIERS);
-        fees[1] =                            governance.getConfig(_wallet, PCT_FEE_NIFTEX);
-        fees[2] = artist == address(0) ? 0 : governance.getConfig(_wallet, PCT_FEE_ARTIST);
+        fees[0] =                            governance.getConfig(wallet, PCT_FEE_SUPPLIERS);
+        fees[1] =                            governance.getConfig(wallet, PCT_FEE_NIFTEX);
+        fees[2] = artist == address(0) ? 0 : governance.getConfig(wallet, PCT_FEE_ARTIST);
 
         uint256 amountWithFee = amount * (10**18 + fees[0] + fees[1] + fees[2]) / 10**18;
 
         // check curve update
-        uint256 newX = _curve.x - amountWithFee;
-        uint256 newY = _curve.k / newX;
+        uint256 newX = curve.x - amountWithFee;
+        uint256 newY = curve.k / newX;
         require(newX > 0 && newY > 0);
 
         // check cost
-        uint256 cost = newY - _curve.k / _curve.x;
+        uint256 cost = newY - curve.k / curve.x;
         require(cost <= maxCost);
 
         // consistency check
-        require(ShardedWallet(payable(_wallet)).balanceOf(address(this)) - _shardLPExtra.feeToNiftex - _shardLPExtra.feeToArtist >= amountWithFee);
+        require(ShardedWallet(payable(wallet)).balanceOf(address(this)) - _shardLPExtra.feeToNiftex - _shardLPExtra.feeToArtist >= amountWithFee);
 
         // update curve
-        _curve.x = _curve.x - amount * (10**18 + fees[1] + fees[2]) / 10**18;
+        curve.x = curve.x - amount * (10**18 + fees[1] + fees[2]) / 10**18;
 
         // update LP supply
         _shardLPExtra.underlyingSupply += amount * fees[0] / 10**18;
@@ -204,38 +203,38 @@ contract BondingCurve3 is IERC1363Spender {
         _shardLPExtra.feeToArtist      += amount * fees[2] / 10**18;
 
         // transfer
-        ShardedWallet(payable(_wallet)).transfer(buyer, amount);
+        ShardedWallet(payable(wallet)).transfer(buyer, amount);
 
         emit ShardsBought(buyer, amount, cost);
         return cost;
     }
 
     function _sellShards(address seller, uint256 amount, uint256 minPayout) internal returns (uint256) {
-        IGovernance governance = ShardedWallet(payable(_wallet)).governance();
-        address     owner      = ShardedWallet(payable(_wallet)).owner();
-        address     artist     = ShardedWallet(payable(_wallet)).artistWallet();
+        IGovernance governance = ShardedWallet(payable(wallet)).governance();
+        address     owner      = ShardedWallet(payable(wallet)).owner();
+        address     artist     = ShardedWallet(payable(wallet)).artistWallet();
 
         // pause if someone else reclaimed the ownership of shardedWallet
-        require(owner == address(0) || governance.isModule(_wallet, owner));
+        require(owner == address(0) || governance.isModule(wallet, owner));
 
         // compute fees
         uint256[3] memory fees;
-        fees[0] =                            governance.getConfig(_wallet, PCT_FEE_SUPPLIERS);
-        fees[1] =                            governance.getConfig(_wallet, PCT_FEE_NIFTEX);
-        fees[2] = artist == address(0) ? 0 : governance.getConfig(_wallet, PCT_FEE_ARTIST);
+        fees[0] =                            governance.getConfig(wallet, PCT_FEE_SUPPLIERS);
+        fees[1] =                            governance.getConfig(wallet, PCT_FEE_NIFTEX);
+        fees[2] = artist == address(0) ? 0 : governance.getConfig(wallet, PCT_FEE_ARTIST);
 
-        uint256 newX = _curve.x + amount;
-        uint256 newY = _curve.k / newX;
+        uint256 newX = curve.x + amount;
+        uint256 newY = curve.k / newX;
         require(newX > 0 && newY > 0);
 
         // check payout
-        uint256 payout = _curve.k / _curve.x - newY;
+        uint256 payout = curve.k / curve.x - newY;
         require(payout <= address(this).balance - _etherLPExtra.feeToNiftex - _etherLPExtra.feeToArtist);
         uint256 value = payout * (10**18 - fees[0] - fees[1] - fees[2]) / 10**18;
         require(value >= minPayout);
 
         // update curve
-        _curve.x = newX;
+        curve.x = newX;
 
         // update LP supply
         _etherLPExtra.underlyingSupply += payout * fees[0] / 10**18;
@@ -250,7 +249,7 @@ contract BondingCurve3 is IERC1363Spender {
     }
 
     function _supplyEther(address supplier, uint256 amount) internal {
-        require(_curve.k / _curve.x >= address(this).balance);
+        require(curve.k / curve.x >= address(this).balance);
 
         etherLPToken.controllerMint(supplier, calcNewEthLPTokensToIssue(amount));
         _etherLPExtra.underlyingSupply += amount;
@@ -260,7 +259,7 @@ contract BondingCurve3 is IERC1363Spender {
 
 
     function _supplyShards(address supplier, uint256 amount) internal {
-        require(_curve.x >= _shardLPExtra.underlyingSupply + amount);
+        require(curve.x >= _shardLPExtra.underlyingSupply + amount);
 
         shardLPToken.controllerMint(supplier, calcNewShardLPTokensToIssue(amount));
         _shardLPExtra.underlyingSupply += amount;
@@ -283,7 +282,7 @@ contract BondingCurve3 is IERC1363Spender {
     }
 
     function calcShardsForEthSuppliers() public view returns (uint256) {
-        uint256 balance = ShardedWallet(payable(_wallet)).balanceOf(address(this)) - _shardLPExtra.feeToNiftex - _shardLPExtra.feeToArtist;
+        uint256 balance = ShardedWallet(payable(wallet)).balanceOf(address(this)) - _shardLPExtra.feeToNiftex - _shardLPExtra.feeToArtist;
         return balance < _shardLPExtra.underlyingSupply ? 0 : balance - _shardLPExtra.underlyingSupply;
     }
 
@@ -313,7 +312,7 @@ contract BondingCurve3 is IERC1363Spender {
         // transfer
         Address.sendValue(payable(msg.sender), value);
         if (payout > 0) {
-            ShardedWallet(payable(_wallet)).transfer(msg.sender, payout);
+            ShardedWallet(payable(wallet)).transfer(msg.sender, payout);
         }
 
         emit EtherWithdrawn(msg.sender, value, payout);
@@ -326,7 +325,7 @@ contract BondingCurve3 is IERC1363Spender {
 
         uint256 shardLPTokenSupply = shardLPToken.totalSupply();
 
-        uint256 balance = ShardedWallet(payable(_wallet)).balanceOf(address(this)) - _shardLPExtra.feeToNiftex - _shardLPExtra.feeToArtist;
+        uint256 balance = ShardedWallet(payable(wallet)).balanceOf(address(this)) - _shardLPExtra.feeToNiftex - _shardLPExtra.feeToArtist;
 
         uint256 shards = (balance <= _shardLPExtra.underlyingSupply)
         ? balance * amount / shardLPTokenSupply
@@ -340,7 +339,7 @@ contract BondingCurve3 is IERC1363Spender {
         shardLPToken.controllerBurn(msg.sender, amount);
 
         // transfer
-        ShardedWallet(payable(_wallet)).transfer(msg.sender, shards);
+        ShardedWallet(payable(wallet)).transfer(msg.sender, shards);
         if (payout > 0) {
             Address.sendValue(payable(msg.sender), payout);
         }
@@ -350,32 +349,32 @@ contract BondingCurve3 is IERC1363Spender {
         return (payout, shards);
     }
 
-    function withdrawNiftexOrArtistFees(address recipient) public {
+    function withdrawNiftexOrArtistFees(address to) public {
         uint256 etherFees = 0;
         uint256 shardFees = 0;
 
-        if (msg.sender == ShardedWallet(payable(_wallet)).artistWallet()) {
+        if (msg.sender == ShardedWallet(payable(wallet)).artistWallet()) {
             etherFees += _etherLPExtra.feeToArtist;
             shardFees += _shardLPExtra.feeToArtist;
             delete _etherLPExtra.feeToArtist;
             delete _shardLPExtra.feeToArtist;
         }
 
-        if (msg.sender == ShardedWallet(payable(_wallet)).governance().getNiftexWallet()) {
+        if (msg.sender == ShardedWallet(payable(wallet)).governance().getNiftexWallet()) {
             etherFees += _etherLPExtra.feeToNiftex;
             shardFees += _shardLPExtra.feeToNiftex;
             delete _etherLPExtra.feeToNiftex;
             delete _shardLPExtra.feeToNiftex;
         }
 
-        Address.sendValue(payable(recipient), etherFees);
-        ShardedWallet(payable(_wallet)).transfer(recipient, shardFees);
+        Address.sendValue(payable(to), etherFees);
+        ShardedWallet(payable(wallet)).transfer(to, shardFees);
     }
 
     function transferTimelockLiquidity() public {
-        require(_deadline < block.timestamp);
-        etherLPToken.controllerTransfer(address(this), _recipient, getEthLPTokens(address(this)));
-        shardLPToken.controllerTransfer(address(this), _recipient, getShardLPTokens(address(this)));
+        require(deadline < block.timestamp);
+        etherLPToken.controllerTransfer(address(this), recipient, getEthLPTokens(address(this)));
+        shardLPToken.controllerTransfer(address(this), recipient, getShardLPTokens(address(this)));
     }
 
     function getEthLPTokens(address owner) public view returns (uint256) {
@@ -386,20 +385,16 @@ contract BondingCurve3 is IERC1363Spender {
         return shardLPToken.balanceOf(owner);
     }
 
-    function transferEthLPTokens(address recipient, uint256 amount) public {
-        etherLPToken.controllerTransfer(msg.sender, recipient, amount);
+    function transferEthLPTokens(address to, uint256 amount) public {
+        etherLPToken.controllerTransfer(msg.sender, to, amount);
     }
 
-    function transferShardLPTokens(address recipient, uint256 amount) public {
-        shardLPToken.controllerTransfer(msg.sender, recipient, amount);
+    function transferShardLPTokens(address to, uint256 amount) public {
+        shardLPToken.controllerTransfer(msg.sender, to, amount);
     }
 
     function getCurrentPrice() external view returns (uint256) {
-        return _curve.k * 10**18 / _curve.x / _curve.x;
-    }
-
-    function getCurveCoordinates() external view returns (uint256, uint256) {
-        return (_curve.x, _curve.k);
+        return curve.k * 10**18 / curve.x / curve.x;
     }
 
     function getEthSuppliers() external view returns (uint256, uint256, uint256, uint256) {

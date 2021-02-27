@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "../../initializable/BondingCurve.sol";
+import "../../initializable/BondingCurve3.sol";
 import "../../governance/IGovernance.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
@@ -166,7 +166,7 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         if (template != address(0)) {
             address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
             wallet.approve(curve, shardsToCurve);
-            BondingCurve(curve).initialize{value: valueToCurve}(
+            BondingCurve3(curve).initialize{value: valueToCurve}(
                 shardsToCurve,
                 address(wallet),
                 recipients[wallet],

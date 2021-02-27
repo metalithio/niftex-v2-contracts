@@ -21,6 +21,7 @@ CONTRACTS
 18 fev 2021: 10h→11h : 1   (total 5)
 21 fev 2021: 13h→15h : 2   (total 7)
 24 fev 2021: 15h→17h : 2   (total 9)
+25 fev 2021: 11h→12h : 1   (total 10)
 SUBGRAPH
 22 dec 2020: 21h→23h : 2   (total 2)
 22 dec 2020: 11h→12h : 1   (total 3)
