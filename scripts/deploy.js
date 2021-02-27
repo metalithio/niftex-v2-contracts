@@ -18,7 +18,7 @@ async function main() {
   console.log(`Governance address: ${governance.address}`);
 
   // Deploy BondingCurve
-  const BondingCurve = await ethers.getContractFactory("BondingCurve");
+  const BondingCurve = await ethers.getContractFactory("BondingCurve3");
   const bondingcurve = await BondingCurve.deploy();
   console.log(`BondingCurve address: ${bondingcurve.address}`);
 
