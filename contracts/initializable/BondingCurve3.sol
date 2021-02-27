@@ -230,8 +230,9 @@ contract BondingCurve3 is IERC1363Spender {
 
         // check payout
         uint256 payout = _curve.k / _curve.x - newY;
-        require(payout <= address(this).balance - _etherLPExtra.feeToNiftex - _etherLPExtra.feeToArtist && payout >= minPayout);
+        require(payout <= address(this).balance - _etherLPExtra.feeToNiftex - _etherLPExtra.feeToArtist);
         uint256 value = payout * (10**18 - fees[0] - fees[1] - fees[2]) / 10**18;
+        require(value >= minPayout);
 
         // update curve
         _curve.x = newX;
