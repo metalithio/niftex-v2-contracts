@@ -69,9 +69,9 @@ contract BondingCurve3 is IERC1363Spender {
     CurveCoordinates internal _curve;
     Asset            internal _etherLPExtra;
     Asset            internal _shardLPExtra;
-    address          internal _wallet;
-    address          internal _recipient;
-    uint256          internal _deadline;
+    address          public _wallet;
+    address          public _recipient;
+    uint256          public _deadline;
 
     event Initialized(address wallet);
     event ShardsBought(address indexed account, uint256 amount, uint256 cost);
