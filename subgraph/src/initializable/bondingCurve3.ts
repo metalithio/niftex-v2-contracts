@@ -114,20 +114,28 @@ export function handleShardsSold(event: ShardsSoldEvent): void {
 
 export function handleEtherSupplied(event: EtherSuppliedEvent): void {
 	// TODO
-	updatePrice(event);
+
+	// Doesn't change curve parameters
+	// updatePrice(event);
 }
 
 export function handleEtherWithdrawn(event: EtherWithdrawnEvent): void {
 	// TODO
-	updatePrice(event);
+
+	// Doesn't change curve parameters
+	// updatePrice(event);
 }
 
 export function handleShardsSupplied(event: ShardsSuppliedEvent): void {
 	// TODO
-	updatePrice(event);
+
+	// Doesn't change curve parameters
+	// updatePrice(event);
 }
 
 export function handleShardsWithdrawn(event: ShardsWithdrawnEvent): void {
 	// TODO
-	updatePrice(event);
+
+	// Doesn't change curve parameters
+	// updatePrice(event);
 }
