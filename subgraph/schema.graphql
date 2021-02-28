@@ -17,17 +17,41 @@ type Account @entity {
 	buyoutsProposed:              [Buyout!]! @derivedFrom(field: "proposer")
 }
 
+# =================================== ERC20 ===================================
+type Token @entity {
+	id:                           ID!
+	asWallet:                     ShardedWallet
+	asLiquidity:                  LiquidityToken
+	name:                         String!
+	symbol:                       String!
+	decimals:                     Int!
+	totalSupply:                  DecimalValue!
+	balances:                     [Balance!]! @derivedFrom(field: "token")
+	approval:                     [Approval!]! @derivedFrom(field: "token")
+	transfer:                     [Transfer!]! @derivedFrom(field: "token")
+}
+
+type Balance @entity {
+	id:                           ID!
+	token:                        Token!
+	account:                      Account!
+	amount:                       DecimalValue!
+	transfersFrom:                [Transfer!]! @derivedFrom(field: "fromBalance")
+	transfersTo:                  [Transfer!]! @derivedFrom(field: "toBalance")
+}
+
+# ================================ Modularity =================================
+type Governance @entity {
+	id:                           ID!
+	wallets:                      [ShardedWallet!]! @derivedFrom(field: "governance")
+}
+
 type Module @entity {
 	id:                           ID!
 	executions:                   [ModuleExecute!]! @derivedFrom(field: "module")
 }
 
 # =============================== ShardedWallet ===============================
-type Governance @entity {
-	id:                           ID!
-	wallets:                      [ShardedWallet!]! @derivedFrom(field: "governance")
-}
-
 type ShardedWallet @entity {
 	id:                           ID!
 	asToken:                      Token!
@@ -60,39 +84,21 @@ type ShardedWallet @entity {
 	shardsBought:                 [ShardsBought!]! @derivedFrom(field: "wallet")
 }
 
+# =============================== BondingCurve ================================
 type BondingCurve @entity {
 	id:                           ID!
 	wallet:                       ShardedWallet!
 	etherLPToken:                 LiquidityToken!
 	shardLPToken:                 LiquidityToken!
+	prices:                       [CurvePriceChanged!]! @derivedFrom(field: "bondingcurve")
+	shardsbought:                 [CurveShardsBought!]! @derivedFrom(field: "bondingcurve")
+	shardssold:                   [CurveShardsSold!]! @derivedFrom(field: "bondingcurve")
 }
 
 type LiquidityToken @entity {
 	id:                           ID!
 	asToken:                      Token!
 	bondingcurve:                 BondingCurve!
-}
-
-type Token @entity {
-	id:                           ID!
-	asWallet:                     ShardedWallet
-	asLiquidity:                  LiquidityToken
-	name:                         String!
-	symbol:                       String!
-	decimals:                     Int!
-	totalSupply:                  DecimalValue!
-	balances:                     [Balance!]! @derivedFrom(field: "token")
-	approval:                     [Approval!]! @derivedFrom(field: "token")
-	transfer:                     [Transfer!]! @derivedFrom(field: "token")
-}
-
-type Balance @entity {
-	id:                           ID!
-	token:                        Token!
-	account:                      Account!
-	amount:                       DecimalValue!
-	transfersFrom:                [Transfer!]! @derivedFrom(field: "fromBalance")
-	transfersTo:                  [Transfer!]! @derivedFrom(field: "toBalance")
 }
 
 # ================================== Timers ===================================
@@ -378,6 +384,34 @@ type ShardsBought implements Event @entity {
 	wallet:                       ShardedWallet!
 	index:                        Int!
 	value:                        DecimalValue!
+}
+
+type CurvePriceChanged implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	bondingcurve:                 BondingCurve!
+	price:                        DecimalValue!
+}
+
+type CurveShardsBought implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	bondingcurve:                 BondingCurve!
+	account:                      Account!
+	amount:                       DecimalValue!
+	cost:                         DecimalValue!
+}
+
+type CurveShardsSold implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	bondingcurve:                 BondingCurve!
+	account:                      Account!
+	amount:                       DecimalValue!
+	payout:                       DecimalValue!
 }
 
 type DecimalValue @entity {

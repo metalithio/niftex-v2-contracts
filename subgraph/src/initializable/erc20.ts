@@ -4,7 +4,6 @@ import {
 } from '../../../generated/templates/ERC20/ERC20'
 
 import {
-	Account,
 	Approval,
 	Transfer,
 } from '../../../generated/schema'
@@ -17,18 +16,17 @@ import {
 } from '@amxx/graphprotocol-utils'
 
 import {
+	fetchAccount,
 	fetchToken,
 	fetchBalanceValue,
 } from '../utils'
 
 export function handleApproval(event: ApprovalEvent): void {
 	let token        = fetchToken(event.address)
-	let owner        = new Account(event.params.owner.toHex())
-	let spender      = new Account(event.params.spender.toHex())
+	let owner        = fetchAccount(event.params.owner)
+	let spender      = fetchAccount(event.params.spender)
 	let amount       = new decimals.Value(events.id(event))
 	amount.set(event.params.value)
-	owner.save()
-	spender.save()
 
 	let ev = new Approval(events.id(event))
 	ev.transaction = transactions.log(event).id
@@ -43,12 +41,10 @@ export function handleApproval(event: ApprovalEvent): void {
 export function handleTransfer(event: TransferEvent): void {
 	let token        = fetchToken(event.address)
 	let tokensupply  = new decimals.Value(token.id.concat('-totalSupply'), token.decimals)
-	let from         = new Account(event.params.from.toHex())
-	let to           = new Account(event.params.to.toHex())
+	let from         = fetchAccount(event.params.from)
+	let to           = fetchAccount(event.params.to)
 	let amount       = new decimals.Value(events.id(event))
 	amount.set(event.params.value)
-	from.save()
-	to.save()
 
 	let ev = new Transfer(events.id(event))
 	ev.transaction = transactions.log(event).id

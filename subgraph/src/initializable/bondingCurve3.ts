@@ -1,12 +1,16 @@
 import {
-  BondingCurve3   as BondingCurve3Contract,
-  EtherSupplied   as EtherSuppliedEvent,
-  EtherWithdrawn  as EtherWithdrawnEvent,
-  Initialized     as InitializedEvent,
-  ShardsBought    as ShardsBoughtEvent,
-  ShardsSold      as ShardsSoldEvent,
-  ShardsSupplied  as ShardsSuppliedEvent,
-  ShardsWithdrawn as ShardsWithdrawnEvent,
+	ethereum,
+} from '@graphprotocol/graph-ts'
+
+import {
+	BondingCurve3   as BondingCurve3Contract,
+	EtherSupplied   as EtherSuppliedEvent,
+	EtherWithdrawn  as EtherWithdrawnEvent,
+	Initialized     as InitializedEvent,
+	ShardsBought    as ShardsBoughtEvent,
+	ShardsSold      as ShardsSoldEvent,
+	ShardsSupplied  as ShardsSuppliedEvent,
+	ShardsWithdrawn as ShardsWithdrawnEvent,
 } from '../../../generated/templates/BondingCurve3/BondingCurve3'
 
 import {
@@ -14,58 +18,116 @@ import {
 } from '../../../generated/templates'
 
 import {
-  BondingCurve,
-  LiquidityToken,
+	BondingCurve,
+	LiquidityToken,
+	CurvePriceChanged,
+	CurveShardsBought,
+	CurveShardsSold,
 } from '../../../generated/schema'
 
 import {
+	decimals,
+	events,
+	transactions,
+} from '@amxx/graphprotocol-utils'
+
+import {
+	fetchAccount,
 	fetchToken,
 } from '../utils'
 
+function updatePrice(event: ethereum.Event): void {
+	let contract    = BondingCurve3Contract.bind(event.address)
+	let ev          = new CurvePriceChanged(events.id(event).concat('-pricechanged'))
+	let evprice     = new decimals.Value(ev.id)
+	evprice.set(contract.getCurrentPrice())
+	ev.transaction  = transactions.log(event).id
+	ev.timestamp    = event.block.timestamp
+	ev.bondingcurve = event.address.toHex()
+	ev.price        = evprice.id
+	ev.save()
+}
+
 export function handleInitialized(event: InitializedEvent): void {
-  let contract        = BondingCurve3Contract.bind(event.address)
-  let etherLPAddress  = contract.etherLPToken()
-  let shardLPAddress  = contract.shardLPToken()
+	let contract                  = BondingCurve3Contract.bind(event.address)
+	let etherLPAddress            = contract.etherLPToken()
+	let shardLPAddress            = contract.shardLPToken()
+	let etherLPToken              = fetchToken(etherLPAddress)
+	let shardLPToken              = fetchToken(shardLPAddress)
+	let bondingcurve              = new BondingCurve(event.address.toHex())
+	let etherLPLiquidity          = new LiquidityToken(etherLPToken.id)
+	let shardLPLiquidity          = new LiquidityToken(shardLPToken.id)
+	bondingcurve.wallet           = event.params.wallet.toHex()
+	bondingcurve.etherLPToken     = etherLPToken.id
+	bondingcurve.shardLPToken     = shardLPToken.id
+	etherLPToken.asLiquidity      = etherLPLiquidity.id
+	shardLPToken.asLiquidity      = shardLPLiquidity.id
+	etherLPLiquidity.asToken      = etherLPToken.id
+	etherLPLiquidity.bondingcurve = bondingcurve.id
+	shardLPLiquidity.asToken      = shardLPToken.id
+	shardLPLiquidity.bondingcurve = bondingcurve.id
+	bondingcurve.save()
+	etherLPToken.save()
+	shardLPToken.save()
+	etherLPLiquidity.save()
+	shardLPLiquidity.save()
 
-  let etherLPToken          = fetchToken(etherLPAddress)
-  let shardLPToken          = fetchToken(shardLPAddress)
+	updatePrice(event);
 
-  let bondingcurve          = new BondingCurve(event.address.toHex())
-  let etherLP               = new LiquidityToken(etherLPToken.id)
-  let shardLP               = new LiquidityToken(shardLPToken.id)
-  bondingcurve.wallet       = event.params.wallet.toHex()
-  bondingcurve.etherLPToken = etherLPToken.id
-  bondingcurve.shardLPToken = shardLPToken.id
-  etherLPToken.asLiquidity  = etherLP.id
-  shardLPToken.asLiquidity  = shardLP.id
-  etherLP.asToken           = etherLPToken.id
-  etherLP.bondingcurve      = bondingcurve.id
-  shardLP.asToken           = shardLPToken.id
-  shardLP.bondingcurve      = bondingcurve.id
-  bondingcurve.save()
-  etherLPToken.save()
-  shardLPToken.save()
-  etherLP.save()
-  shardLP.save()
-
-  ERC20Template.create(etherLPAddress)
-  ERC20Template.create(shardLPAddress)
+	ERC20Template.create(etherLPAddress)
+	ERC20Template.create(shardLPAddress)
 }
 
 export function handleShardsBought(event: ShardsBoughtEvent): void {
+	let ev          = new CurveShardsBought(events.id(event))
+	let evamount    = new decimals.Value(ev.id.concat('-amount')) // TODO: add decimals
+	let evcost      = new decimals.Value(ev.id.concat('-cost')) // TODO: add decimals
+	evamount.set(event.params.amount)
+	evcost.set(event.params.cost)
+	ev.transaction  = transactions.log(event).id
+	ev.timestamp    = event.block.timestamp
+	ev.bondingcurve = event.address.toHex()
+	ev.account      = fetchAccount(event.params.account).id
+	ev.amount       = evamount.id
+	ev.cost         = evcost.id
+	ev.save()
+
+	updatePrice(event);
 }
 
 export function handleShardsSold(event: ShardsSoldEvent): void {
+	let ev          = new CurveShardsSold(events.id(event))
+	let evamount    = new decimals.Value(ev.id.concat('-amount')) // TODO: add decimals
+	let evpayout    = new decimals.Value(ev.id.concat('-payout')) // TODO: add decimals
+	evamount.set(event.params.amount)
+	evpayout.set(event.params.payout)
+	ev.transaction  = transactions.log(event).id
+	ev.timestamp    = event.block.timestamp
+	ev.bondingcurve = event.address.toHex()
+	ev.account      = fetchAccount(event.params.account).id
+	ev.amount       = evamount.id
+	ev.payout       = evpayout.id
+	ev.save()
+
+	updatePrice(event);
 }
 
 export function handleEtherSupplied(event: EtherSuppliedEvent): void {
+	// TODO
+	updatePrice(event);
 }
 
 export function handleEtherWithdrawn(event: EtherWithdrawnEvent): void {
+	// TODO
+	updatePrice(event);
 }
 
 export function handleShardsSupplied(event: ShardsSuppliedEvent): void {
+	// TODO
+	updatePrice(event);
 }
 
 export function handleShardsWithdrawn(event: ShardsWithdrawnEvent): void {
+	// TODO
+	updatePrice(event);
 }

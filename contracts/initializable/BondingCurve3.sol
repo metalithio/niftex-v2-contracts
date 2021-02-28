@@ -10,7 +10,7 @@ import "../governance/IGovernance.sol";
 import "../interface/IERC1363Receiver.sol";
 import "../interface/IERC1363Spender.sol";
 
-contract BondingCurve3LP is ERC20 {
+contract LiquidityToken is ERC20 {
     address public controler;
 
     modifier onlyControler() {
@@ -53,7 +53,7 @@ contract BondingCurve3 is IERC1363Spender {
         uint256 feeToArtist;
     }
 
-    BondingCurve3LP immutable internal _template;
+    LiquidityToken immutable internal _template;
 
     // bytes32 public constant PCT_FEE_SUPPLIERS = bytes32(uint256(keccak256("PCT_FEE_SUPPLIERS")) - 1);
     bytes32 public constant PCT_FEE_SUPPLIERS  = 0xe4f5729eb40e38b5a39dfb36d76ead9f9bc286f06852595980c5078f1af7e8c9;
@@ -64,8 +64,8 @@ contract BondingCurve3 is IERC1363Spender {
     // bytes32 public constant LIQUIDITY_TIMELOCK   = bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
     bytes32 public constant LIQUIDITY_TIMELOCK = 0x4babff57ebd34f251a515a845400ed950a51f0a64c92e803a3e144fc40623fa8;
 
-    BondingCurve3LP  public   etherLPToken;
-    BondingCurve3LP  public   shardLPToken;
+    LiquidityToken   public   etherLPToken;
+    LiquidityToken   public   shardLPToken;
     CurveCoordinates public   curve;
     Asset            internal _etherLPExtra;
     Asset            internal _shardLPExtra;
@@ -82,7 +82,7 @@ contract BondingCurve3 is IERC1363Spender {
     event EtherWithdrawn(address indexed provider, uint256 value, uint256 payout);
 
     constructor() {
-        _template = new BondingCurve3LP();
+        _template = new LiquidityToken();
         wallet = address(0xdead);
     }
 
@@ -99,8 +99,8 @@ contract BondingCurve3 is IERC1363Spender {
         string memory name_   = ShardedWallet(payable(wallet_)).name();
         string memory symbol_ = ShardedWallet(payable(wallet_)).symbol();
 
-        etherLPToken = BondingCurve3LP(Clones.clone(address(_template)));
-        shardLPToken = BondingCurve3LP(Clones.clone(address(_template)));
+        etherLPToken = LiquidityToken(Clones.clone(address(_template)));
+        shardLPToken = LiquidityToken(Clones.clone(address(_template)));
         etherLPToken.initialize(address(this), string(abi.encodePacked(name_, "-EtherLP")), string(abi.encodePacked(symbol_, "-ELP")));
         shardLPToken.initialize(address(this), string(abi.encodePacked(name_, "-ShardLP")), string(abi.encodePacked(symbol_, "-SLP")));
 

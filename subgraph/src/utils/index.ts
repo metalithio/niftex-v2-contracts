@@ -39,6 +39,12 @@ export function bytesStringToAddressString(address: string): string {
 	return "0x".concat(address.substr(26, 40))
 }
 
+export function fetchAccount(address: Address): Account {
+	let account = new Account(address.toHex());
+	account.save()
+	return account;
+}
+
 export function fetchToken(address: Address): Token {
 	let id = address.toHex()
 	let token = Token.load(id)
@@ -75,9 +81,9 @@ export function fetchShardedWallet(address: Address): ShardedWallet {
 	if (wallet == null) {
 		let token         = fetchToken(address)
 		let contract      = ShardedWalletContract.bind(address)
-		let owner         = new Account(contract.owner().toHex())
 		let governance    = new Governance(contract.governance().toHex())
-		let artist        = new Account(contract.artistWallet().toHex())
+		let owner         = fetchAccount(contract.owner())
+		let artist        = fetchAccount(contract.artistWallet())
 		wallet            = new ShardedWallet(id)
 		wallet.asToken    = token.id
 		wallet.owner      = owner.id
@@ -86,9 +92,7 @@ export function fetchShardedWallet(address: Address): ShardedWallet {
 		token.asWallet    = wallet.id
 		wallet.save()
 		token.save()
-		owner.save()
 		governance.save()
-		artist.save()
 	}
 	return wallet as ShardedWallet
 }

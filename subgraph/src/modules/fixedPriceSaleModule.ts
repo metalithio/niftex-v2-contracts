@@ -19,8 +19,6 @@ import {
 } from '../../../generated/templates'
 
 import {
-	Account,
-	ShardedWallet,
 	Token,
 	FixedPriceSale,
 	FixedPriceSalePrebuy,
@@ -39,6 +37,7 @@ import {
 import {
 	bytesToAddress,
 	addressStringToBytesString,
+	fetchAccount,
 	fetchToken,
 	fetchShardedWallet,
 } from '../utils'
@@ -61,7 +60,7 @@ function fetchFixedPriceSale(wallet: Token, module: Address, reset: bool = false
 		let walletAsAddress            = Address.fromString(wallet.id)
 		let priceValue                 = contract.prices(walletAsAddress)
 		let remainingShardsValue       = contract.remainingShards(walletAsAddress)
-		let recipient                  = new Account(contract.recipients(walletAsAddress).toHex())
+		let recipient                  = fetchAccount(contract.recipients(walletAsAddress))
 		let balance                    = new decimals.Value(wallet.id.concat('-balance'), 18) // ETH
 		let price                      = new decimals.Value(wallet.id.concat('-price'), 18) // ETH per Shard
 		let offeredShards              = new decimals.Value(wallet.id.concat('-offered'), wallet.decimals) // Shards
@@ -79,14 +78,12 @@ function fetchFixedPriceSale(wallet: Token, module: Address, reset: bool = false
 		fixedpricesale.timer           = module.toHex().concat('-').concat(addressStringToBytesString(wallet.id))
 		fixedpricesale.status          = remainingShards._entry.exact.equals(constants.BIGINT_ZERO) ? 'SUCCESS' : 'INITIATED'
 		fixedpricesale.withdrawn       = false
-		recipient.save()
 	}
 	return fixedpricesale as FixedPriceSale
 }
 
 function fetchFixedPriceSaleBuy(wallet: Token, fixedpricesale: FixedPriceSale, to: Address): FixedPriceSaleBuy {
-	let recipient = new Account(to.toHex())
-	recipient.save()
+	let recipient = fetchAccount(to)
 
 	let id = wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString())
 
@@ -107,8 +104,7 @@ function fetchFixedPriceSaleBuy(wallet: Token, fixedpricesale: FixedPriceSale, t
 }
 
 function fetchFixedPriceSalePrebuy(wallet: Token, fixedpricesale: FixedPriceSale, to: Address): FixedPriceSalePrebuy {
-	let recipient = new Account(to.toHex())
-	recipient.save()
+	let recipient = fetchAccount(to)
 
 	let id = wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString())
 
@@ -219,8 +215,7 @@ export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): 
 	let wallet               = fetchShardedWallet(event.params.wallet)
 	let token                = fetchToken(event.params.wallet)
 	let fixedpricesale       = fetchFixedPriceSale(token, event.address)
-	let recipient            = new Account(event.params.to.toHex())
-	recipient.save()
+	let recipient            = fetchAccount(event.params.to)
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesaleprebuy != null) {
@@ -241,8 +236,7 @@ export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): 
 	let wallet               = fetchShardedWallet(event.params.wallet)
 	let token                = fetchToken(event.params.wallet)
 	let fixedpricesale       = fetchFixedPriceSale(token, event.address)
-	let recipient            = new Account(event.params.to.toHex())
-	recipient.save()
+	let recipient            = fetchAccount(event.params.to)
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesaleprebuy != null) {

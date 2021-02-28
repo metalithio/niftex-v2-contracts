@@ -6,7 +6,6 @@ import {
 } from '../../../generated/BuyoutModule/BuyoutModule'
 
 import {
-	Account,
 	Timer,
 	Buyout,
 	BuyoutOpened,
@@ -23,6 +22,7 @@ import {
 
 import {
 	addressStringToBytesString,
+	fetchAccount,
 	fetchShardedWallet,
 } from '../utils'
 
@@ -50,8 +50,8 @@ export function handleTimerReset(event: TimerResetEvent): void {
 export function handleBuyoutOpened(event: BuyoutOpenedEvent): void {
 	let wallet            = fetchShardedWallet(event.params.wallet)
 	let timer             = Timer.load(event.address.toHex().concat('-').concat(addressStringToBytesString(wallet.id)))
+	let proposer          = fetchAccount(event.params.proposer)
 	let buyout            = new Buyout(events.id(event))
-	let proposer          = new Account(event.params.proposer.toHex())
 	let ev                = new BuyoutOpened(events.id(event))
 	let pricepershard     = new decimals.Value(buyout.id.concat('-pricePerShard'))
 	pricepershard.set(event.params.pricePerShard)
@@ -70,14 +70,12 @@ export function handleBuyoutOpened(event: BuyoutOpenedEvent): void {
 	ev.proposer           = proposer.id
 	wallet.save()
 	buyout.save()
-	proposer.save()
 	ev.save()
 }
 
 export function handleBuyoutClosed(event: BuyoutClosedEvent): void {
 	let wallet            = fetchShardedWallet(event.params.wallet)
 	let buyout            = new Buyout(wallet.activeBuyout)
-	let closer            = new Account(event.params.closer.toHex())
 	let ev                = new BuyoutClosed(events.id(event))
 	wallet.activeBuyout   = null
 	buyout.status         = 'CANCELLED'
@@ -85,26 +83,23 @@ export function handleBuyoutClosed(event: BuyoutClosedEvent): void {
 	ev.timestamp          = event.block.timestamp
 	ev.buyout             = buyout.id
 	ev.wallet             = wallet.id
-	ev.closer             = closer.id
+	ev.closer             = fetchAccount(event.params.closer).id
 	wallet.save()
 	buyout.save()
-	closer.save()
 	ev.save()
 }
 
 export function handleBuyoutClaimed(event: BuyoutClaimedEvent): void {
 	let wallet            = fetchShardedWallet(event.params.wallet)
 	let buyout            = new Buyout(wallet.activeBuyout)
-	let user              = new Account(event.params.user.toHex())
 	let ev                = new BuyoutClaimed(events.id(event))
 	buyout.status         = 'SUCCESSFULL'
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
 	ev.buyout             = buyout.id
 	ev.wallet             = wallet.id
-	ev.user               = user.id
+	ev.user               = fetchAccount(event.params.user).id
 	buyout.save()
-	user.save()
 	ev.save()
 }
 

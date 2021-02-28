@@ -12,7 +12,6 @@ import {
 } from '../../../generated/templates/ShardedWallet/ShardedWallet'
 
 import {
-	Account,
 	Governance,
 	Module,
 	OwnershipTransferred,
@@ -29,18 +28,15 @@ import {
 } from '@amxx/graphprotocol-utils'
 
 import {
+	fetchAccount,
 	fetchShardedWallet,
 } from '../utils'
 
 export function handleOwnershipTransferred(event: OwnershipTransferredEvent): void {
 	let wallet   = fetchShardedWallet(event.address)
-	let from     = new Account(event.params.previousOwner.toHex())
-	let to       = new Account(event.params.newOwner.toHex())
-
+	let from     = fetchAccount(event.params.previousOwner)
+	let to       = fetchAccount(event.params.newOwner)
 	wallet.owner = to.id
-
-	from.save()
-	to.save()
 	wallet.save()
 
 	let ev         = new OwnershipTransferred(events.id(event))
@@ -54,10 +50,9 @@ export function handleOwnershipTransferred(event: OwnershipTransferredEvent): vo
 
 export function handleExecute(event: ExecuteEvent): void {
 	let wallet = fetchShardedWallet(event.address)
-	let to     = new Account(event.params.to.toHex())
+	let to     = fetchAccount(event.params.to)
 	let value  = new decimals.Value(events.id(event))
 	value.set(event.params.value)
-	to.save()
 
 	let ev = new Execute(events.id(event))
 	ev.transaction = transactions.log(event).id
@@ -72,11 +67,10 @@ export function handleExecute(event: ExecuteEvent): void {
 export function handleModuleExecute(event: ModuleExecuteEvent): void {
 	let wallet = fetchShardedWallet(event.address)
 	let module = new Module(event.params.module.toHex())
-	let to     = new Account(event.params.to.toHex())
+	let to     = fetchAccount(event.params.to)
 	let value  = new decimals.Value(events.id(event))
 	value.set(event.params.value)
 	module.save()
-	to.save()
 
 	let ev = new ModuleExecute(events.id(event))
 	ev.transaction = transactions.log(event).id
@@ -106,10 +100,9 @@ export function handleGovernanceUpdated(event: GovernanceUpdatedEvent): void {
 
 export function handleArtistUpdated(event: ArtistUpdatedEvent): void {
 	let wallet          = fetchShardedWallet(event.address)
-	let artist          = new Account(event.params.newArtist.toHex())
+	let artist          = fetchAccount(event.params.newArtist)
 	wallet.artist       = artist.id
 	wallet.save()
-	artist.save()
 
 	let ev = new ArtistUpdated(events.id(event))
 	ev.transaction = transactions.log(event).id
