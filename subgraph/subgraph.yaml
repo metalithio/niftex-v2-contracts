@@ -141,6 +141,27 @@ dataSources:
       file: ./src/modules/fixedPriceSaleModule.ts
 # ====== Template - ShardedWallet ============================================
 templates:
+  - name: ERC20
+    kind: ethereum/contract
+    network: rinkeby
+    source:
+      abi: ERC20
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+      abis:
+        - name: ERC20
+          file: ../artifacts/contracts/initializable/ERC20.sol/ERC20.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,uint256)
+          handler: handleApproval
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/initializable/erc20.ts
+
   - name: ShardedWallet
     kind: ethereum/contract
     network: rinkeby
@@ -153,11 +174,11 @@ templates:
       entities:
         - Transaction
       abis:
+        - name: ERC20
+          file: ../artifacts/contracts/initializable/ERC20.sol/ERC20.json
         - name: ShardedWallet
           file: ../artifacts/contracts/wallet/ShardedWallet.sol/ShardedWallet.json
       eventHandlers:
-        - event: Approval(indexed address,indexed address,uint256)
-          handler: handleApproval
         - event: Execute(indexed address,uint256,bytes)
           handler: handleExecute
         - event: GovernanceUpdated(indexed address,indexed address)
@@ -168,17 +189,15 @@ templates:
           handler: handleOwnershipTransferred
         - event: Received(indexed address,uint256,bytes)
           handler: handleReceived
-        - event: Transfer(indexed address,indexed address,uint256)
-          handler: handleTransfer
         - event: ArtistUpdated(indexed address,indexed address)
           handler: handleArtistUpdated
       file: ./src/wallet/shardedWallet.ts
 
-  - name: BondingCurve
+  - name: BondingCurve3
     kind: ethereum/contract
     network: rinkeby
     source:
-      abi: BondingCurve
+      abi: BondingCurve3
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
@@ -186,25 +205,23 @@ templates:
       entities:
         - Transaction
       abis:
-        - name: BondingCurve
-          file: ../artifacts/contracts/initializable/BondingCurve.sol/BondingCurve.json
+        - name: ERC20
+          file: ../artifacts/contracts/initializable/ERC20.sol/ERC20.json
+        - name: BondingCurve3
+          file: ../artifacts/contracts/initializable/BondingCurve3.sol/BondingCurve3.json
       eventHandlers:
-        - event: EtherSupplied(uint256,address)
+        - event: EtherSupplied(indexed address,uint256)
           handler: handleEtherSupplied
-        - event: EtherWithdrawn(uint256,uint256,address)
+        - event: EtherWithdrawn(indexed address,uint256,uint256)
           handler: handleEtherWithdrawn
-        - event: Initialized(address,address)
+        - event: Initialized(address)
           handler: handleInitialized
-        - event: ShardsBought(uint256,uint256,address)
+        - event: ShardsBought(indexed address,uint256,uint256)
           handler: handleShardsBought
-        - event: ShardsSold(uint256,uint256,address)
+        - event: ShardsSold(indexed address,uint256,uint256)
           handler: handleShardsSold
-        - event: ShardsSupplied(uint256,address)
+        - event: ShardsSupplied(indexed address,uint256)
           handler: handleShardsSupplied
-        - event: ShardsWithdrawn(uint256,uint256,address)
+        - event: ShardsWithdrawn(indexed address,uint256,uint256)
           handler: handleShardsWithdrawn
-        - event: TransferEthLPTokens(address,address,uint256)
-          handler: handleTransferEthLPTokens
-        - event: TransferShardLPTokens(address,address,uint256)
-          handler: handleTransferShardLPTokens
-      file: ./src/initializable/bondingCurve.ts
+      file: ./src/initializable/bondingCurve3.ts

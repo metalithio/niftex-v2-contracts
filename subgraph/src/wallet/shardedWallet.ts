@@ -3,13 +3,11 @@ import {
 } from '@graphprotocol/graph-ts'
 
 import {
-	Approval             as ApprovalEvent,
 	Execute              as ExecuteEvent,
 	ModuleExecute        as ModuleExecuteEvent,
 	GovernanceUpdated    as GovernanceUpdatedEvent,
 	OwnershipTransferred as OwnershipTransferredEvent,
 	Received             as ReceivedEvent,
-	Transfer             as TransferEvent,
 	ArtistUpdated        as ArtistUpdatedEvent,
 } from '../../../generated/templates/ShardedWallet/ShardedWallet'
 
@@ -18,8 +16,6 @@ import {
 	Governance,
 	Module,
 	OwnershipTransferred,
-	Approval,
-	Transfer,
 	Execute,
 	ModuleExecute,
 	GovernanceUpdated,
@@ -27,7 +23,6 @@ import {
 } from '../../../generated/schema'
 
 import {
-	constants,
 	decimals,
 	events,
 	transactions,
@@ -35,7 +30,6 @@ import {
 
 import {
 	fetchShardedWallet,
-	fetchBalanceValue,
 } from '../utils'
 
 export function handleOwnershipTransferred(event: OwnershipTransferredEvent): void {
@@ -55,62 +49,6 @@ export function handleOwnershipTransferred(event: OwnershipTransferredEvent): vo
 	ev.wallet      = wallet.id
 	ev.from        = from.id
 	ev.to          = to.id
-	ev.save()
-}
-
-export function handleApproval(event: ApprovalEvent): void {
-	let wallet       = fetchShardedWallet(event.address)
-	let owner        = new Account(event.params.owner.toHex())
-	let spender      = new Account(event.params.spender.toHex())
-	let amount       = new decimals.Value(events.id(event))
-	amount.set(event.params.value)
-	owner.save()
-	spender.save()
-
-	let ev = new Approval(events.id(event))
-	ev.transaction = transactions.log(event).id
-	ev.timestamp   = event.block.timestamp
-	ev.wallet      = wallet.id
-	ev.owner       = owner.id
-	ev.spender     = spender.id
-	ev.amount      = amount.id
-	ev.save()
-}
-
-export function handleTransfer(event: TransferEvent): void {
-	let wallet       = fetchShardedWallet(event.address)
-	let walletsupply = new decimals.Value(wallet.id.concat('-totalSupply'), wallet.decimals)
-	let from         = new Account(event.params.from.toHex())
-	let to           = new Account(event.params.to.toHex())
-	let amount       = new decimals.Value(events.id(event))
-	amount.set(event.params.value)
-	from.save()
-	to.save()
-
-	let ev = new Transfer(events.id(event))
-	ev.transaction = transactions.log(event).id
-	ev.timestamp   = event.block.timestamp
-	ev.wallet      = wallet.id
-	ev.from        = from.id
-	ev.to          = to.id
-	ev.amount      = amount.id
-
-	if (from.id == constants.ADDRESS_ZERO) {
-		walletsupply.increment(amount._entry.exact)
-	} else {
-		let balance = fetchBalanceValue(wallet, from)
-		balance.decrement(amount._entry.exact)
-		ev.fromBalance = balance.id
-	}
-
-	if (to.id == constants.ADDRESS_ZERO) {
-		walletsupply.decrement(amount._entry.exact)
-	} else {
-		let balance = fetchBalanceValue(wallet, to)
-		balance.increment(amount._entry.exact)
-		ev.toBalance = balance.id
-	}
-
 	ev.save()
 }
 

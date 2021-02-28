@@ -33,7 +33,7 @@ import {
 	handleTimerStarted as genericHandleTimerStarted,
 	handleTimerStopped as genericHandleTimerStopped,
 	handleTimerReset   as genericHandleTimerReset,
-} from '../generic/timer'
+} from '../utils/timer'
 
 export function handleTimerStarted(event: TimerStartedEvent): void {
 	let timer = genericHandleTimerStarted(event)
