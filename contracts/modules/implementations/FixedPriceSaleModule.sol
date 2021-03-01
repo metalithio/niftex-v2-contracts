@@ -104,10 +104,6 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
             emit ShardsPrebuy(wallet, premints[i].receiver, premints[i].amount);
         }
 
-        // Sanity check, guaranties that the crowdsale will get enought value
-        // to initialize the bounding curve
-        require(premintShards[wallet][CURVE_PREMINT_RESERVE] <= totalSupply);
-
         recipients[wallet] = recipient;
         prices[wallet] = price;
         remainingShards[wallet] = totalSupply;
