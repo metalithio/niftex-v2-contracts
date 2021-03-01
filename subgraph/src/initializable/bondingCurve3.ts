@@ -57,9 +57,13 @@ export function handleInitialized(event: InitializedEvent): void {
 	let bondingcurve              = new BondingCurve(event.address.toHex())
 	let etherLPLiquidity          = new LiquidityToken(etherLPToken.id)
 	let shardLPLiquidity          = new LiquidityToken(shardLPToken.id)
+	let tradedShards              = new decimals.Value(bondingcurve.id.concat('-tradedShards')) // TODO decimals ?
+	let tradedEthers              = new decimals.Value(bondingcurve.id.concat('-tradedEthers')) // TODO decimals ?
 	bondingcurve.wallet           = event.params.wallet.toHex()
 	bondingcurve.etherLPToken     = etherLPToken.id
 	bondingcurve.shardLPToken     = shardLPToken.id
+	bondingcurve.tradedEthers     = tradedEthers.id
+	bondingcurve.tradedShards     = tradedShards.id
 	etherLPToken.asLiquidity      = etherLPLiquidity.id
 	shardLPToken.asLiquidity      = shardLPLiquidity.id
 	etherLPLiquidity.asToken      = etherLPToken.id
@@ -92,7 +96,12 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 	ev.cost         = evcost.id
 	ev.save()
 
-	updatePrice(event);
+	let tradedEthers = new decimals.Value(event.address.toHex().concat('-tradedEthers'))
+	let tradedShards = new decimals.Value(event.address.toHex().concat('-tradedShards'))
+	tradedEthers.increment(event.params.cost)
+	tradedShards.increment(event.params.amount)
+
+	updatePrice(event)
 }
 
 export function handleShardsSold(event: ShardsSoldEvent): void {
@@ -109,7 +118,12 @@ export function handleShardsSold(event: ShardsSoldEvent): void {
 	ev.payout       = evpayout.id
 	ev.save()
 
-	updatePrice(event);
+	let tradedEthers = new decimals.Value(event.address.toHex().concat('-tradedEthers'))
+	let tradedShards = new decimals.Value(event.address.toHex().concat('-tradedShards'))
+	tradedEthers.increment(event.params.payout)
+	tradedShards.increment(event.params.amount)
+
+	updatePrice(event)
 }
 
 export function handleEtherSupplied(event: EtherSuppliedEvent): void {

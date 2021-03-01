@@ -95,6 +95,7 @@ export function handleGovernanceUpdated(event: GovernanceUpdatedEvent): void {
 	ev.timestamp   = event.block.timestamp
 	ev.wallet      = wallet.id
 	ev.governance  = governance.id
+	ev.previous    = event.params.oldGovernance.toHex()
 	ev.save()
 }
 

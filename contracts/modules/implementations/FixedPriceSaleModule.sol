@@ -185,7 +185,7 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         address to = recipients[wallet];
         if (remainingShards[wallet] == 0) { // crowdsaleSuccess
             uint256     shardsToCurve = premintShards[wallet][CURVE_PREMINT_RESERVE];
-            uint256     valueToCurve  = balance[wallet] * wallet.governance().getConfig(address(wallet),PCT_ETH_TO_CURVE) / 10**18;
+            uint256     valueToCurve  = balance[wallet] * wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE) / 10**18;
             uint256     value         = balance[wallet] - valueToCurve;
             address     curve         = _makeCurve(wallet, valueToCurve, shardsToCurve);
             delete balance[wallet];
