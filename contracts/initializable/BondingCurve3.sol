@@ -193,7 +193,7 @@ contract BondingCurve3 is IERC1363Spender {
         require(cost <= maxCost);
 
         // consistency check
-        require(ShardedWallet(payable(_wallet)).balanceOf(address(this)) - _shardLPExtra.feeToNiftex - _shardLPExtra.feeToArtist >= amountWithFee);
+        require(ShardedWallet(payable(_wallet)).balanceOf(address(this)) - _shardLPExtra.feeToNiftex - _shardLPExtra.feeToArtist >= amount * (10**18 + fees[1] + fees[2]) / 10**18);
 
         // update curve
         _curve.x = _curve.x - amount * (10**18 + fees[1] + fees[2]) / 10**18;
