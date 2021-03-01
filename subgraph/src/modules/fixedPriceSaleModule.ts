@@ -4,7 +4,7 @@ import {
 } from '@graphprotocol/graph-ts'
 
 import {
-	FixedPriceSaleModule as FixedPriceSaleModuleContract,
+	FixedPriceSaleModule   as FixedPriceSaleModuleContract,
 	OwnershipReclaimed     as OwnershipReclaimedEvent,
 	ShardsPrebuy           as ShardsPrebuyEvent,
 	ShardsBought           as ShardsBoughtEvent,
@@ -15,12 +15,11 @@ import {
 } from '../../../generated/FixedPriceSaleModule/FixedPriceSaleModule'
 
 import {
-	BondingCurve as BondingCurveTemplate,
+	BondingCurve3 as BondingCurve3Template,
 } from '../../../generated/templates'
 
 import {
-	Account,
-	ShardedWallet,
+	Token,
 	FixedPriceSale,
 	FixedPriceSalePrebuy,
 	FixedPriceSaleBuy,
@@ -38,6 +37,8 @@ import {
 import {
 	bytesToAddress,
 	addressStringToBytesString,
+	fetchAccount,
+	fetchToken,
 	fetchShardedWallet,
 } from '../utils'
 
@@ -48,9 +49,9 @@ import {
 	handleTimerStarted as genericHandleTimerStarted,
 	handleTimerStopped as genericHandleTimerStopped,
 	handleTimerReset   as genericHandleTimerReset,
-} from '../generic/timer'
+} from '../utils/timer'
 
-function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, reset: bool = false): FixedPriceSale {
+function fetchFixedPriceSale(wallet: Token, module: Address, reset: bool = false): FixedPriceSale {
 	let fixedpricesale = FixedPriceSale.load(wallet.id)
 	if (fixedpricesale == null || reset) {
 		let index                      = fixedpricesale == null ? 0 : fixedpricesale.index
@@ -59,7 +60,7 @@ function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, reset: bool
 		let walletAsAddress            = Address.fromString(wallet.id)
 		let priceValue                 = contract.prices(walletAsAddress)
 		let remainingShardsValue       = contract.remainingShards(walletAsAddress)
-		let recipient                  = new Account(contract.recipients(walletAsAddress).toHex())
+		let recipient                  = fetchAccount(contract.recipients(walletAsAddress))
 		let balance                    = new decimals.Value(wallet.id.concat('-balance'), 18) // ETH
 		let price                      = new decimals.Value(wallet.id.concat('-price'), 18) // ETH per Shard
 		let offeredShards              = new decimals.Value(wallet.id.concat('-offered'), wallet.decimals) // Shards
@@ -77,14 +78,12 @@ function fetchFixedPriceSale(wallet: ShardedWallet, module: Address, reset: bool
 		fixedpricesale.timer           = module.toHex().concat('-').concat(addressStringToBytesString(wallet.id))
 		fixedpricesale.status          = remainingShards._entry.exact.equals(constants.BIGINT_ZERO) ? 'SUCCESS' : 'INITIATED'
 		fixedpricesale.withdrawn       = false
-		recipient.save()
 	}
 	return fixedpricesale as FixedPriceSale
 }
 
-function fetchFixedPriceSaleBuy(wallet: ShardedWallet, fixedpricesale: FixedPriceSale, to: Address): FixedPriceSaleBuy {
-	let recipient = new Account(to.toHex())
-	recipient.save()
+function fetchFixedPriceSaleBuy(wallet: Token, fixedpricesale: FixedPriceSale, to: Address): FixedPriceSaleBuy {
+	let recipient = fetchAccount(to)
 
 	let id = wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString())
 
@@ -104,9 +103,8 @@ function fetchFixedPriceSaleBuy(wallet: ShardedWallet, fixedpricesale: FixedPric
 	return fixedpricesalebuy as FixedPriceSaleBuy
 }
 
-function fetchFixedPriceSalePrebuy(wallet: ShardedWallet, fixedpricesale: FixedPriceSale, to: Address): FixedPriceSalePrebuy {
-	let recipient = new Account(to.toHex())
-	recipient.save()
+function fetchFixedPriceSalePrebuy(wallet: Token, fixedpricesale: FixedPriceSale, to: Address): FixedPriceSalePrebuy {
+	let recipient = fetchAccount(to)
 
 	let id = wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString())
 
@@ -127,12 +125,10 @@ function fetchFixedPriceSalePrebuy(wallet: ShardedWallet, fixedpricesale: FixedP
 }
 
 export function handleTimerStarted(event: TimerStartedEvent): void {
-	let timer = genericHandleTimerStarted(event)
-
-	let wallet = fetchShardedWallet(bytesToAddress(event.params.timer))
-	wallet.save()
-
-	let fixedpricesale      = fetchFixedPriceSale(wallet, event.address, true)
+	let timer               = genericHandleTimerStarted(event)
+	let wallet              = fetchShardedWallet(bytesToAddress(event.params.timer))
+	let token               = fetchToken(bytesToAddress(event.params.timer))
+	let fixedpricesale      = fetchFixedPriceSale(token, event.address, true)
 	fixedpricesale.start    = timer.start
 	fixedpricesale.deadline = timer.deadline
 	fixedpricesale.save()
@@ -144,22 +140,24 @@ export function handleTimerStopped(event: TimerStoppedEvent): void {
 }
 
 export function handleTimerReset(event: TimerResetEvent): void {
-	let timer = genericHandleTimerReset(event)
-	let wallet            = fetchShardedWallet(bytesToAddress(event.params.timer))
-	let fixedpricesale    = fetchFixedPriceSale(wallet, event.address)
-	fixedpricesale.status = 'RESET'
+	let timer               = genericHandleTimerReset(event)
+	let wallet              = fetchShardedWallet(bytesToAddress(event.params.timer))
+	let token               = fetchToken(bytesToAddress(event.params.timer))
+	let fixedpricesale      = fetchFixedPriceSale(token, event.address)
+	fixedpricesale.status   = 'RESET'
 	fixedpricesale.save()
 }
 
 export function handleShardsPrebuy(event: ShardsPrebuyEvent): void {
 	let wallet               = fetchShardedWallet(event.params.wallet)
-	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
-	let fixedpricesaleprebuy = fetchFixedPriceSalePrebuy(wallet, fixedpricesale, event.params.receiver)
+	let token                = fetchToken(event.params.wallet)
+	let fixedpricesale       = fetchFixedPriceSale(token, event.address)
+	let fixedpricesaleprebuy = fetchFixedPriceSalePrebuy(token, fixedpricesale, event.params.receiver)
 	let prebought            = new decimals.Value(fixedpricesaleprebuy.amount)
 	prebought.increment(event.params.count)
 
 	let ev = new ShardsPrebuy(events.id(event))
-	let value = new decimals.Value(ev.id.concat('-value'), wallet.decimals)
+	let value = new decimals.Value(ev.id.concat('-value'), token.decimals)
 	value.set(event.params.count)
 	ev.transaction          = transactions.log(event).id
 	ev.timestamp            = event.block.timestamp
@@ -171,9 +169,10 @@ export function handleShardsPrebuy(event: ShardsPrebuyEvent): void {
 }
 
 export function handleShardsBought(event: ShardsBoughtEvent): void {
-	let wallet            = fetchShardedWallet(event.params.wallet)
-	let fixedpricesale    = fetchFixedPriceSale(wallet, event.address)
-	let fixedpricesalebuy = fetchFixedPriceSaleBuy(wallet, fixedpricesale, event.params.to)
+	let wallet               = fetchShardedWallet(event.params.wallet)
+	let token                = fetchToken(event.params.wallet)
+	let fixedpricesale       = fetchFixedPriceSale(token, event.address)
+	let fixedpricesalebuy    = fetchFixedPriceSaleBuy(token, fixedpricesale, event.params.to)
 
 	let bought          = new decimals.Value(fixedpricesalebuy.amount)
 	let balance         = new decimals.Value(fixedpricesale.balance)
@@ -189,7 +188,7 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 	balance.increment(
 		event.params.count
 		.times(price._entry.exact)
-		.div(BigInt.fromI32(10).pow(<u8>wallet.decimals))
+		.div(BigInt.fromI32(10).pow(<u8>token.decimals))
 	)
 	remainingShards.decrement(
 		event.params.count
@@ -201,7 +200,7 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 	}
 
 	let ev = new ShardsBought(events.id(event))
-	let value = new decimals.Value(ev.id.concat('-value'), wallet.decimals)
+	let value = new decimals.Value(ev.id.concat('-value'), token.decimals)
 	value.set(event.params.count)
 	ev.transaction        = transactions.log(event).id
 	ev.timestamp          = event.block.timestamp
@@ -214,9 +213,9 @@ export function handleShardsBought(event: ShardsBoughtEvent): void {
 
 export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): void {
 	let wallet               = fetchShardedWallet(event.params.wallet)
-	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
-	let recipient            = new Account(event.params.to.toHex())
-	recipient.save()
+	let token                = fetchToken(event.params.wallet)
+	let fixedpricesale       = fetchFixedPriceSale(token, event.address)
+	let recipient            = fetchAccount(event.params.to)
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesaleprebuy != null) {
@@ -235,9 +234,9 @@ export function handleShardsRedeemedSuccess(event: ShardsRedeemedSuccessEvent): 
 
 export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): void {
 	let wallet               = fetchShardedWallet(event.params.wallet)
-	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
-	let recipient            = new Account(event.params.to.toHex())
-	recipient.save()
+	let token                = fetchToken(event.params.wallet)
+	let fixedpricesale       = fetchFixedPriceSale(token, event.address)
+	let recipient            = fetchAccount(event.params.to)
 
 	let fixedpricesaleprebuy = FixedPriceSalePrebuy.load(wallet.id.concat('-').concat(recipient.id).concat('-').concat(BigInt.fromI32(fixedpricesale.index).toString()))
 	if (fixedpricesaleprebuy != null) {
@@ -259,7 +258,8 @@ export function handleShardsRedeemedFailure(event: ShardsRedeemedFailureEvent): 
 
 export function handleWithdraw(event: WithdrawEvent): void {
 	let wallet               = fetchShardedWallet(event.params.wallet)
-	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
+	let token                = fetchToken(event.params.wallet)
+	let fixedpricesale       = fetchFixedPriceSale(token, event.address)
 	fixedpricesale.withdrawn = true
 	fixedpricesale.save()
 
@@ -268,7 +268,8 @@ export function handleWithdraw(event: WithdrawEvent): void {
 
 export function handleOwnershipReclaimed(event: OwnershipReclaimedEvent): void {
 	let wallet               = fetchShardedWallet(event.params.wallet)
-	let fixedpricesale       = fetchFixedPriceSale(wallet, event.address)
+	let token                = fetchToken(event.params.wallet)
+	let fixedpricesale       = fetchFixedPriceSale(token, event.address)
 	fixedpricesale.withdrawn = true
 	fixedpricesale.status    = 'FAILURE'
 	fixedpricesale.save()
@@ -277,5 +278,5 @@ export function handleOwnershipReclaimed(event: OwnershipReclaimedEvent): void {
 }
 
 export function handleNewBondingCurve(event: NewBondingCurveEvent): void {
-	BondingCurveTemplate.create(event.params.curve)
+	BondingCurve3Template.create(event.params.curve)
 }

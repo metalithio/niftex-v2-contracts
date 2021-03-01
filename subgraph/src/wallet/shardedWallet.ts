@@ -3,23 +3,18 @@ import {
 } from '@graphprotocol/graph-ts'
 
 import {
-	Approval             as ApprovalEvent,
 	Execute              as ExecuteEvent,
 	ModuleExecute        as ModuleExecuteEvent,
 	GovernanceUpdated    as GovernanceUpdatedEvent,
 	OwnershipTransferred as OwnershipTransferredEvent,
 	Received             as ReceivedEvent,
-	Transfer             as TransferEvent,
 	ArtistUpdated        as ArtistUpdatedEvent,
 } from '../../../generated/templates/ShardedWallet/ShardedWallet'
 
 import {
-	Account,
 	Governance,
 	Module,
 	OwnershipTransferred,
-	Approval,
-	Transfer,
 	Execute,
 	ModuleExecute,
 	GovernanceUpdated,
@@ -27,26 +22,21 @@ import {
 } from '../../../generated/schema'
 
 import {
-	constants,
 	decimals,
 	events,
 	transactions,
 } from '@amxx/graphprotocol-utils'
 
 import {
+	fetchAccount,
 	fetchShardedWallet,
-	fetchBalanceValue,
 } from '../utils'
 
 export function handleOwnershipTransferred(event: OwnershipTransferredEvent): void {
 	let wallet   = fetchShardedWallet(event.address)
-	let from     = new Account(event.params.previousOwner.toHex())
-	let to       = new Account(event.params.newOwner.toHex())
-
+	let from     = fetchAccount(event.params.previousOwner)
+	let to       = fetchAccount(event.params.newOwner)
 	wallet.owner = to.id
-
-	from.save()
-	to.save()
 	wallet.save()
 
 	let ev         = new OwnershipTransferred(events.id(event))
@@ -58,68 +48,11 @@ export function handleOwnershipTransferred(event: OwnershipTransferredEvent): vo
 	ev.save()
 }
 
-export function handleApproval(event: ApprovalEvent): void {
-	let wallet       = fetchShardedWallet(event.address)
-	let owner        = new Account(event.params.owner.toHex())
-	let spender      = new Account(event.params.spender.toHex())
-	let amount       = new decimals.Value(events.id(event))
-	amount.set(event.params.value)
-	owner.save()
-	spender.save()
-
-	let ev = new Approval(events.id(event))
-	ev.transaction = transactions.log(event).id
-	ev.timestamp   = event.block.timestamp
-	ev.wallet      = wallet.id
-	ev.owner       = owner.id
-	ev.spender     = spender.id
-	ev.amount      = amount.id
-	ev.save()
-}
-
-export function handleTransfer(event: TransferEvent): void {
-	let wallet       = fetchShardedWallet(event.address)
-	let walletsupply = new decimals.Value(wallet.id.concat('-totalSupply'), wallet.decimals)
-	let from         = new Account(event.params.from.toHex())
-	let to           = new Account(event.params.to.toHex())
-	let amount       = new decimals.Value(events.id(event))
-	amount.set(event.params.value)
-	from.save()
-	to.save()
-
-	let ev = new Transfer(events.id(event))
-	ev.transaction = transactions.log(event).id
-	ev.timestamp   = event.block.timestamp
-	ev.wallet      = wallet.id
-	ev.from        = from.id
-	ev.to          = to.id
-	ev.amount      = amount.id
-
-	if (from.id == constants.ADDRESS_ZERO) {
-		walletsupply.increment(amount._entry.exact)
-	} else {
-		let balance = fetchBalanceValue(wallet, from)
-		balance.decrement(amount._entry.exact)
-		ev.fromBalance = balance.id
-	}
-
-	if (to.id == constants.ADDRESS_ZERO) {
-		walletsupply.decrement(amount._entry.exact)
-	} else {
-		let balance = fetchBalanceValue(wallet, to)
-		balance.increment(amount._entry.exact)
-		ev.toBalance = balance.id
-	}
-
-	ev.save()
-}
-
 export function handleExecute(event: ExecuteEvent): void {
 	let wallet = fetchShardedWallet(event.address)
-	let to     = new Account(event.params.to.toHex())
+	let to     = fetchAccount(event.params.to)
 	let value  = new decimals.Value(events.id(event))
 	value.set(event.params.value)
-	to.save()
 
 	let ev = new Execute(events.id(event))
 	ev.transaction = transactions.log(event).id
@@ -134,11 +67,10 @@ export function handleExecute(event: ExecuteEvent): void {
 export function handleModuleExecute(event: ModuleExecuteEvent): void {
 	let wallet = fetchShardedWallet(event.address)
 	let module = new Module(event.params.module.toHex())
-	let to     = new Account(event.params.to.toHex())
+	let to     = fetchAccount(event.params.to)
 	let value  = new decimals.Value(events.id(event))
 	value.set(event.params.value)
 	module.save()
-	to.save()
 
 	let ev = new ModuleExecute(events.id(event))
 	ev.transaction = transactions.log(event).id
@@ -168,10 +100,9 @@ export function handleGovernanceUpdated(event: GovernanceUpdatedEvent): void {
 
 export function handleArtistUpdated(event: ArtistUpdatedEvent): void {
 	let wallet          = fetchShardedWallet(event.address)
-	let artist          = new Account(event.params.newArtist.toHex())
+	let artist          = fetchAccount(event.params.newArtist)
 	wallet.artist       = artist.id
 	wallet.save()
-	artist.save()
 
 	let ev = new ArtistUpdated(events.id(event))
 	ev.transaction = transactions.log(event).id

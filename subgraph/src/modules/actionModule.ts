@@ -9,7 +9,6 @@ import {
 } from '../../../generated/ActionModule/ActionModule'
 
 import {
-	Account,
 	Action,
 	ActionCall,
 	ActionScheduled,
@@ -24,6 +23,7 @@ import {
 } from '@amxx/graphprotocol-utils'
 
 import {
+	fetchAccount,
 	fetchShardedWallet,
 } from '../utils'
 
@@ -34,7 +34,7 @@ import {
 	handleTimerStarted as genericHandleTimerStarted,
 	handleTimerStopped as genericHandleTimerStopped,
 	handleTimerReset   as genericHandleTimerReset,
-} from '../generic/timer'
+} from '../utils/timer'
 
 export function handleTimerStarted(event: TimerStartedEvent): void {
 	let timer = genericHandleTimerStarted(event)
@@ -50,9 +50,9 @@ export function handleTimerReset(event: TimerResetEvent): void {
 
 export function handleActionScheduled(event: ActionScheduledEvent): void {
 	let wallet        = fetchShardedWallet(event.params.wallet)
+	let to            = fetchAccount(event.params.to)
 	let action        = new Action(event.params.uid.toHex())
 	let actioncall    = new ActionCall(action.id.concat('-').concat(event.params.i.toHex()))
-	let to            = new Account(event.params.to.toHex())
 	let value         = new decimals.Value(events.id(event))
 	value.set(event.params.value)
 
@@ -65,7 +65,6 @@ export function handleActionScheduled(event: ActionScheduledEvent): void {
 	actioncall.to     = to.id
 	actioncall.value  = value.id
 	actioncall.data   = event.params.data.subarray(0, 2048) as Bytes
-	to.save()
 	action.save()
 	actioncall.save()
 

@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "../wallet/ShardedWallet.sol";
-import "../governance/IGovernance.sol";
-import "../interface/IERC1363Receiver.sol";
-import "../interface/IERC1363Spender.sol";
+import "../../wallet/ShardedWallet.sol";
+import "../../governance/IGovernance.sol";
+import "../../interface/IERC1363Receiver.sol";
+import "../../interface/IERC1363Spender.sol";
 
 contract BondingCurve2 is IERC1363Spender {
     struct CurveCoordinates {
