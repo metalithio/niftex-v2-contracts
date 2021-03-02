@@ -9,8 +9,8 @@ dataSources:
     name: ShardedWalletFactory
     network: rinkeby
     source:
-      address: '0xfd07fc2CE2D40A15D3A2A90005CAFF2E8e9a35D4'
-      startBlock: 8048839
+      address: '0xE65D49a4a44cb07699520b2Ad52DBb1E0F28c2E6'
+      startBlock: 8162520
       abi: ShardedWalletFactory
     mapping:
       kind: ethereum/events
@@ -26,15 +26,15 @@ dataSources:
           handler: handleNewInstance
       file: ./src/wallet/shardedWalletFactory.ts
   # ====== Governance ========================================================
-  # address: 0x8245e3F7E409daBa8e32bA125fc7C6eDD92762eF
-  # startBlock: 8048839
+  # address: 0xc10526E359eDCCBB280e201D3fAF90548BB86a52
+  # startBlock: 8162520
   # ====== Module - Action ===================================================
   - kind: ethereum/contract
     name: ActionModule
     network: rinkeby
     source:
-      address: '0x53588b839E036d1269C8251204de2Fb068Beb401'
-      startBlock: 8048839
+      address: '0xa1c679805d62a6208F7a1586169Ec948D02dA0d0'
+      startBlock: 8162520
       abi: ActionModule
     mapping:
       kind: ethereum/events
@@ -66,9 +66,8 @@ dataSources:
     name: BuyoutModule
     network: rinkeby
     source:
-      # address: '0xFd62d07cd3D54C905D61A017DedFAfd9E7048224'
-      address: '0x5A2a8758e83F2c8c24b0eb5F6F85A686cea59259'
-      startBlock: 8048839
+      address: '0x760e32051BCb3129e57A11b3b061BdbE3a29d49d'
+      startBlock: 8162520
       abi: BuyoutModule
     mapping:
       kind: ethereum/events
@@ -102,9 +101,8 @@ dataSources:
     name: FixedPriceSaleModule
     network: rinkeby
     source:
-      # address: '0xc15C24f8a44A6B36D8810f0d8DaE9423E87B574d'
-      address: '0xe4d5FbDB258a7878c1c2cacdd28813f001C296f9'
-      startBlock: 8048839
+      address: '0xFC2761AaD91bEd9950Fe41c9a9f81b06D32C152d'
+      startBlock: 8162520
       abi: FixedPriceSaleModule
     mapping:
       kind: ethereum/events
