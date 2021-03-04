@@ -259,7 +259,7 @@ contract BondingCurve3 is IERC1363Spender {
 
 
     function _supplyShards(address supplier, uint256 amount) internal {
-        require(curve.x >= _shardLPExtra.underlyingSupply + amount);
+        require(curve.x >= ShardedWallet(payable(wallet)).balanceOf(address(this)) + amount);
 
         shardLPToken.controllerMint(supplier, calcNewShardLPTokensToIssue(amount));
         _shardLPExtra.underlyingSupply += amount;
