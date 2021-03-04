@@ -90,6 +90,8 @@ type BondingCurve @entity {
 	wallet:                       ShardedWallet!
 	etherLPToken:                 LiquidityToken!
 	shardLPToken:                 LiquidityToken!
+	tradedEthers:                 DecimalValue!
+	tradedShards:                 DecimalValue!
 	prices:                       [CurvePriceChanged!]! @derivedFrom(field: "bondingcurve")
 	shardsbought:                 [CurveShardsBought!]! @derivedFrom(field: "bondingcurve")
 	shardssold:                   [CurveShardsSold!]! @derivedFrom(field: "bondingcurve")
@@ -276,6 +278,7 @@ type GovernanceUpdated implements Event @entity {
 	timestamp:                    BigInt!
 	wallet:                       ShardedWallet!
 	governance:                   Governance!
+	previous:                     Governance
 }
 
 type ArtistUpdated implements Event @entity {
