@@ -151,6 +151,7 @@ contract BondingCurve3 is IERC1363Spender {
     }
 
     function onApprovalReceived(address owner, uint256 amount, bytes calldata data) public override returns (bytes4) {
+        require(msg.sender == wallet);
         require(ShardedWallet(payable(wallet)).transferFrom(owner, address(this), amount));
 
         bytes4 selector = abi.decode(data, (bytes4));
