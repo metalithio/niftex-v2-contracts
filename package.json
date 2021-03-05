@@ -6,10 +6,6 @@
   "license": "MIT",
   "scripts": {
     "build": "hardhat compile",
-    "subgraph:schema": "concat -o subgraph/schema.graphql subgraph/src/schema.gql node_modules/@amxx/graphprotocol-utils/schema.graphql",
-    "subgraph:codegen": "graph codegen subgraph/subgraph.yaml",
-    "subgraph:build": "graph build subgraph/subgraph.yaml",
-    "subgraph": "yarn subgraph:schema && yarn subgraph:codegen && yarn subgraph:build",
     "coverage": "hardhat coverage",
     "test": "hardhat test test/*.test.js",
     "lint": "hardhat check",
@@ -20,16 +16,12 @@
     "@openzeppelin/contracts": "^4.0.0-beta.0"
   },
   "devDependencies": {
-    "@amxx/graphprotocol-utils": "0.0.7",
-    "@graphprotocol/graph-cli": "^0.19.0",
-    "@graphprotocol/graph-ts": "^0.19.0",
     "@nomiclabs/hardhat-ethers": "^2.0.1",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@nomiclabs/hardhat-truffle5": "^2.0.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/hardhat-upgrades": "^1.6.0",
     "@openzeppelin/test-helpers": "^0.5.9",
-    "concat": "^1.0.3",
     "dotenv": "^8.2.0",
     "ethers": "^5.0.29",
     "ganache-cli": "^6.12.1",
