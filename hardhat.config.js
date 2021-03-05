@@ -1,16 +1,18 @@
-require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-truffle5");
-require("@nomiclabs/hardhat-solhint");
-require("@openzeppelin/hardhat-upgrades");
-require("solidity-coverage");
-require("dotenv").config();
+require('@nomiclabs/hardhat-ethers');
+require('@nomiclabs/hardhat-truffle5');
+require('@nomiclabs/hardhat-solhint');
+require('@openzeppelin/hardhat-upgrades');
+require('solidity-coverage');
+require('dotenv').config();
 
 module.exports = {
-  solidity: "0.8.1",
-  settings: {
-    optimizer: {
-      enabled: true,
-      runs: 999,
+  solidity: {
+		version: '0.8.1',
+		settings: {
+			optimizer: {
+				enabled: true,
+				runs: 999,
+			},
     },
   },
   networks: {},
