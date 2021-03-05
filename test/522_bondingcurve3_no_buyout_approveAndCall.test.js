@@ -14,7 +14,7 @@ contract('Workflow', function (accounts) {
 		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
 		Multicall:     { artifact: artifacts.require('MulticallModule')      },
 		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
-		BondingCurve:  { artifact: artifacts.require('BondingCurve2')         },
+		BondingCurve:  { artifact: artifacts.require('BondingCurve3')         },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -330,7 +330,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: mBuyer1, value: maxCost });
 			console.log('buyShards gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -360,7 +360,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: cBuyer1, value: maxCost });
 			console.log('buyShards gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -386,17 +386,11 @@ contract('Workflow', function (accounts) {
 	describe('cBuyer2 supply 30 shards', () => {
 		it('perform', async() => {
 			const amount      = web3.utils.toWei('30');
-			const selector    = web3.eth.abi.encodeFunctionSignature('supplyShards(uint256)');
-			const data        = web3.eth.abi.encodeParameters([ 'bytes4' ], [ selector ]);
-			const { receipt } = await instance.methods['transferAndCall(address,uint256,bytes)'](
-				curveInstance.address,
-				amount,
-				data,
-				{ from: cBuyer2 }
-			);
+			await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: cBuyer2 });
+			const { receipt } = await curveInstance.supplyShards(amount, { from: cBuyer2 });
 			console.log('supplyShards gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -406,6 +400,29 @@ contract('Workflow', function (accounts) {
 				shardInPool: web3.utils.fromWei(shardInPool),
 			});
 		});
+
+		// it('perform', async() => {
+		// 	const amount      = web3.utils.toWei('5');
+		// 	const selector    = web3.eth.abi.encodeFunctionSignature('supplyShards(uint256)');
+		// 	const data        = web3.eth.abi.encodeParameters([ 'bytes4' ], [ selector ]);
+		// 	const { receipt } = await instance.methods['approveAndCall(address,uint256,bytes)'](
+		// 		curveInstance.address,
+		// 		amount,
+		// 		data,
+		// 		{ from: cBuyer2 }
+		// 	);
+		// 	console.log('supplyShards gasUsed: ', receipt.gasUsed);
+		//
+		// 	const curve       = await curveInstance.curve();
+		// 	const etherInPool = await web3.eth.getBalance(curveInstance.address);
+		// 	const shardInPool = await instance.balanceOf(curveInstance.address);
+		// 	console.log({
+		// 		x:           curve[0].toString(),
+		// 		k:           curve[1].toString(),
+		// 		etherInPool: web3.utils.fromWei(etherInPool),
+		// 		shardInPool: web3.utils.fromWei(shardInPool),
+		// 	});
+		// });
 
 		after(async function () {
 			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
@@ -425,7 +442,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await curveInstance.supplyEther({ from: cBuyer1, value });
 			console.log('supplyEther gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -454,7 +471,7 @@ contract('Workflow', function (accounts) {
 			const minPayout   = web3.utils.toWei('0'); // TODO (.05)
 			const selector    = web3.eth.abi.encodeFunctionSignature('sellShards(uint256,uint256)');
 			const data        = web3.eth.abi.encodeParameters([ 'bytes4', 'uint256' ], [ selector, minPayout ]);
-			const { receipt } = await instance.methods['transferAndCall(address,uint256,bytes)'](
+			const { receipt } = await instance.methods['approveAndCall(address,uint256,bytes)'](
 				curveInstance.address,
 				amount,
 				data,
@@ -462,7 +479,7 @@ contract('Workflow', function (accounts) {
 			);
 			console.log('sellShards gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -493,7 +510,7 @@ contract('Workflow', function (accounts) {
 		it('perform', async() => {
 			const buyShardsTxn = await curveInstance.transferTimelockLiquidity();
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -554,7 +571,7 @@ contract('Workflow', function (accounts) {
 		}
 
 		it('check if ethInPool and shardsInPool are both the remaining for artist and NIFTEX', async() => {
-			const curve          = await curveInstance.getCurveCoordinates();
+			const curve          = await curveInstance.curve();
 			const etherInPool    = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool    = await instance.balanceOf(curveInstance.address);
 			const ethSuppliers   = await curveInstance.getEthSuppliers();

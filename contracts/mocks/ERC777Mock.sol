@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/token/ERC777/ERC777.sol";
 
-contract ERC777Mock is Context, ERC777 {
+contract ERC777Mock is ERC777 {
     constructor(
         address initialHolder,
         uint256 initialBalance,

@@ -6,5 +6,4 @@ cache/
 generated/
 
 package-lock.json
-.openzeppelin
 .env

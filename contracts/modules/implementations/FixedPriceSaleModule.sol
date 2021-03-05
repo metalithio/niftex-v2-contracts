@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "../../initializable/BondingCurve.sol";
+import "../../initializable/BondingCurve3.sol";
 import "../../governance/IGovernance.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
@@ -17,8 +17,6 @@ struct Allocation
 
 contract FixedPriceSaleModule is IModule, ModuleBase, Timers
 {
-    using SafeMath for uint256;
-
     string public constant override name = type(FixedPriceSaleModule).name;
 
     // address public constant CURVE_PREMINT_RESERVE   = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
@@ -47,19 +45,19 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
 
     modifier onlyCrowdsaleActive(ShardedWallet wallet)
     {
-        require(_duringTimer(bytes32(uint256(address(wallet)))) && remainingShards[wallet] > 0);
+        require(_duringTimer(bytes32(uint256(uint160(address(wallet))))) && remainingShards[wallet] > 0);
         _;
     }
 
     modifier onlyCrowdsaleFinished(ShardedWallet wallet)
     {
-        require(_afterTimer(bytes32(uint256(address(wallet)))) || remainingShards[wallet] == 0);
+        require(_afterTimer(bytes32(uint256(uint160(address(wallet))))) || remainingShards[wallet] == 0);
         _;
     }
 
     modifier onlyCrowdsaleFailled(ShardedWallet wallet)
     {
-        require(_afterTimer(bytes32(uint256(address(wallet)))) && remainingShards[wallet] > 0);
+        require(_afterTimer(bytes32(uint256(uint160(address(wallet))))) && remainingShards[wallet] > 0);
         _;
     }
 
@@ -82,19 +80,19 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         uint256               duration, // !TODO controlled by Governance.sol possibly?
         uint256               totalSupply,
         Allocation[] calldata premints)
-    external onlyBeforeTimer(bytes32(uint256(address(wallet)))) onlyOwner(wallet, msg.sender)
+    external onlyBeforeTimer(bytes32(uint256(uint160(address(wallet))))) onlyOwner(wallet, msg.sender)
     {
         require(wallet.totalSupply() == 0);
         wallet.moduleMint(address(this), totalSupply);
         wallet.moduleTransferOwnership(address(this));
 
-        Timers._startTimer(bytes32(uint256(address(wallet))), duration);
+        Timers._startTimer(bytes32(uint256(uint160(address(wallet)))), duration);
 
         {
-            uint256 amount = totalSupply.mul(wallet.governance().getConfig(address(wallet), PCT_SHARDS_NIFTEX)).div(10**18);
+            uint256 amount = totalSupply * wallet.governance().getConfig(address(wallet), PCT_SHARDS_NIFTEX) / 10**18;
             address niftex = wallet.governance().getNiftexWallet();
             premintShards[wallet][niftex] = amount;
-            totalSupply = totalSupply.sub(amount);
+            totalSupply -= amount;
             emit ShardsPrebuy(wallet, niftex, amount);
         }
 
@@ -102,13 +100,9 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         for (uint256 i = 0; i < premints.length; ++i)
         {
             premintShards[wallet][premints[i].receiver] += premints[i].amount;
-            totalSupply = totalSupply.sub(premints[i].amount);
+            totalSupply -= premints[i].amount;
             emit ShardsPrebuy(wallet, premints[i].receiver, premints[i].amount);
         }
-
-        // Sanity check, guaranties that the crowdsale will get enought value
-        // to initialize the bounding curve
-        require(premintShards[wallet][CURVE_PREMINT_RESERVE] <= totalSupply);
 
         recipients[wallet] = recipient;
         prices[wallet] = price;
@@ -120,20 +114,19 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     {
         require(to != CURVE_PREMINT_RESERVE);
 
-        uint256 decimals = wallet.decimals();
         uint256 price = prices[wallet];
-        uint256 count = Math.min(msg.value.mul(10**decimals).div(price), remainingShards[wallet]);
-        uint256 value = count.mul(price).div(10**decimals);
+        uint256 count = Math.min(msg.value * 10**18 / price, remainingShards[wallet]);
+        uint256 value = count * price / 10**18;
 
-        balance[wallet] = balance[wallet].add(value);
-        boughtShards[wallet][to] = boughtShards[wallet][to].add(count);
-        remainingShards[wallet] = remainingShards[wallet].sub(count);
+        balance[wallet]          += value;
+        boughtShards[wallet][to] += count;
+        remainingShards[wallet]  -= count;
 
         if (remainingShards[wallet] == 0) { // crowdsaleSuccess
             wallet.renounceOwnership(); // make address(0) owner for actions
         }
 
-        Address.sendValue(msg.sender, msg.value.sub(value));
+        Address.sendValue(payable(msg.sender), msg.value - value);
         emit ShardsBought(wallet, msg.sender, to, count);
     }
 
@@ -142,20 +135,19 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     {
         require(to != CURVE_PREMINT_RESERVE);
 
-        uint256 decimals = wallet.decimals();
         uint256 premint  = premintShards[wallet][to];
         uint256 bought   = boughtShards[wallet][to];
         delete premintShards[wallet][to];
         delete boughtShards[wallet][to];
 
         if (remainingShards[wallet] == 0) { // crowdsaleSuccess
-            uint256 shards = premint.add(bought);
+            uint256 shards = premint + bought;
             wallet.transfer(to, shards);
             emit ShardsRedeemedSuccess(wallet, msg.sender, to, shards);
         } else {
-            uint256 value = bought.mul(prices[wallet]).div(10**decimals);
-            balance[wallet] = balance[wallet].sub(value);
-            remainingShards[wallet] = remainingShards[wallet].add(premint).add(bought);
+            uint256 value = bought * prices[wallet] / 10**18;
+            balance[wallet] -= value;
+            remainingShards[wallet] += premint + bought;
             Address.sendValue(payable(to), value);
             emit ShardsRedeemedFailure(wallet, msg.sender, to, bought);
         }
@@ -170,7 +162,7 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         if (template != address(0)) {
             address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
             wallet.approve(curve, shardsToCurve);
-            BondingCurve(curve).initialize{value: valueToCurve}(
+            BondingCurve3(curve).initialize{value: valueToCurve}(
                 shardsToCurve,
                 address(wallet),
                 recipients[wallet],
@@ -189,15 +181,15 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         address to = recipients[wallet];
         if (remainingShards[wallet] == 0) { // crowdsaleSuccess
             uint256     shardsToCurve = premintShards[wallet][CURVE_PREMINT_RESERVE];
-            uint256     valueToCurve  = balance[wallet].mul(wallet.governance().getConfig(address(wallet),PCT_ETH_TO_CURVE)).div(10**18);
-            uint256     value         = balance[wallet].sub(valueToCurve);
+            uint256     valueToCurve  = balance[wallet] * wallet.governance().getConfig(address(wallet), PCT_ETH_TO_CURVE) / 10**18;
+            uint256     value         = balance[wallet] - valueToCurve;
             address     curve         = _makeCurve(wallet, valueToCurve, shardsToCurve);
             delete balance[wallet];
             delete premintShards[wallet][CURVE_PREMINT_RESERVE];
 
             if (curve == address(0)) {
                 wallet.transfer(payable(to), shardsToCurve);
-                value = value.add(valueToCurve);
+                value += valueToCurve;
             }
 
             Address.sendValue(payable(to), value);
@@ -214,12 +206,12 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         uint256 totalSupply = wallet.totalSupply();
         require(remainingShards[wallet] + premintShards[wallet][CURVE_PREMINT_RESERVE] == totalSupply, "Crowdsale dirty, not all allocation have been claimed"); // failure + redeems
         wallet.moduleBurn(address(this), totalSupply);
-        Timers._resetTimer(bytes32(uint256(address(wallet))));
+        Timers._resetTimer(bytes32(uint256(uint160(address(wallet)))));
     }
 
     function deadline(ShardedWallet wallet)
     external view returns (uint256)
     {
-        return _getDeadline(bytes32(uint256(address(wallet))));
+        return _getDeadline(bytes32(uint256(uint160(address(wallet)))));
     }
 }

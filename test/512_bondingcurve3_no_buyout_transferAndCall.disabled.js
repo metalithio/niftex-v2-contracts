@@ -14,7 +14,7 @@ contract('Workflow', function (accounts) {
 		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
 		Multicall:     { artifact: artifacts.require('MulticallModule')      },
 		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
-		BondingCurve:  { artifact: artifacts.require('BondingCurve2')         },
+		BondingCurve:  { artifact: artifacts.require('BondingCurve3')         },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -330,7 +330,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: mBuyer1, value: maxCost });
 			console.log('buyShards gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -360,7 +360,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: cBuyer1, value: maxCost });
 			console.log('buyShards gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -396,7 +396,7 @@ contract('Workflow', function (accounts) {
 			);
 			console.log('supplyShards gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -425,7 +425,7 @@ contract('Workflow', function (accounts) {
 			const { receipt } = await curveInstance.supplyEther({ from: cBuyer1, value });
 			console.log('supplyEther gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -462,7 +462,7 @@ contract('Workflow', function (accounts) {
 			);
 			console.log('sellShards gasUsed: ', receipt.gasUsed);
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -493,7 +493,7 @@ contract('Workflow', function (accounts) {
 		it('perform', async() => {
 			const buyShardsTxn = await curveInstance.transferTimelockLiquidity();
 
-			const curve       = await curveInstance.getCurveCoordinates();
+			const curve       = await curveInstance.curve();
 			const etherInPool = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool = await instance.balanceOf(curveInstance.address);
 			console.log({
@@ -554,7 +554,7 @@ contract('Workflow', function (accounts) {
 		}
 
 		it('check if ethInPool and shardsInPool are both the remaining for artist and NIFTEX', async() => {
-			const curve          = await curveInstance.getCurveCoordinates();
+			const curve          = await curveInstance.curve();
 			const etherInPool    = await web3.eth.getBalance(curveInstance.address);
 			const shardInPool    = await instance.balanceOf(curveInstance.address);
 			const ethSuppliers   = await curveInstance.getEthSuppliers();
