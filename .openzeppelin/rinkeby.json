@@ -1,0 +1,135 @@
+{
+  "manifestVersion": "3.1",
+  "impls": {
+    "bdd516603ffd3cd053b31faaf604bad56d8784dbded55cd3ceb97c9f0c900c46": {
+      "address": "0x116e5e6f715998A9D7Bee6573FF6F39b9B108e81",
+      "txHash": "0x4d64bc87a8895402cdcf730bc8798a422c36ed5ffb21ca47685fd951594e612b",
+      "layout": {
+        "storage": [
+          {
+            "contract": "AccessControl",
+            "label": "_roles",
+            "type": "t_mapping(t_bytes32,t_struct(RoleData)12_storage)",
+            "src": "@openzeppelin/contracts/access/AccessControl.sol:51"
+          },
+          {
+            "contract": "AccessControlEnumerable",
+            "label": "_roleMembers",
+            "type": "t_mapping(t_bytes32,t_struct(AddressSet)5387_storage)",
+            "src": "@openzeppelin/contracts/access/AccessControlEnumerable.sol:14"
+          },
+          {
+            "contract": "Governance",
+            "label": "_config",
+            "type": "t_mapping(t_address,t_mapping(t_bytes32,t_uint256))",
+            "src": "contracts/governance/Governance.sol:18"
+          },
+          {
+            "contract": "Governance",
+            "label": "_disabled",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
+            "src": "contracts/governance/Governance.sol:19"
+          },
+          {
+            "contract": "Governance",
+            "label": "_staticcalls",
+            "type": "t_mapping(t_address,t_mapping(t_bytes4,t_address))",
+            "src": "contracts/governance/Governance.sol:20"
+          },
+          {
+            "contract": "Governance",
+            "label": "_globalOnlyKeys",
+            "type": "t_mapping(t_bytes32,t_bool)",
+            "src": "contracts/governance/Governance.sol:21"
+          }
+        ],
+        "types": {
+          "t_mapping(t_address,t_mapping(t_bytes32,t_uint256))": {
+            "label": "mapping(address => mapping(bytes32 => uint256))"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_mapping(t_bytes32,t_uint256)": {
+            "label": "mapping(bytes32 => uint256)"
+          },
+          "t_bytes32": {
+            "label": "bytes32"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+            "label": "mapping(address => mapping(address => bool))"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_mapping(t_address,t_mapping(t_bytes4,t_address))": {
+            "label": "mapping(address => mapping(bytes4 => address))"
+          },
+          "t_mapping(t_bytes4,t_address)": {
+            "label": "mapping(bytes4 => address)"
+          },
+          "t_bytes4": {
+            "label": "bytes4"
+          },
+          "t_mapping(t_bytes32,t_bool)": {
+            "label": "mapping(bytes32 => bool)"
+          },
+          "t_mapping(t_bytes32,t_struct(AddressSet)5387_storage)": {
+            "label": "mapping(bytes32 => struct EnumerableSet.AddressSet)"
+          },
+          "t_struct(AddressSet)5387_storage": {
+            "label": "struct EnumerableSet.AddressSet",
+            "members": [
+              {
+                "label": "_inner",
+                "type": "t_struct(Set)5110_storage"
+              }
+            ]
+          },
+          "t_struct(Set)5110_storage": {
+            "label": "struct EnumerableSet.Set",
+            "members": [
+              {
+                "label": "_values",
+                "type": "t_array(t_bytes32)dyn_storage"
+              },
+              {
+                "label": "_indexes",
+                "type": "t_mapping(t_bytes32,t_uint256)"
+              }
+            ]
+          },
+          "t_array(t_bytes32)dyn_storage": {
+            "label": "bytes32[]"
+          },
+          "t_mapping(t_bytes32,t_struct(RoleData)12_storage)": {
+            "label": "mapping(bytes32 => struct AccessControl.RoleData)"
+          },
+          "t_struct(RoleData)12_storage": {
+            "label": "struct AccessControl.RoleData",
+            "members": [
+              {
+                "label": "members",
+                "type": "t_mapping(t_address,t_bool)"
+              },
+              {
+                "label": "adminRole",
+                "type": "t_bytes32"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "admin": {
+    "address": "0x41A856e803D2a6D105bAF0f8950375f5d742eFBB",
+    "txHash": "0xe6e056760e129d80a97ce71dd13f0a28ed6f184f5e4125fe44e70ae7ee8178e1"
+  }
+}
