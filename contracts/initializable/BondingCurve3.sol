@@ -78,8 +78,8 @@ contract BondingCurve3 is IERC1363Spender {
     event ShardsSold(address indexed account, uint256 amount, uint256 payout);
     event ShardsSupplied(address indexed provider, uint256 amount);
     event EtherSupplied(address indexed provider, uint256 amount);
-    event ShardsWithdrawn(address indexed provider, uint256 payout, uint256 shards);
-    event EtherWithdrawn(address indexed provider, uint256 value, uint256 payout);
+    event ShardsWithdrawn(address indexed provider, uint256 payout, uint256 shards, uint256 amountLPToken);
+    event EtherWithdrawn(address indexed provider, uint256 value, uint256 payout, uint256 amountLPToken);
 
     constructor() {
         _template = new LiquidityToken();
@@ -316,7 +316,7 @@ contract BondingCurve3 is IERC1363Spender {
             ShardedWallet(payable(wallet)).transfer(msg.sender, payout);
         }
 
-        emit EtherWithdrawn(msg.sender, value, payout);
+        emit EtherWithdrawn(msg.sender, value, payout, amount);
 
         return (value, payout);
     }
@@ -345,7 +345,7 @@ contract BondingCurve3 is IERC1363Spender {
             Address.sendValue(payable(msg.sender), payout);
         }
 
-        emit ShardsWithdrawn(msg.sender, payout, shards);
+        emit ShardsWithdrawn(msg.sender, payout, shards, amount);
 
         return (payout, shards);
     }
