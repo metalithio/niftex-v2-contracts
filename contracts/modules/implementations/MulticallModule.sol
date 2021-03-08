@@ -9,6 +9,8 @@ contract MulticallModule is IModule, ModuleBase
 {
     string public constant override name = type(MulticallModule).name;
 
+    constructor(address walletTemplate) ModuleBase(walletTemplate) {}
+
     function batch(ShardedWallet wallet, address[] calldata to, uint256[] calldata value, bytes[] calldata data)
     external onlyOwner(wallet, msg.sender)
     {

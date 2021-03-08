@@ -1,22 +1,20 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const BigNumber = require('bignumber.js');
 
-const BondingCurve = artifacts.require('BondingCurve');
-
 contract('Workflow', function (accounts) {
 	const [ admin, nftOwner, cBuyer1, cBuyer2, mBuyer1, mBuyer2, artist, newAdmin, claimant1, claimant2 ] = accounts;
 	const CURVE_PREMINT_RESERVE = '0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9';
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
-	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
+	const BondingCurve         = artifacts.require('BondingCurve');
 	const Governance           = artifacts.require('Governance');
 	const Modules = {
 		Action:        { artifact: artifacts.require('ActionModule')         },
 		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
 		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
+		Factory:       { artifact: artifacts.require('ShardedWalletFactory') },
 		Multicall:     { artifact: artifacts.require('MulticallModule')      },
 		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
-		BondingCurve:  { artifact: artifacts.require('BondingCurve')         },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -29,27 +27,33 @@ contract('Workflow', function (accounts) {
 
 	before(async function () {
 		// Deploy factory
-		this.factory = await ShardedWalletFactory.new();
-		// Deploy & whitelist modules
+		this.template     = await ShardedWallet.new();
+		this.bondingcurve = await BondingCurve.new();
+		// Deploy governance
 		this.governance = await Governance.new();
+		// Deploy modules
+		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({
+			...await acc,
+			[key.toLowerCase()]: await artifact.new(this.template.address, ...(this.extraargs || []))
+		}), Promise.resolve({}));
+		// whitelist modules
 		await this.governance.initialize(); // Performed by proxy
-		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		for ({ address } of Object.values(this.modules))
 		{
 			await this.governance.grantRole(await this.governance.MODULE_ROLE(), address);
 		}
 		// set config
-		await this.governance.setGlobalConfig(await this.modules.action.ACTION_AUTH_RATIO(),          web3.utils.toWei('0.01'));
-		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_AUTH_RATIO(),          web3.utils.toWei('0.01'));
-		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION(),            50400);
-		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION(),            50400);
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE(),          this.modules.bondingcurve.address);
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARDS_NIFTEX(),       web3.utils.toWei('0.0')); // 0% eth to niftex
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),        web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_NIFTEX(),       web3.utils.toWei('0.001')); // 0% to niftex initially
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_ARTIST(),       web3.utils.toWei('0.001')); // 0.1% to artist initially
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.PCT_FEE_SUPPLIERS(),    web3.utils.toWei('0.003')); // 0.3% to providers initially
-		await this.governance.setGlobalConfig(await this.modules.bondingcurve.LIQUIDITY_TIMELOCK(),   100800); // timelock for 1 month
+		await this.governance.setGlobalConfig(await this.modules.action.ACTION_AUTH_RATIO(),    web3.utils.toWei('0.01'));
+		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_AUTH_RATIO(),    web3.utils.toWei('0.01'));
+		await this.governance.setGlobalConfig(await this.modules.action.ACTION_DURATION(),      50400);
+		await this.governance.setGlobalConfig(await this.modules.buyout.BUYOUT_DURATION(),      50400);
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE(),    this.bondingcurve.address);
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_SHARDS_NIFTEX(), web3.utils.toWei('0.0')); // 0% eth to niftex
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.PCT_ETH_TO_CURVE(),  web3.utils.toWei('0.20')); // 20% eth from crowdsale to bonding curve
+		await this.governance.setGlobalConfig(await this.bondingcurve.PCT_FEE_NIFTEX(),         web3.utils.toWei('0.001')); // 0% to niftex initially
+		await this.governance.setGlobalConfig(await this.bondingcurve.PCT_FEE_ARTIST(),         web3.utils.toWei('0.001')); // 0.1% to artist initially
+		await this.governance.setGlobalConfig(await this.bondingcurve.PCT_FEE_SUPPLIERS(),      web3.utils.toWei('0.003')); // 0.3% to providers initially
+		await this.governance.setGlobalConfig(await this.bondingcurve.LIQUIDITY_TIMELOCK(),     100800); // timelock for 1 month
 
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
@@ -58,13 +62,15 @@ contract('Workflow', function (accounts) {
 		// Deploy Mocks
 		this.mocks = await Object.entries(Mocks).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		// Verbose
-		const { gasUsed } = await web3.eth.getTransactionReceipt(this.factory.transactionHash);
-		console.log('factory deployment:', gasUsed);
+		const { gasUsed: gasUsedTemplate } = await web3.eth.getTransactionReceipt(this.template.transactionHash);
+		console.log('template deployment:', gasUsedTemplate);
+		const { gasUsed: gasUsedFactory } = await web3.eth.getTransactionReceipt(this.modules.factory.transactionHash);
+		console.log('factory deployment:', gasUsedFactory);
 	});
 
 	describe('Initialize', function () {
 		it('perform', async function () {
-			const { receipt } = await this.factory.mintWallet(
+			const { receipt } = await this.modules.factory.mintWallet(
 				this.governance.address, // governance_
 				nftOwner,                // owner_
 				'Tokenized NFT',         // name_

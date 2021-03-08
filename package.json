@@ -7,7 +7,7 @@
   "scripts": {
     "build": "hardhat compile",
     "coverage": "hardhat coverage",
-    "test": "hardhat test test/*.test.js",
+    "test": "hardhat test",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby"

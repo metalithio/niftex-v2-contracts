@@ -73,6 +73,8 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         _;
     }
 
+    constructor(address walletTemplate) ModuleBase(walletTemplate) {}
+
     function setup(
         ShardedWallet         wallet,
         address               recipient,
@@ -80,7 +82,10 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         uint256               duration, // !TODO controlled by Governance.sol possibly?
         uint256               totalSupply,
         Allocation[] calldata premints)
-    external onlyBeforeTimer(bytes32(uint256(uint160(address(wallet))))) onlyOwner(wallet, msg.sender)
+    external
+    onlyShardedWallet(wallet)
+    onlyBeforeTimer(bytes32(uint256(uint160(address(wallet)))))
+    onlyOwner(wallet, msg.sender)
     {
         require(wallet.totalSupply() == 0);
         wallet.moduleMint(address(this), totalSupply);
@@ -110,7 +115,8 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     }
 
     function buy(ShardedWallet wallet, address to)
-    external payable onlyCrowdsaleActive(wallet)
+    external payable
+    onlyCrowdsaleActive(wallet)
     {
         require(to != CURVE_PREMINT_RESERVE);
 
@@ -131,7 +137,8 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     }
 
     function redeem(ShardedWallet wallet, address to)
-    external onlyCrowdsaleFinished(wallet)
+    external
+    onlyCrowdsaleFinished(wallet)
     {
         require(to != CURVE_PREMINT_RESERVE);
 
@@ -176,7 +183,8 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     }
 
     function withdraw(ShardedWallet wallet)
-    public onlyCrowdsaleFinished(wallet)
+    public
+    onlyCrowdsaleFinished(wallet)
     {
         address to = recipients[wallet];
         if (remainingShards[wallet] == 0) { // crowdsaleSuccess
@@ -201,7 +209,8 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     }
 
     function cleanup(ShardedWallet wallet)
-    external onlyCrowdsaleFinished(wallet)
+    external
+    onlyCrowdsaleFinished(wallet)
     {
         uint256 totalSupply = wallet.totalSupply();
         require(remainingShards[wallet] + premintShards[wallet][CURVE_PREMINT_RESERVE] == totalSupply, "Crowdsale dirty, not all allocation have been claimed"); // failure + redeems

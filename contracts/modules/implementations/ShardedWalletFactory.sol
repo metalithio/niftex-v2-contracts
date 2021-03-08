@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import "../utils/CloneFactory.sol";
-import "./ShardedWallet.sol";
+import "../../utils/CloneFactory.sol";
+import "../ModuleBase.sol";
 
-contract ShardedWalletFactory is CloneFactory
+contract ShardedWalletFactory is IModule, ModuleBase, CloneFactory
 {
-    constructor()
-    CloneFactory(address(new ShardedWallet()))
-    {}
+    string public constant override name = type(ShardedWalletFactory).name;
+
+    constructor(address walletTemplate) ModuleBase(walletTemplate) CloneFactory(walletTemplate) {}
 
     function mintWallet(
         address               governance_,

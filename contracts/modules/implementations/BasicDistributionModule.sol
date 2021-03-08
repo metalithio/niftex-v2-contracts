@@ -15,6 +15,8 @@ contract BasicDistributionModule is IModule, ModuleBase
 {
     string public constant override name = type(BasicDistributionModule).name;
 
+    constructor(address walletTemplate) ModuleBase(walletTemplate) {}
+
     function setup(ShardedWallet wallet, Allocation[] calldata mints)
     external onlyOwner(wallet, msg.sender)
     {

@@ -29,6 +29,8 @@ contract ActionModule is IModule, ModuleBase, Timers
         _;
     }
 
+    constructor(address walletTemplate) ModuleBase(walletTemplate) {}
+
     function schedule(ShardedWallet wallet, address[] memory to, uint256[] memory value, bytes[] memory data)
     public actionAuthorized(wallet, msg.sender) returns (bytes32)
     {

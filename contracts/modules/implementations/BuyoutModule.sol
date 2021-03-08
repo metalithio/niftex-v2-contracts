@@ -34,8 +34,13 @@ contract BuyoutModule is IModule, ModuleBase, Timers
         _;
     }
 
+    constructor(address walletTemplate) ModuleBase(walletTemplate) {}
+
     function openBuyout(ShardedWallet wallet, uint256 pricePerShard)
-    external payable buyoutAuthorized(wallet, msg.sender) onlyBeforeTimer(bytes32(uint256(uint160(address(wallet)))))
+    external payable
+    onlyShardedWallet(wallet)
+    buyoutAuthorized(wallet, msg.sender)
+    onlyBeforeTimer(bytes32(uint256(uint160(address(wallet)))))
     {
         uint256 ownedshards = wallet.balanceOf(msg.sender);
         uint256 buyoutprice = (wallet.totalSupply() - ownedshards) * pricePerShard / 10**18;
@@ -53,7 +58,8 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     }
 
     function closeBuyout(ShardedWallet wallet)
-    external payable onlyDuringTimer(bytes32(uint256(uint160(address(wallet)))))
+    external payable
+    onlyDuringTimer(bytes32(uint256(uint160(address(wallet)))))
     {
         uint256 pricePerShard = _prices[wallet];
         uint256 lockedShards  = wallet.balanceOf(address(this));
@@ -88,7 +94,8 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     }
 
     function claimBuyout(ShardedWallet wallet)
-    external onlyAfterTimer(bytes32(uint256(uint160(address(wallet)))))
+    external
+    onlyAfterTimer(bytes32(uint256(uint160(address(wallet)))))
     {
         uint256 pricePerShard = _prices[wallet];
         uint256 shards        = wallet.balanceOf(msg.sender);
@@ -101,7 +108,8 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     }
 
     function claimBuyoutBackup(ShardedWallet wallet)
-    external onlyAfterTimer(bytes32(uint256(uint160(address(wallet)))))
+    external
+    onlyAfterTimer(bytes32(uint256(uint160(address(wallet)))))
     {
         uint256 pricePerShard = _prices[wallet];
         uint256 shards        = wallet.balanceOf(msg.sender);
@@ -114,7 +122,8 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     }
 
     function finalizeBuyout(ShardedWallet wallet)
-    external onlyAfterTimer(bytes32(uint256(uint160(address(wallet)))))
+    external
+    onlyAfterTimer(bytes32(uint256(uint160(address(wallet)))))
     {
         // Warning: do NOT burn the locked shards, this would allow the last holder to retrieve ownership of the wallet
         require(_proposers[wallet] != address(0));

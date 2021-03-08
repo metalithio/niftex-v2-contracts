@@ -8,6 +8,8 @@ contract ERC20ManagerModule is IModule, ModuleBase
 {
     string public constant override name = type(ERC20ManagerModule).name;
 
+    constructor(address walletTemplate) ModuleBase(walletTemplate) {}
+
     function mint(address account, uint256 amount) public {
         ShardedWallet(payable(msg.sender)).moduleMint(account, amount);
     }

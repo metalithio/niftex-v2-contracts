@@ -4,14 +4,14 @@ contract('Workflow', function (accounts) {
 	const [ admin, user1, user2, user3, other1, other2, other3 ] = accounts;
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
-	const ShardedWalletFactory = artifacts.require('ShardedWalletFactory');
 	const Governance           = artifacts.require('Governance');
 	const Modules = {
-		Action:        { artifact: artifacts.require('ActionModule')         },
-		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
-		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
-		Multicall:     { artifact: artifacts.require('MulticallModule')      },
-		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
+		Action:        { artifact: artifacts.require('ActionModule')            },
+		Buyout:        { artifact: artifacts.require('BuyoutModule')            },
+		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule')    },
+		Factory:       { artifact: artifacts.require('ShardedWalletFactory')    },
+		Multicall:     { artifact: artifacts.require('MulticallModule')         },
+		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')     },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -22,12 +22,17 @@ contract('Workflow', function (accounts) {
 	let instance;
 
 	before(async function () {
-		// Deploy factory
-		this.factory = await ShardedWalletFactory.new();
-		// Deploy & whitelist modules
+		// Deploy template
+		this.template = await ShardedWallet.new();
+		// Deploy governance
 		this.governance = await Governance.new();
+		// Deploy modules
+		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({
+			...await acc,
+			[key.toLowerCase()]: await artifact.new(this.template.address, ...(this.extraargs || []))
+		}), Promise.resolve({}));
+		// whitelist modules
 		await this.governance.initialize(); // Performed by proxy
-		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		for ({ address } of Object.values(this.modules))
 		{
 			await this.governance.grantRole(await this.governance.MODULE_ROLE(), address);
@@ -44,13 +49,15 @@ contract('Workflow', function (accounts) {
 		// Deploy Mocks
 		this.mocks = await Object.entries(Mocks).reduce(async (acc, [ key, { artifact, args } ]) => ({ ...await acc, [key.toLowerCase()]: await artifact.new(...(args || [])) }), Promise.resolve({}));
 		// Verbose
-		const { gasUsed } = await web3.eth.getTransactionReceipt(this.factory.transactionHash);
-		console.log('factory deployment:', gasUsed);
+		const { gasUsed: gasUsedTemplate } = await web3.eth.getTransactionReceipt(this.template.transactionHash);
+		console.log('template deployment:', gasUsedTemplate);
+		const { gasUsed: gasUsedFactory } = await web3.eth.getTransactionReceipt(this.modules.factory.transactionHash);
+		console.log('factory deployment:', gasUsedFactory);
 	});
 
 	describe('Initialize', function () {
 		it('perform', async function () {
-			const { receipt } = await this.factory.mintWallet(
+			const { receipt } = await this.modules.factory.mintWallet(
 				this.governance.address,      // governance_
 				user1,                        // owner_
 				'Tokenized NFT',              // name_

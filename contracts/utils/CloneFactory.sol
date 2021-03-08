@@ -6,29 +6,29 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 
 abstract contract CloneFactory
 {
-    address private _cloneFactoryMaster;
+    address immutable public template;
 
     event NewInstance(address instance);
 
-    constructor(address master_) { _cloneFactoryMaster = master_; }
+    constructor(address template_) { template = template_; }
 
     function _clone()
     internal returns (address instance)
     {
-        instance = Clones.clone(_cloneFactoryMaster);
+        instance = Clones.clone(template);
         emit NewInstance(instance);
     }
 
     function _cloneDeterministic(bytes32 salt)
     internal returns (address instance)
     {
-        instance = Clones.cloneDeterministic(_cloneFactoryMaster, salt);
+        instance = Clones.cloneDeterministic(template, salt);
         emit NewInstance(instance);
     }
 
     function _predictDeterministicAddress(bytes32 salt)
     internal view returns (address predicted)
     {
-        predicted = Clones.predictDeterministicAddress(_cloneFactoryMaster, salt);
+        predicted = Clones.predictDeterministicAddress(template, salt);
     }
 }

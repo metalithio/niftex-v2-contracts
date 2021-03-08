@@ -6,11 +6,13 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "../IModule.sol";
+import "../ModuleBase.sol";
 
-contract TokenReceiverModule is IModule, ERC165, IERC721Receiver, IERC777Recipient, IERC1155Receiver
+contract TokenReceiverModule is IModule, ModuleBase, ERC165, IERC721Receiver, IERC777Recipient, IERC1155Receiver
 {
     string public constant override name = type(TokenReceiverModule).name;
+
+    constructor(address walletTemplate) ModuleBase(walletTemplate) {}
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
         return interfaceId == type(IERC721Receiver).interfaceId

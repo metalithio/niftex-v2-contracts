@@ -10,6 +10,8 @@ async function main() {
   const factory = await Factory.deploy();
   console.log(`Factory address: ${factory.address}`);
 
+  const template = await factory.template();
+
   // Deploy Governance
   const Governance = await ethers.getContractFactory("Governance");
   // const governance = await Governance.deploy();
@@ -36,7 +38,7 @@ async function main() {
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;
       const Module = await ethers.getContractFactory(name);
-      const module = await Module.deploy();
+      const module = await Module.deploy(template);
       await governance.grantRole(MODULE_ROLE, module.address);
       console.log(` - ${name}: ${module.address}`);
       return Object.assign(acc, { [ key ]: module });
