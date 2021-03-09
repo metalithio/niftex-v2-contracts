@@ -250,8 +250,6 @@ contract BondingCurve3 is IERC1363Spender {
     }
 
     function _supplyEther(address supplier, uint256 amount) internal {
-        require(curve.k / curve.x >= address(this).balance - _etherLPExtra.feeToArtist - _etherLPExtra.feeToNiftex);
-
         etherLPToken.controllerMint(supplier, calcNewEthLPTokensToIssue(amount));
         _etherLPExtra.underlyingSupply += amount;
 
@@ -260,8 +258,6 @@ contract BondingCurve3 is IERC1363Spender {
 
 
     function _supplyShards(address supplier, uint256 amount) internal {
-        require(curve.x >= ShardedWallet(payable(wallet)).balanceOf(address(this)) - _shardLPExtra.feeToArtist - _shardLPExtra.feeToNiftex);
-
         shardLPToken.controllerMint(supplier, calcNewShardLPTokensToIssue(amount));
         _shardLPExtra.underlyingSupply += amount;
 
