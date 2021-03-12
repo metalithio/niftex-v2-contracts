@@ -55,12 +55,6 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         _;
     }
 
-    modifier onlyCrowdsaleFailled(ShardedWallet wallet)
-    {
-        require(_afterTimer(bytes32(uint256(uint160(address(wallet))))) && remainingShards[wallet] > 0);
-        _;
-    }
-
     modifier onlyCrowdsaleSuccess(ShardedWallet wallet)
     {
         require(remainingShards[wallet] == 0);
