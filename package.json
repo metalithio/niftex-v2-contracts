@@ -8,6 +8,7 @@
     "build": "hardhat compile",
     "coverage": "hardhat coverage",
     "test": "hardhat test",
+    "test:531": "hardhat test ./test/531_bondingcurve3_with_helpers",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby"
