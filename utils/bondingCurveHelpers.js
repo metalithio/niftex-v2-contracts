@@ -33,7 +33,7 @@ const getMaxFractionsToBuyWei = ({
 			tenPow(18)
 				.plus(feeToNiftex)
 				.plus(feeToArtist)
-				.plus(feeToProviders)
+				// .plus(feeToProviders)
 		)
 		.integerValue(BigNumber.ROUND_DOWN);
 };

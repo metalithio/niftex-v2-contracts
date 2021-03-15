@@ -348,11 +348,6 @@ contract('Workflow', function (accounts) {
 
 	describe('mBuyer1 buy more than maxFractionsToBuyWei fractions', () => {
 		it('perform', async() => {
-
-			console.log({
-				'this.governance': this.modules,
-			});
-
 			const bondingCurveVariables = await getBondingCurveCoreVariables({
 				bondingCurveInstance: curveInstance,
 				shardedWalletInstance: instance,
@@ -360,31 +355,12 @@ contract('Workflow', function (accounts) {
 				web3,
 			});
 
-			console.log({
-				bondingCurveVariables
-			});
-			// const maxFractionsToBuyWei = getMaxFractionsToBuyWei({
-			// 	fractionsInCurve,
-			// 	feeToNiftex,
-			// 	feeToArtist,
-			// 	feeToProviders,
-			// 	fractionsForNiftex,
-			// 	fractionsForArtist,
-			// })
-			const amount      = web3.utils.toWei('5');
-			const maxCost     = web3.utils.toWei('10');
-			const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: mBuyer1, value: maxCost });
-			console.log('buyShards gasUsed: ', receipt.gasUsed);
+			const maxFractionsToBuyWei = getMaxFractionsToBuyWei(bondingCurveVariables);
+			// the utils round down, safe to plus 2 to test (instead of plus 1)
+			const amount = new BigNumber(maxFractionsToBuyWei).plus(2).toFixed();
 
-			const curve       = await curveInstance.curve();
-			const etherInPool = await web3.eth.getBalance(curveInstance.address);
-			const shardInPool = await instance.balanceOf(curveInstance.address);
-			console.log({
-				x:           curve[0].toString(),
-				k:           curve[1].toString(),
-				etherInPool: web3.utils.fromWei(etherInPool),
-				shardInPool: web3.utils.fromWei(shardInPool),
-			});
+			const maxCost     = web3.utils.toWei('10');
+			await expectRevert.unspecified(curveInstance.buyShards(amount, maxCost, { from: mBuyer1, value: maxCost }));
 		});
 
 		after(async function () {
@@ -395,7 +371,7 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
 			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('75'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('80'));
 		});
 	});
 
