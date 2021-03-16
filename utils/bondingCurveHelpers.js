@@ -111,14 +111,12 @@ const ethForExactFractionsSellWei = ({
 
 	const ethBeforeFee = oldY.minus(newY);
 	const ethAfterFee = ethBeforeFee
-		.times(
+		.times(tenPow(18).minus(feeToNiftex).minus(feeToArtist).minus(feeToProviders))
+		.div(
 			tenPow(18)
-				.plus(feeToProviders)
-				.plus(feeToNiftex)
-				.plus(feeToArtist)
 		)
-		.div(tenPow(18))
-		.integerValue(BigNumber.ROUND_DOWN);
+		.integerValue(BigNumber.ROUND_DOWN)
+		.toFixed();
 	return ethAfterFee;
 };
 
@@ -436,4 +434,5 @@ module.exports = {
 	tenPow,
 	getMaxFractionsToBuyWei,
 	ethForExactFractionsBuyWei,
+	ethForExactFractionsSellWei,
 }
