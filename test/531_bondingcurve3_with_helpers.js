@@ -5,6 +5,7 @@ const {
 	getMaxFractionsToBuyWei,
 	ethForExactFractionsBuyWei,
 	ethForExactFractionsSellWei,
+	getMaxFractionsToSellWei,
 } = require('../utils/bondingCurveHelpers');
 
 /*
@@ -778,53 +779,106 @@ contract('Workflow', function (accounts) {
 		// });
 	});
 
-	// describe('mBuyer1 sells more than balance', () => {
-	// 	let fracBalanceOfSellerBefore;
-	// 	let bcCoreVariablesBefore;
-	// 	let bcCoreVariablesAfter;
-	// 	let fractionsToSell;
-	// 	let expectedEthToGet;
+	describe('nftOwner sells maxFractionsToSellWei+1', () => {
+		let fracBalanceOfSellerBefore;
+		let bcCoreVariablesBefore;
+		let bcCoreVariablesAfter;
+		let fractionsToSell;
+		let expectedEthToGet;
 
-	// 	it('perform', async() => {
-	// 		fracBalanceOfSellerBefore = instance.balanceOf(mBuyer1);
-	// 		fractionsToSell   = new BigNumber(fracBalanceOfSellerBefore).plus(1).toFixed();
-	// 		const minPayout   = ethForExactFractionsSellWei(Object.assign()); // TODO (.05)
-	// 		const selector    = web3.eth.abi.encodeFunctionSignature('sellShards(uint256,uint256)');
-	// 		const data        = web3.eth.abi.encodeParameters([ 'bytes4', 'uint256' ], [ selector, minPayout ]);
-	// 		const { receipt } = await instance.methods['approveAndCall(address,uint256,bytes)'](
-	// 			curveInstance.address,
-	// 			amount,
-	// 			data,
-	// 			{ from: mBuyer1 }
-	// 		);
-	// 		console.log('sellShards gasUsed: ', receipt.gasUsed);
+		it('perform', async() => {
+			bcCoreVariablesBefore = await getBondingCurveCoreVariables({
+				bondingCurveInstance: curveInstance,
+				shardedWalletInstance: instance,
+				governanceInstance,
+				web3,
+			});
 
-	// 		const curve       = await curveInstance.curve();
-	// 		const etherInPool = await web3.eth.getBalance(curveInstance.address);
-	// 		const shardInPool = await instance.balanceOf(curveInstance.address);
-	// 		console.log({
-	// 			x:           curve[0].toString(),
-	// 			k:           curve[1].toString(),
-	// 			etherInPool: web3.utils.fromWei(etherInPool),
-	// 			shardInPool: web3.utils.fromWei(shardInPool),
-	// 		});
-	// 	});
+			fracBalanceOfSellerBefore = await instance.balanceOf(nftOwner);
+			fractionsToSell   = getMaxFractionsToSellWei(bcCoreVariablesBefore);
 
-	// 	after(async function () {
-	// 		assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
-	// 		assert.equal(await instance.name(),                                  'Tokenized NFT');
-	// 		assert.equal(await instance.symbol(),                                'TNFT');
-	// 		assert.equal(await instance.decimals(),                              '18');
-	// 		assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
-	// 		assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-	// 		assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-	// 		assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
-	// 	});
+			expectedEthToGet = ethForExactFractionsSellWei(Object.assign(bcCoreVariablesBefore, { fractionsToSell }));
+			const minPayout   = new BigNumber(expectedEthToGet).plus(1).toFixed();
+			const selector    = web3.eth.abi.encodeFunctionSignature('sellShards(uint256,uint256)');
+			const data        = web3.eth.abi.encodeParameters([ 'bytes4', 'uint256' ], [ selector, minPayout ]);
+			const sellPromise = instance.methods['approveAndCall(address,uint256,bytes)'](
+				curveInstance.address,
+				new BigNumber(fractionsToSell).plus(1).toFixed(),
+				data,
+				{ from: nftOwner }
+			);
 
-	// 	// it('Move till end of timelock', async function () {
-	// 	// 	await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 100800 ], id: 0 }, () => {});
-	// 	// });
-	// });
+			await expectRevert.unspecified(sellPromise);
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     fracBalanceOfSellerBefore.toString(10));
+		});
+
+		// it('Move till end of timelock', async function () {
+		// 	await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 100800 ], id: 0 }, () => {});
+		// });
+	});
+
+	describe('nftOwner sells exactly maxFractionsToSellWei', () => {
+		let fracBalanceOfSellerBefore;
+		let bcCoreVariablesBefore;
+		let bcCoreVariablesAfter;
+		let fractionsToSell;
+		let expectedEthToGet;
+
+		it('perform', async() => {
+			bcCoreVariablesBefore = await getBondingCurveCoreVariables({
+				bondingCurveInstance: curveInstance,
+				shardedWalletInstance: instance,
+				governanceInstance,
+				web3,
+			});
+
+			fracBalanceOfSellerBefore = await instance.balanceOf(nftOwner);
+			fractionsToSell   = getMaxFractionsToSellWei(bcCoreVariablesBefore);
+
+			expectedEthToGet = ethForExactFractionsSellWei(Object.assign(bcCoreVariablesBefore, { fractionsToSell }));
+			const minPayout   = expectedEthToGet;
+			const selector    = web3.eth.abi.encodeFunctionSignature('sellShards(uint256,uint256)');
+			const data        = web3.eth.abi.encodeParameters([ 'bytes4', 'uint256' ], [ selector, minPayout ]);
+			const { receipt } = await instance.methods['approveAndCall(address,uint256,bytes)'](
+				curveInstance.address,
+				fractionsToSell,
+				data,
+				{ from: nftOwner }
+			);
+			console.log('sellShards(approveAndCall) gasUsed: ', receipt.gasUsed);
+
+			bcCoreVariablesAfter = await getBondingCurveCoreVariables({
+				bondingCurveInstance: curveInstance,
+				shardedWalletInstance: instance,
+				governanceInstance,
+				web3,
+			});
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(bcCoreVariablesAfter.fractionsInCurve,                  new BigNumber(bcCoreVariablesBefore.fractionsInCurve).plus(fractionsToSell).toFixed());
+			assert.equal(await instance.balanceOf(nftOwner),                      new BigNumber(fracBalanceOfSellerBefore).minus(fractionsToSell).toFixed());
+		});
+
+		// it('Move till end of timelock', async function () {
+		// 	await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 100800 ], id: 0 }, () => {});
+		// });
+	});
 });
 
 const getBondingCurveCoreVariables =  async ({

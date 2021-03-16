@@ -65,14 +65,16 @@ const getMaxFractionsToSellWei = ({
 	ethForArtist
 }) => {
 	const oldY = new BigNumber(k).div(x).integerValue(BigNumber.ROUND_DOWN);
-	let newY = oldY.minus(ethInCurve);
+	let newY = oldY.minus(
+		new BigNumber(ethInCurve).minus(ethForNiftex).minus(ethForArtist)
+	);
 	if (newY.lt(0)) {
 		newY = new BigNumber(1);
 	}
 
 	const newX = new BigNumber(k).div(newY).integerValue(BigNumber.ROUND_DOWN);
 
-	return newX.minus(x);
+	return newX.minus(x).toFixed();
 };
 
 const getCurrentPriceWei = ({ x, k }) => {
@@ -449,4 +451,5 @@ module.exports = {
 	getMaxFractionsToBuyWei,
 	ethForExactFractionsBuyWei,
 	ethForExactFractionsSellWei,
+	getMaxFractionsToSellWei,
 }
