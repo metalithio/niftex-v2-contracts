@@ -27,7 +27,19 @@ const getMaxFractionsToBuyWei = ({
 	k,
 	x,
 }) => {
-	let maxFractions = new BigNumber(x).minus(1).times(tenPow(18).plus(feeToNiftex).plus(feeToArtist)).div(tenPow(18).plus(feeToArtist).plus(feeToNiftex).plus(feeToProviders));
+	let maxFractions = new BigNumber(x)
+		.minus(1)
+		.times(
+			tenPow(18)
+				.plus(feeToNiftex)
+				.plus(feeToArtist)
+		)
+		.div(
+			tenPow(18)
+				.plus(feeToArtist)
+				.plus(feeToNiftex)
+				.plus(feeToProviders)
+		);
 
 	if (maxFractions.gte(fractionsInCurve)) {
 		maxFractions = fractionsInCurve;
@@ -41,7 +53,6 @@ const getMaxFractionsToBuyWei = ({
 			tenPow(18)
 				.plus(feeToNiftex)
 				.plus(feeToArtist)
-				// .plus(feeToProviders)
 		)
 		.integerValue(BigNumber.ROUND_DOWN);
 };
@@ -111,10 +122,13 @@ const ethForExactFractionsSellWei = ({
 
 	const ethBeforeFee = oldY.minus(newY);
 	const ethAfterFee = ethBeforeFee
-		.times(tenPow(18).minus(feeToNiftex).minus(feeToArtist).minus(feeToProviders))
-		.div(
+		.times(
 			tenPow(18)
+				.minus(feeToNiftex)
+				.minus(feeToArtist)
+				.minus(feeToProviders)
 		)
+		.div(tenPow(18))
 		.integerValue(BigNumber.ROUND_DOWN)
 		.toFixed();
 	return ethAfterFee;

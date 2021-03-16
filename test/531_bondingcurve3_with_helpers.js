@@ -677,6 +677,53 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
+	describe('mBuyer1 sells all his fractions, minPayout just 1 wei more than expectedEthToGet', () => {
+		let fracBalanceOfSellerBefore;
+		let bcCoreVariablesBefore;
+		let bcCoreVariablesAfter;
+		let fractionsToSell;
+		let expectedEthToGet;
+
+		it('perform', async() => {
+			fracBalanceOfSellerBefore = await instance.balanceOf(mBuyer1);
+			fractionsToSell   = new BigNumber(fracBalanceOfSellerBefore).toFixed();
+
+			bcCoreVariablesBefore = await getBondingCurveCoreVariables({
+				bondingCurveInstance: curveInstance,
+				shardedWalletInstance: instance,
+				governanceInstance,
+				web3,
+			});
+			expectedEthToGet = ethForExactFractionsSellWei(Object.assign(bcCoreVariablesBefore, { fractionsToSell }));
+			const minPayout   = new BigNumber(expectedEthToGet).plus(1).toFixed();
+			const selector    = web3.eth.abi.encodeFunctionSignature('sellShards(uint256,uint256)');
+			const data        = web3.eth.abi.encodeParameters([ 'bytes4', 'uint256' ], [ selector, minPayout ]);
+			const sellPromise = instance.methods['approveAndCall(address,uint256,bytes)'](
+				curveInstance.address,
+				fractionsToSell,
+				data,
+				{ from: mBuyer1 }
+			);
+
+			await expectRevert.unspecified(sellPromise);
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        bcCoreVariablesBefore.fractionsInCurve);
+		});
+
+		// it('Move till end of timelock', async function () {
+		// 	await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 100800 ], id: 0 }, () => {});
+		// });
+	});
+
 	describe('mBuyer1 sells all his fractions', () => {
 		let fracBalanceOfSellerBefore;
 		let bcCoreVariablesBefore;
@@ -695,8 +742,7 @@ contract('Workflow', function (accounts) {
 				web3,
 			});
 			expectedEthToGet = ethForExactFractionsSellWei(Object.assign(bcCoreVariablesBefore, { fractionsToSell }));
-			console.log({ fractionsToSell, expectedEthToGet });
-			const minPayout   = expectedEthToGet; // TODO (.05)
+			const minPayout   = expectedEthToGet;
 			const selector    = web3.eth.abi.encodeFunctionSignature('sellShards(uint256,uint256)');
 			const data        = web3.eth.abi.encodeParameters([ 'bytes4', 'uint256' ], [ selector, minPayout ]);
 			const { receipt } = await instance.methods['approveAndCall(address,uint256,bytes)'](
