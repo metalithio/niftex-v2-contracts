@@ -375,6 +375,44 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
+	describe('mBuyer1 buy exactly maxFractionsToBuyWei fractions', () => {
+		let bondingCurveVariablesAfter;
+		let amount;
+		it('perform', async() => {
+			const bondingCurveVariables = await getBondingCurveCoreVariables({
+				bondingCurveInstance: curveInstance,
+				shardedWalletInstance: instance,
+				governanceInstance,
+				web3,
+			});
+
+			const maxFractionsToBuyWei = getMaxFractionsToBuyWei(bondingCurveVariables);
+
+			amount = new BigNumber(maxFractionsToBuyWei).plus(0).toFixed();
+			const maxCost = web3.utils.toWei('10');
+			await curveInstance.buyShards(amount, maxCost, { from: mBuyer1, value: maxCost });
+
+			bondingCurveVariablesAfter = await getBondingCurveCoreVariables({
+				bondingCurveInstance: curveInstance,
+				shardedWalletInstance: instance,
+				governanceInstance,
+				web3,
+			});
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        bondingCurveVariablesAfter.fractionsInCurve);
+			assert.equal(await instance.balanceOf(mBuyer1),        							 amount);
+		});
+	});
+
 	// describe('mBuyer1 buy 5 shards', () => {
 	// 	it('perform', async() => {
 	// 		const amount      = web3.utils.toWei('5');

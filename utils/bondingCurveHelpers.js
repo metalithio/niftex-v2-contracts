@@ -23,9 +23,17 @@ const getMaxFractionsToBuyWei = ({
 	feeToArtist,
 	feeToProviders,
 	fractionsForNiftex,
-	fractionsForArtist
+	fractionsForArtist,
+	k,
+	x,
 }) => {
-	return new BigNumber(fractionsInCurve)
+	let maxFractions = new BigNumber(x).minus(1).times(tenPow(18).plus(feeToNiftex).plus(feeToArtist)).div(tenPow(18).plus(feeToArtist).plus(feeToNiftex).plus(feeToProviders));
+
+	if (maxFractions.gte(fractionsInCurve)) {
+		maxFractions = fractionsInCurve;
+	}
+
+	return new BigNumber(maxFractions)
 		.minus(fractionsForNiftex)
 		.minus(fractionsForArtist)
 		.times(tenPow(18))
