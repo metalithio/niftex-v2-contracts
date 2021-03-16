@@ -435,4 +435,5 @@ const ethForFractionSuppliers = ({
 module.exports = {
 	tenPow,
 	getMaxFractionsToBuyWei,
+	ethForExactFractionsBuyWei,
 }
