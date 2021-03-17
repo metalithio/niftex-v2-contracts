@@ -72,6 +72,7 @@ contract BondingCurve3 is IERC1363Spender {
     address          public   wallet;
     address          public   recipient;
     uint256          public   deadline;
+    uint256          public   recordedTotalSupply;
 
     event Initialized(address wallet);
     event ShardsBought(address indexed account, uint256 amount, uint256 cost);
@@ -95,7 +96,7 @@ contract BondingCurve3 is IERC1363Spender {
     public payable
     {
         require(wallet == address(0));
-        uint256 totalSupply_  = ShardedWallet(payable(wallet_)).totalSupply();
+        recordedTotalSupply   = ShardedWallet(payable(wallet_)).totalSupply();
         string memory name_   = ShardedWallet(payable(wallet_)).name();
         string memory symbol_ = ShardedWallet(payable(wallet_)).symbol();
 
@@ -117,10 +118,9 @@ contract BondingCurve3 is IERC1363Spender {
         {
             // setup curve
             uint256 decimals_ = ShardedWallet(payable(wallet_)).decimals();
-            curve.x = totalSupply_;
-            curve.k = totalSupply_ * totalSupply_ * price / 10**decimals_;
+            curve.x = recordedTotalSupply;
+            curve.k = recordedTotalSupply * recordedTotalSupply * price / 10**decimals_;
         }
-        
 
         // mint liquidity
         etherLPToken.controllerMint(address(this), msg.value);
@@ -370,6 +370,17 @@ contract BondingCurve3 is IERC1363Spender {
 
         Address.sendValue(payable(to), etherFees);
         ShardedWallet(payable(wallet)).transfer(to, shardFees);
+    }
+
+    function rebaseWhenTotalSupplyChange() public {
+        uint256 newTotalSupply_ = ShardedWallet(payable(wallet)).totalSupply();
+        require (newTotalSupply_ != recordedTotalSupply);
+        curve.k = curve.k * newTotalSupply_ / recordedTotalSupply * newTotalSupply_ / recordedTotalSupply; // new k = (new supply/old supply)^2 * old k, intentionally * / * / to avoid uint overflow;
+        curve.x = curve.x * newTotalSupply_ / recordedTotalSupply; // new x = (new supply/old supply) * old x
+        recordedTotalSupply = newTotalSupply_;
+        assert(curve.k > 0);
+        assert(curve.x > 0);
+        assert(recordedTotalSupply > 0);
     }
 
     function transferTimelockLiquidity() public {
