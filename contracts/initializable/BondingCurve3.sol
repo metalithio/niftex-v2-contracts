@@ -114,9 +114,13 @@ contract BondingCurve3 is IERC1363Spender {
             require(ShardedWallet(payable(wallet_)).transferFrom(msg.sender, address(this), supply));
         }
 
-        // setup curve
-        curve.x = totalSupply_;
-        curve.k = totalSupply_ * totalSupply_ * price / 10**18;
+        {
+            // setup curve
+            uint256 decimals_ = ShardedWallet(payable(wallet_)).decimals();
+            curve.x = totalSupply_;
+            curve.k = totalSupply_ * totalSupply_ * price / 10**decimals_;
+        }
+        
 
         // mint liquidity
         etherLPToken.controllerMint(address(this), msg.value);
