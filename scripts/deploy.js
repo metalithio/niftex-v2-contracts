@@ -25,13 +25,14 @@ async function main() {
   console.log("Deploying modules:");
   const MODULE_ROLE = await governance.MODULE_ROLE();
   const modules = await Object.entries({
-    "action":            "ActionModule",
-    "basicdistribution": "BasicDistributionModule",
-    "buyout":            "BuyoutModule",
-    "crowdsale":         "FixedPriceSaleModule",
-    "factory":           "ShardedWalletFactory",
-    "multicall":         "MulticallModule",
-    "tokenreceiver":     "TokenReceiverModule",
+    "action":              "ActionModule",
+    "basicdistribution":   "BasicDistributionModule",
+    "buyout":              "BuyoutModule",
+    "crowdsale":           "FixedPriceSaleModule",
+    "factory":             "ShardedWalletFactory",
+    "multicall":           "MulticallModule",
+    "tokenreceiver":       "TokenReceiverModule",
+    "erc20managermodule":  "ERC20ManagerModule",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;
