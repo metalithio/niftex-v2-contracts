@@ -63,7 +63,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     {
         uint256 pricePerShard = _prices[wallet];
         uint256 lockedShards  = wallet.balanceOf(address(this));
-        uint256 buyShards     = Math.min(msg.value * 10**18 / pricePerShard, lockedShards);
+        uint256 buyShards     = pricePerShard == 0 ? lockedShards : Math.min(lockedShards, msg.value * 10**18 / pricePerShard);
         uint256 buyprice      = buyShards * pricePerShard / 10**18;
         _deposit[wallet]     += buyprice;
 
