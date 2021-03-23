@@ -62,17 +62,17 @@ async function main() {
   // Set config
   console.log("Configuring governance");
   for ([ key, value ] of Object.entries({
-    [ await modules.action.ACTION_AUTH_RATIO()    ]: ethers.utils.parseEther('0.01'),
-    [ await modules.buyout.BUYOUT_AUTH_RATIO()    ]: ethers.utils.parseEther('0.01'),
-    [ await modules.action.ACTION_DURATION()      ]: 50400,
-    [ await modules.buyout.BUYOUT_DURATION()      ]: 50400,
-    [ await modules.crowdsale.CURVE_TEMPLATE()    ]: bondingcurve.address,
-    [ await modules.crowdsale.PCT_SHARDS_NIFTEX() ]: ethers.utils.parseEther('0.0'),
-    [ await modules.crowdsale.PCT_ETH_TO_CURVE()  ]: ethers.utils.parseEther('0.20'),
-    [ await bondingcurve.PCT_FEE_NIFTEX()         ]: ethers.utils.parseEther('0.001'),
-    [ await bondingcurve.PCT_FEE_ARTIST()         ]: ethers.utils.parseEther('0.001'),
-    [ await bondingcurve.PCT_FEE_SUPPLIERS()      ]: ethers.utils.parseEther('0.003'),
-    [ await bondingcurve.LIQUIDITY_TIMELOCK()     ]: 100800,
+    [ await modules.action.ACTION_AUTH_RATIO()            ]: ethers.utils.parseEther('0.01'),
+    [ await modules.buyout.BUYOUT_AUTH_RATIO()            ]: ethers.utils.parseEther('0.01'),
+    [ await modules.action.ACTION_DURATION()              ]: 50400,
+    [ await modules.buyout.BUYOUT_DURATION()              ]: 50400,
+    [ await modules.crowdsale.CURVE_TEMPLATE()            ]: bondingcurve.address,
+    [ await modules.basicdistribution.PCT_SHARDS_NIFTEX() ]: ethers.utils.parseEther('0.01'),
+    [ await modules.crowdsale.PCT_ETH_TO_CURVE()          ]: ethers.utils.parseEther('0.20'),
+    [ await bondingcurve.PCT_FEE_NIFTEX()                 ]: ethers.utils.parseEther('0.001'),
+    [ await bondingcurve.PCT_FEE_ARTIST()                 ]: ethers.utils.parseEther('0.001'),
+    [ await bondingcurve.PCT_FEE_SUPPLIERS()              ]: ethers.utils.parseEther('0.003'),
+    [ await bondingcurve.LIQUIDITY_TIMELOCK()             ]: 100800,
   }))
   {
     console.log(` - ${key}: ${value}`)
