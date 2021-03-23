@@ -23,8 +23,6 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
     address public constant CURVE_PREMINT_RESERVE   = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
     // bytes32 public constant PCT_ETH_TO_CURVE        = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
     bytes32 public constant PCT_ETH_TO_CURVE        = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
-    // bytes32 public constant PCT_SHARDS_NIFTEX       = bytes32(uint256(keccak256("PCT_SHARDS_NIFTEX")) - 1);
-    bytes32 public constant PCT_SHARDS_NIFTEX       = 0xfbbd159a3fa06a90e6706a184ef085e653f08384af107f1a8507ee0e3b341aa6;
     // bytes32 public constant CURVE_TEMPLATE          = bytes32(uint256(keccak256("CURVE_TEMPLATE")) - 1);
     bytes32 public constant CURVE_TEMPLATE          = 0x3cec7c13345ae32e688f81840d184c63978bb776762e026e7e61d891bb2dd84b;
 
@@ -86,14 +84,6 @@ contract FixedPriceSaleModule is IModule, ModuleBase, Timers
         wallet.moduleTransferOwnership(address(this));
 
         Timers._startTimer(bytes32(uint256(uint160(address(wallet)))), duration);
-
-        {
-            uint256 amount = totalSupply * wallet.governance().getConfig(address(wallet), PCT_SHARDS_NIFTEX) / 10**18;
-            address niftex = wallet.governance().getNiftexWallet();
-            premintShards[wallet][niftex] = amount;
-            totalSupply -= amount;
-            emit ShardsPrebuy(wallet, niftex, amount);
-        }
 
         // Allocate the premints
         for (uint256 i = 0; i < premints.length; ++i)
