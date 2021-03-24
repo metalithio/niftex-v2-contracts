@@ -25,13 +25,14 @@ async function main() {
   console.log("Deploying modules:");
   const MODULE_ROLE = await governance.MODULE_ROLE();
   const modules = await Object.entries({
-    "action":            "ActionModule",
-    "basicdistribution": "BasicDistributionModule",
-    "buyout":            "BuyoutModule",
-    "crowdsale":         "FixedPriceSaleModule",
-    "factory":           "ShardedWalletFactory",
-    "multicall":         "MulticallModule",
-    "tokenreceiver":     "TokenReceiverModule",
+    "action":              "ActionModule",
+    "basicdistribution":   "BasicDistributionModule",
+    "buyout":              "BuyoutModule",
+    "crowdsale":           "FixedPriceSaleModule",
+    "factory":             "ShardedWalletFactory",
+    "multicall":           "MulticallModule",
+    "tokenreceiver":       "TokenReceiverModule",
+    "erc20managermodule":  "ERC20ManagerModule",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;
@@ -62,17 +63,17 @@ async function main() {
   // Set config
   console.log("Configuring governance");
   for ([ key, value ] of Object.entries({
-    [ await modules.action.ACTION_AUTH_RATIO()    ]: ethers.utils.parseEther('0.01'),
+    [ await modules.action.ACTION_AUTH_RATIO()    ]: ethers.utils.parseEther('0.03'),
     [ await modules.buyout.BUYOUT_AUTH_RATIO()    ]: ethers.utils.parseEther('0.01'),
-    [ await modules.action.ACTION_DURATION()      ]: 50400,
-    [ await modules.buyout.BUYOUT_DURATION()      ]: 50400,
+    [ await modules.action.ACTION_DURATION()      ]: 432000,
+    [ await modules.buyout.BUYOUT_DURATION()      ]: 432000,
     [ await modules.crowdsale.CURVE_TEMPLATE()    ]: bondingcurve.address,
-    [ await modules.crowdsale.PCT_SHARDS_NIFTEX() ]: ethers.utils.parseEther('0.0'),
-    [ await modules.crowdsale.PCT_ETH_TO_CURVE()  ]: ethers.utils.parseEther('0.20'),
-    [ await bondingcurve.PCT_FEE_NIFTEX()         ]: ethers.utils.parseEther('0.001'),
+    [ await modules.crowdsale.PCT_SHARDS_NIFTEX() ]: ethers.utils.parseEther('0.01'),
+    [ await modules.crowdsale.PCT_ETH_TO_CURVE()  ]: ethers.utils.parseEther('0.25'),
+    [ await bondingcurve.PCT_FEE_NIFTEX()         ]: ethers.utils.parseEther('0'),
     [ await bondingcurve.PCT_FEE_ARTIST()         ]: ethers.utils.parseEther('0.001'),
     [ await bondingcurve.PCT_FEE_SUPPLIERS()      ]: ethers.utils.parseEther('0.003'),
-    [ await bondingcurve.LIQUIDITY_TIMELOCK()     ]: 100800,
+    [ await bondingcurve.LIQUIDITY_TIMELOCK()     ]: 2592000,
   }))
   {
     console.log(` - ${key}: ${value}`)
@@ -91,6 +92,17 @@ async function main() {
     await governance.setGlobalKey(key, value);
   }
 
+	const DEFAULT_ADMIN_ROLE = await governance.DEFAULT_ADMIN_ROLE();
+
+	await governance.grantRole(
+		DEFAULT_ADMIN_ROLE,
+		process.env.MULTISIG_ADDRESS
+	);
+
+	await governance.renounceRole(
+		DEFAULT_ADMIN_ROLE,
+		deployer.address
+	);
 }
 
 main()
