@@ -25,13 +25,14 @@ async function main() {
   console.log("Deploying modules:");
   const MODULE_ROLE = await governance.MODULE_ROLE();
   const modules = await Object.entries({
-    "action":            "ActionModule",
-    "basicdistribution": "BasicDistributionModule",
-    "buyout":            "BuyoutModule",
-    "crowdsale":         "FixedPriceSaleModule",
-    "factory":           "ShardedWalletFactory",
-    "multicall":         "MulticallModule",
-    "tokenreceiver":     "TokenReceiverModule",
+    "action":              "ActionModule",
+    "basicdistribution":   "BasicDistributionModule",
+    "buyout":              "BuyoutModule",
+    "crowdsale":           "FixedPriceSaleModule",
+    "factory":             "ShardedWalletFactory",
+    "multicall":           "MulticallModule",
+    "tokenreceiver":       "TokenReceiverModule",
+    "erc20managermodule":  "ERC20ManagerModule",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;
@@ -83,7 +84,7 @@ async function main() {
 
   for ([ key, value ] of Object.entries({
     [ await shardedwallet.ALLOW_GOVERNANCE_UPGRADE() ]: true,
-    [ await modules.crowdsale.PCT_SHARDS_NIFTEX()    ]: true,
+    [ await modules.basicdistribution.PCT_SHARDS_NIFTEX()    ]: true,
     [ await bondingcurve.PCT_FEE_NIFTEX()            ]: true,
   }))
   {
@@ -91,6 +92,27 @@ async function main() {
     await governance.setGlobalKey(key, value);
   }
 
+	const DEFAULT_ADMIN_ROLE = await governance.DEFAULT_ADMIN_ROLE();
+
+  console.log(`Granting ${DEFAULT_ADMIN_ROLE} role to ${process.env.MULTISIG_ADDRESS}`);
+	await governance.grantRole(
+		DEFAULT_ADMIN_ROLE,
+		process.env.MULTISIG_ADDRESS
+	);
+
+  // need to wait 30 seconds before revoke
+  console.log('Waiting for 5 seconds before renouncing role');
+  await new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(true);
+    }, 30000)
+  });
+
+  console.log(`Renounce ${DEFAULT_ADMIN_ROLE} role to ${deployer.address}`);
+	await governance.renounceRole(
+		DEFAULT_ADMIN_ROLE,
+		deployer.address
+	);
 }
 
 main()
