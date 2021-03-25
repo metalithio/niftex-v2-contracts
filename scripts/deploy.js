@@ -15,6 +15,11 @@ async function main() {
   const bondingcurve = await BondingCurve.deploy();
   console.log(`BondingCurve address: ${bondingcurve.address}`);
 
+  // Deploy BatchTransferHelper
+  const BatchTransferHelper = await ethers.getContractFactory("BatchTransferHelper");
+  const batchTransferHelper = await BondingCurve.deploy();
+  console.log(`BatchTransferHelper address: ${batchTransferHelper.address}`);
+
   // Deploy Governance
   const Governance = await ethers.getContractFactory("Governance");
   const governance = await upgrades.deployProxy(Governance);
