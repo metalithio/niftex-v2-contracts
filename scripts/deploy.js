@@ -26,6 +26,9 @@ async function main() {
   await governance.deployed();
   console.log(`Governance address: ${governance.address}`);
 
+  console.log(`Transfer ownership of the upgradeable governance top ${process.env.MULTISIG_ADDRESS}`);
+  await upgrades.admin.transferProxyAdminOwnership(process.env.MULTISIG_ADDRESS);
+
   // Deploy and whitelist modules
   console.log("Deploying modules:");
   const MODULE_ROLE = await governance.MODULE_ROLE();
@@ -118,9 +121,6 @@ async function main() {
     DEFAULT_ADMIN_ROLE,
     deployer.address
   );
-
-  console.log(`Transfer ownership of the upgradeable governance top ${process.env.MULTISIG_ADDRESS}`);
-  upgrades.admin.transferProxyAdminOwnership(process.env.MULTISIG_ADDRESS);
 }
 
 main()
