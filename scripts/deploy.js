@@ -15,6 +15,11 @@ async function main() {
   const bondingcurve = await BondingCurve.deploy();
   console.log(`BondingCurve address: ${bondingcurve.address}`);
 
+  // Deploy BatchTransferHelper
+  const BatchTransferHelper = await ethers.getContractFactory("BatchTransferHelper");
+  const batchTransferHelper = await BondingCurve.deploy();
+  console.log(`BatchTransferHelper address: ${batchTransferHelper.address}`);
+
   // Deploy Governance
   const Governance = await ethers.getContractFactory("Governance");
   const governance = await upgrades.deployProxy(Governance);
@@ -63,17 +68,17 @@ async function main() {
   // Set config
   console.log("Configuring governance");
   for ([ key, value ] of Object.entries({
-    [ await modules.action.ACTION_AUTH_RATIO()    ]: ethers.utils.parseEther('0.03'),
-    [ await modules.buyout.BUYOUT_AUTH_RATIO()    ]: ethers.utils.parseEther('0.01'),
-    [ await modules.action.ACTION_DURATION()      ]: 432000,
-    [ await modules.buyout.BUYOUT_DURATION()      ]: 432000,
-    [ await modules.crowdsale.CURVE_TEMPLATE()    ]: bondingcurve.address,
-    [ await modules.crowdsale.PCT_SHARDS_NIFTEX() ]: ethers.utils.parseEther('0.01'),
-    [ await modules.crowdsale.PCT_ETH_TO_CURVE()  ]: ethers.utils.parseEther('0.25'),
-    [ await bondingcurve.PCT_FEE_NIFTEX()         ]: ethers.utils.parseEther('0'),
-    [ await bondingcurve.PCT_FEE_ARTIST()         ]: ethers.utils.parseEther('0.001'),
-    [ await bondingcurve.PCT_FEE_SUPPLIERS()      ]: ethers.utils.parseEther('0.003'),
-    [ await bondingcurve.LIQUIDITY_TIMELOCK()     ]: 2592000,
+    [ await modules.action.ACTION_AUTH_RATIO()            ]: ethers.utils.parseEther('0.03'),
+    [ await modules.buyout.BUYOUT_AUTH_RATIO()            ]: ethers.utils.parseEther('0.01'),
+    [ await modules.action.ACTION_DURATION()              ]: 432000,
+    [ await modules.buyout.BUYOUT_DURATION()              ]: 432000,
+    [ await modules.crowdsale.CURVE_TEMPLATE()            ]: bondingcurve.address,
+    [ await modules.basicdistribution.PCT_SHARDS_NIFTEX() ]: ethers.utils.parseEther('0.01'),
+    [ await modules.crowdsale.PCT_ETH_TO_CURVE()          ]: ethers.utils.parseEther('0.20'),
+    [ await bondingcurve.PCT_FEE_NIFTEX()                 ]: ethers.utils.parseEther('0'),
+    [ await bondingcurve.PCT_FEE_ARTIST()                 ]: ethers.utils.parseEther('0.001'),
+    [ await bondingcurve.PCT_FEE_SUPPLIERS()              ]: ethers.utils.parseEther('0.003'),
+    [ await bondingcurve.LIQUIDITY_TIMELOCK()             ]: 2592000,
   }))
   {
     console.log(` - ${key}: ${value}`)
@@ -83,9 +88,9 @@ async function main() {
   console.log("setting global only keys");
 
   for ([ key, value ] of Object.entries({
-    [ await shardedwallet.ALLOW_GOVERNANCE_UPGRADE() ]: true,
-    [ await modules.crowdsale.PCT_SHARDS_NIFTEX()    ]: true,
-    [ await bondingcurve.PCT_FEE_NIFTEX()            ]: true,
+    [ await shardedwallet.ALLOW_GOVERNANCE_UPGRADE()      ]: true,
+    [ await modules.basicdistribution.PCT_SHARDS_NIFTEX() ]: true,
+    [ await bondingcurve.PCT_FEE_NIFTEX()                 ]: true,
   }))
   {
     console.log(` - ${key}: ${value}`)
