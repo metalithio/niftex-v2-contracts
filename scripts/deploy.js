@@ -92,16 +92,16 @@ async function main() {
     await governance.setGlobalKey(key, value);
   }
 
-	const DEFAULT_ADMIN_ROLE = await governance.DEFAULT_ADMIN_ROLE();
+  const DEFAULT_ADMIN_ROLE = await governance.DEFAULT_ADMIN_ROLE();
 
   console.log(`Granting ${DEFAULT_ADMIN_ROLE} role to ${process.env.MULTISIG_ADDRESS}`);
-	await governance.grantRole(
-		DEFAULT_ADMIN_ROLE,
-		process.env.MULTISIG_ADDRESS
-	);
+  await governance.grantRole(
+    DEFAULT_ADMIN_ROLE,
+    process.env.MULTISIG_ADDRESS
+  );
 
   // need to wait 30 seconds before revoke
-  console.log('Waiting for 5 seconds before renouncing role');
+  console.log('Waiting for 30 seconds before renouncing role');
   await new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve(true);
@@ -109,10 +109,13 @@ async function main() {
   });
 
   console.log(`Renounce ${DEFAULT_ADMIN_ROLE} role to ${deployer.address}`);
-	await governance.renounceRole(
-		DEFAULT_ADMIN_ROLE,
-		deployer.address
-	);
+  await governance.renounceRole(
+    DEFAULT_ADMIN_ROLE,
+    deployer.address
+  );
+
+  console.log(`Transfer ownership of the upgradeable governance top ${process.env.MULTISIG_ADDRESS}`);
+  upgrades.admin.transferProxyAdminOwnership(process.env.MULTISIG_ADDRESS);
 }
 
 main()
