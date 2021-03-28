@@ -33,7 +33,7 @@ contract BasicDistributionModule is IModule, ModuleBase
         IGovernance governance = wallet.governance();
         require(
             wallet.balanceOf(governance.getNiftexWallet())
-            ==
+            >=
             wallet.totalSupply() * governance.getConfig(address(wallet), PCT_SHARDS_NIFTEX) / 10**18
         );
     }
