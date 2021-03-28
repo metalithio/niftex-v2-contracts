@@ -15,6 +15,9 @@ contract BasicDistributionModule is IModule, ModuleBase
 {
     string public constant override name = type(BasicDistributionModule).name;
 
+    // bytes32 public constant PCT_SHARDS_NIFTEX = bytes32(uint256(keccak256("PCT_SHARDS_NIFTEX")) - 1);
+    bytes32 public constant PCT_SHARDS_NIFTEX = 0xfbbd159a3fa06a90e6706a184ef085e653f08384af107f1a8507ee0e3b341aa6;
+
     constructor(address walletTemplate) ModuleBase(walletTemplate) {}
 
     function setup(ShardedWallet wallet, Allocation[] calldata mints)
@@ -26,5 +29,12 @@ contract BasicDistributionModule is IModule, ModuleBase
         {
             wallet.moduleMint(mints[i].receiver, mints[i].amount);
         }
+
+        IGovernance governance = wallet.governance();
+        require(
+            wallet.balanceOf(governance.getNiftexWallet())
+            ==
+            wallet.totalSupply() * governance.getConfig(address(wallet), PCT_SHARDS_NIFTEX) / 10**18
+        );
     }
 }
