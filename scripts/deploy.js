@@ -88,9 +88,9 @@ async function main() {
   console.log("setting global only keys");
 
   for ([ key, value ] of Object.entries({
-    [ await shardedwallet.ALLOW_GOVERNANCE_UPGRADE() ]: true,
-    [ await modules.basicdistribution.PCT_SHARDS_NIFTEX()    ]: true,
-    [ await bondingcurve.PCT_FEE_NIFTEX()            ]: true,
+    [ await shardedwallet.ALLOW_GOVERNANCE_UPGRADE()      ]: true,
+    [ await modules.basicdistribution.PCT_SHARDS_NIFTEX() ]: true,
+    [ await bondingcurve.PCT_FEE_NIFTEX()                 ]: true,
   }))
   {
     console.log(` - ${key}: ${value}`)
