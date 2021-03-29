@@ -12,7 +12,7 @@
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
-    "deploy:eth": "env-cmd -f .env.eth hardhat run scripts/deploy.js --network eth"
+    "deploy:mainnet": "npx hardhat run scripts/deploy.js --network mainnet"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.0.0",
