@@ -17,7 +17,7 @@ async function main() {
 
   // Deploy BatchTransferHelper
   const BatchTransferHelper = await ethers.getContractFactory("BatchTransferHelper");
-  const batchTransferHelper = await BondingCurve.deploy();
+  const batchTransferHelper = await BatchTransferHelper.deploy();
   console.log(`BatchTransferHelper address: ${batchTransferHelper.address}`);
 
   // Deploy Governance

@@ -34,4 +34,5 @@ module.exports.networks.mainnet = {
       ? process.env.MAINNET_PRIVATE_KEY
       : '0x' + process.env.MAINNET_PRIVATE_KEY,
   ],
+  timeout: 60*1000*10,
 }
