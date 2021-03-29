@@ -6,4 +6,4 @@ cache/
 generated/
 
 package-lock.json
-.env
+.env*

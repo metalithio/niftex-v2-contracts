@@ -11,10 +11,12 @@
     "test:531": "hardhat test ./test/531_bondingcurve3_with_helpers",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
-    "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby"
+    "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
+    "deploy:eth": "env-cmd -f .env.eth hardhat run scripts/deploy.js --network eth"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.0.0"
+    "@openzeppelin/contracts": "^4.0.0",
+    "env-cmd": "^10.1.0"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
