@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 
+import "contracts/initializable/ERC20.sol";
 import "./capabilities/Proxiable.sol";
-import "./@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20Detailed.sol";
 import "./ERC1404.sol";
 import "./roles/OwnerRole.sol";
 import "./capabilities/Whitelistable.sol";
@@ -10,7 +10,7 @@ import "./capabilities/Burnable.sol";
 import "./capabilities/Revocable.sol";
 import "./capabilities/Pausable.sol";
 
-contract TokenSoftToken is Proxiable, ERC20Detailed, ERC1404, OwnerRole, Whitelistable, Mintable, Burnable, Revocable, Pausable {
+contract TokenSoftToken is Proxiable, ERC20, ERC1404, OwnerRole, Whitelistable, Mintable, Burnable, Revocable, Pausable {
 
     // ERC1404 Error codes and messages
     uint8 public constant SUCCESS_CODE = 0;
@@ -26,11 +26,10 @@ contract TokenSoftToken is Proxiable, ERC20Detailed, ERC1404, OwnerRole, Whiteli
     Constructor for the token to set readable details and mint all tokens
     to the specified owner.
      */
-    function initialize (address owner, string memory name, string memory symbol, uint8 decimals, uint256 initialSupply, bool whitelistEnabled)
+    function initialize (address owner, string memory name, string memory symbol, uint256 initialSupply, bool whitelistEnabled)
         public
-        initializer
     {
-        ERC20Detailed.initialize(name, symbol, decimals);
+        ERC20._initialize(name, symbol);
         Mintable._mint(msg.sender, owner, initialSupply);
         OwnerRole._addOwner(owner);
         Whitelistable._setWhitelistEnabled(whitelistEnabled);
@@ -39,7 +38,7 @@ contract TokenSoftToken is Proxiable, ERC20Detailed, ERC1404, OwnerRole, Whiteli
     /**
     Public function to update the address of the code contract, retricted to owner
      */
-    function updateCodeAddress (address newAddress) public onlyOwner {
+    function updateCodeAddress (address newAddress) public TS_onlyOwner {
         Proxiable._updateCodeAddress(newAddress);
     }
 
@@ -117,7 +116,7 @@ contract TokenSoftToken is Proxiable, ERC20Detailed, ERC1404, OwnerRole, Whiteli
     function transfer (address to, uint256 value)
         public
         virtual
-        override(ERC20, IERC20)
+        override(IERC20, ERC20)
         notRestricted(msg.sender, to, value)
         returns (bool success)
     {
@@ -130,7 +129,7 @@ contract TokenSoftToken is Proxiable, ERC20Detailed, ERC1404, OwnerRole, Whiteli
     function transferFrom (address from, address to, uint256 value)
         public
         virtual
-        override(ERC20, IERC20)
+				override(IERC20, ERC20)
         notRestricted(from, to, value)
         returns (bool success)
     {

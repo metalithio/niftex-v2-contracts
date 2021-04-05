@@ -29,11 +29,11 @@ contract WhitelisterRole is OwnerRole {
         emit WhitelisterRemoved(account, msg.sender);
     }
 
-    function addWhitelister(address account) public onlyOwner {
+    function addWhitelister(address account) public TS_onlyOwner {
         _addWhitelister(account);
     }
 
-    function removeWhitelister(address account) public onlyOwner {
+    function removeWhitelister(address account) public TS_onlyOwner {
         _removeWhitelister(account);
     }
 }

@@ -29,11 +29,11 @@ contract MinterRole is OwnerRole {
         emit MinterRemoved(account, msg.sender);
     }
 
-    function addMinter(address account) public onlyOwner {
+    function addMinter(address account) public TS_onlyOwner {
         _addMinter(account);
     }
 
-    function removeMinter(address account) public onlyOwner {
+    function removeMinter(address account) public TS_onlyOwner {
         _removeMinter(account);
     }
 

@@ -122,7 +122,7 @@ contract Whitelistable is WhitelisterRole {
     /**
      * Enable or disable the whitelist enforcement
      */
-    function setWhitelistEnabled(bool enabled) public onlyOwner {
+    function setWhitelistEnabled(bool enabled) public TS_onlyOwner {
         _setWhitelistEnabled(enabled);
     }
 

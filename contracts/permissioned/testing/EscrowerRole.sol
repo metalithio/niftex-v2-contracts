@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import "../roles/OwnerRole.sol";
 
 contract EscrowerRole is OwnerRole {
+		using Roles for Roles.Role;
 
     event EscrowerAdded(address indexed addedEscrow, address indexed addedBy);
     event EscrowerRemoved(address indexed removedEscrow, address indexed removedBy);
@@ -28,11 +29,11 @@ contract EscrowerRole is OwnerRole {
         emit EscrowerRemoved(account, msg.sender);
     }
 
-    function addEscrower(address account) public onlyOwner {
+    function addEscrower(address account) public TS_onlyOwner {
         _addEscrower(account);
     }
 
-    function removeEscrower(address account) public onlyOwner {
+    function removeEscrower(address account) public TS_onlyOwner {
         require(msg.sender != account, "Escrowers cannot remove themselves as Escrower");
         _removeEscrower(account);
     }

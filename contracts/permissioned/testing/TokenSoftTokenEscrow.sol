@@ -10,7 +10,7 @@ import "../capabilities/Revocable.sol";
 import "../capabilities/Pausable.sol";
 import "./Escrowable.sol";
 
-contract TokenSoftTokenEscrow is Proxiable, ERC20Detailed, OwnerRole, Whitelistable, Mintable, Burnable, Revocable, Pausable, Escrowable {
+contract TokenSoftTokenEscrow is Proxiable, ERC20, OwnerRole, Whitelistable, Mintable, Burnable, Revocable, Pausable, Escrowable {
 
     // ERC1404 Error codes and messages`
     uint8 public constant SUCCESS_CODE = 0;
@@ -25,11 +25,10 @@ contract TokenSoftTokenEscrow is Proxiable, ERC20Detailed, OwnerRole, Whitelista
     Constructor for the token to set readable details and mint all tokens
     to the specified owner.
      */
-    function initialize (address owner, string memory name, string memory symbol, uint8 decimals, uint256 initialSupply, bool whitelistEnabled)
+    function initialize (address owner, string memory name, string memory symbol, uint256 initialSupply, bool whitelistEnabled)
         public
-        initializer
     {
-        ERC20Detailed.initialize(name, symbol, decimals);
+        ERC20._initialize(name, symbol);
         Mintable._mint(msg.sender, owner, initialSupply);
         OwnerRole._addOwner(owner);
         Whitelistable._setWhitelistEnabled(whitelistEnabled);
@@ -38,7 +37,7 @@ contract TokenSoftTokenEscrow is Proxiable, ERC20Detailed, OwnerRole, Whitelista
     /**
     Public function to update the address of the code contract, retricted to owner
      */
-    function updateCodeAddress (address newAddress) public onlyOwner {
+    function updateCodeAddress (address newAddress) public TS_onlyOwner {
         Proxiable._updateCodeAddress(newAddress);
     }
 
@@ -61,7 +60,7 @@ contract TokenSoftTokenEscrow is Proxiable, ERC20Detailed, OwnerRole, Whitelista
      */
     function transfer (address to, uint256 value)
         public
-        override(IERC20, ERC20)
+        override
         returns (bool success)
     {
         success = Escrowable._createTransferProposal(to, value);
@@ -74,7 +73,7 @@ contract TokenSoftTokenEscrow is Proxiable, ERC20Detailed, OwnerRole, Whitelista
      */
     function transferFrom (address from, address to, uint256 value)
         public
-        override(IERC20, ERC20)
+        override
         returns (bool success)
     {
         success = Escrowable._createTransferFromProposal(from, to, value);

@@ -29,11 +29,11 @@ contract BlacklisterRole is OwnerRole {
         emit BlacklisterRemoved(account, msg.sender);
     }
 
-    function addBlacklister(address account) public onlyOwner {
+    function addBlacklister(address account) public TS_onlyOwner {
         _addBlacklister(account);
     }
 
-    function removeBlacklister(address account) public onlyOwner {
+    function removeBlacklister(address account) public TS_onlyOwner {
         _removeBlacklister(account);
     }
 

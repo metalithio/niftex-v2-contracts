@@ -29,11 +29,11 @@ contract PauserRole is OwnerRole {
         emit PauserRemoved(account, msg.sender);
     }
 
-    function addPauser(address account) public onlyOwner {
+    function addPauser(address account) public TS_onlyOwner {
         _addPauser(account);
     }
 
-    function removePauser(address account) public onlyOwner {
+    function removePauser(address account) public TS_onlyOwner {
         _removePauser(account);
     }
 }

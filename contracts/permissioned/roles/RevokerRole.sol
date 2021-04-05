@@ -29,11 +29,11 @@ contract RevokerRole is OwnerRole {
         emit RevokerRemoved(account, msg.sender);
     }
 
-    function addRevoker(address account) public onlyOwner {
+    function addRevoker(address account) public TS_onlyOwner {
         _addRevoker(account);
     }
 
-    function removeRevoker(address account) public onlyOwner {
+    function removeRevoker(address account) public TS_onlyOwner {
         _removeRevoker(account);
     }
 }

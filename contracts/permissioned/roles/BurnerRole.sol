@@ -29,11 +29,11 @@ contract BurnerRole is OwnerRole {
         emit BurnerRemoved(account, msg.sender);
     }
 
-    function addBurner(address account) public onlyOwner {
+    function addBurner(address account) public TS_onlyOwner {
         _addBurner(account);
     }
 
-    function removeBurner(address account) public onlyOwner {
+    function removeBurner(address account) public TS_onlyOwner {
         _removeBurner(account);
     }
 

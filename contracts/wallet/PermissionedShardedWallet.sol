@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../governance/IGovernance.sol";
-import "../tokensoft_token/contracts/TokenSoftTokenV2.sol";
+import "../permissioned/TokenSoftTokenV2.sol";
 import "../initializable/Ownable.sol";
 /* import "../initializable/ERC1363.sol"; */
 

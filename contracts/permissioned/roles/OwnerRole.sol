@@ -10,7 +10,7 @@ contract OwnerRole {
 
     Roles.Role private _owners;
 
-    modifier onlyOwner() {
+    modifier TS_onlyOwner() {
         require(isOwner(msg.sender), "OwnerRole: caller does not have the Owner role");
         _;
     }
@@ -19,11 +19,11 @@ contract OwnerRole {
         return _owners.has(account);
     }
 
-    function addOwner(address account) public onlyOwner {
+    function addOwner(address account) public TS_onlyOwner {
         _addOwner(account);
     }
 
-    function removeOwner(address account) public onlyOwner {
+    function removeOwner(address account) public TS_onlyOwner {
         _removeOwner(account);
     }
 

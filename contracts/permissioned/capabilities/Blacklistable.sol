@@ -75,7 +75,7 @@ contract Blacklistable is BlacklisterRole {
     /**
      * Enable or disable the Blacklist enforcement
      */
-    function setBlacklistEnabled(bool enabled) public onlyOwner {
+    function setBlacklistEnabled(bool enabled) public TS_onlyOwner {
         _setBlacklistEnabled(enabled);
     }
 

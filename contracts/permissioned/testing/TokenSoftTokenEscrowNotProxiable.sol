@@ -9,7 +9,7 @@ import "../capabilities/Revocable.sol";
 import "../capabilities/Pausable.sol";
 import "./Escrowable.sol";
 
-contract TokenSoftTokenEscrowNotProxiable is ERC20Detailed, OwnerRole, Whitelistable, Mintable, Burnable, Revocable, Pausable, Escrowable {
+contract TokenSoftTokenEscrowNotProxiable is ERC20, OwnerRole, Whitelistable, Mintable, Burnable, Revocable, Pausable, Escrowable {
 
     // ERC1404 Error codes and messages
     uint8 public constant SUCCESS_CODE = 0;
@@ -24,11 +24,10 @@ contract TokenSoftTokenEscrowNotProxiable is ERC20Detailed, OwnerRole, Whitelist
     Constructor for the token to set readable details and mint all tokens
     to the specified owner.
      */
-    function initialize (address owner, string memory name, string memory symbol, uint8 decimals, uint256 initialSupply, bool whitelistEnabled)
+    function initialize (address owner, string memory name, string memory symbol, uint256 initialSupply, bool whitelistEnabled)
         public
-        initializer
     {
-        ERC20Detailed.initialize(name, symbol, decimals);
+        ERC20._initialize(name, symbol);
         Mintable._mint(msg.sender, owner, initialSupply);
         OwnerRole._addOwner(owner);
         Whitelistable._setWhitelistEnabled(whitelistEnabled);
@@ -53,7 +52,7 @@ contract TokenSoftTokenEscrowNotProxiable is ERC20Detailed, OwnerRole, Whitelist
      */
     function transfer (address to, uint256 value)
         public
-        override(IERC20, ERC20)
+        override
         returns (bool success)
     {
         success = Escrowable._createTransferProposal(to, value);
@@ -66,7 +65,7 @@ contract TokenSoftTokenEscrowNotProxiable is ERC20Detailed, OwnerRole, Whitelist
      */
     function transferFrom (address from, address to, uint256 value)
         public
-        override(IERC20, ERC20)
+        override
         returns (bool success)
     {
         success = Escrowable._createTransferFromProposal(from, to, value);
