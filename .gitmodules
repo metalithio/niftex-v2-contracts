@@ -1,3 +1,0 @@
-[submodule "contracts/tokensoft_token"]
-	path = contracts/tokensoft_token
-	url = git@github.com:tokensoft/tokensoft_token.git
