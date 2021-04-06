@@ -9,7 +9,7 @@ import "../permissioned/TokenSoftTokenV2.sol";
 import "../initializable/Ownable.sol";
 /* import "../initializable/ERC1363.sol"; */
 
-contract ShardedWallet is Ownable, TokenSoftTokenV2
+contract PermissionedShardedWallet is Ownable, TokenSoftTokenV2
 {
     // bytes32 public constant ALLOW_GOVERNANCE_UPGRADE = bytes32(uint256(keccak256("ALLOW_GOVERNANCE_UPGRADE")) - 1);
     bytes32 public constant ALLOW_GOVERNANCE_UPGRADE = 0xedde61aea0459bc05d70dd3441790ccfb6c17980a380201b00eca6f9ef50452a;
@@ -73,7 +73,6 @@ contract ShardedWallet is Ownable, TokenSoftTokenV2
         address         minter_,
         string calldata name_,
         string calldata symbol_,
-				bool            whitelistEnabled_,
         address         artistWallet_
     )
     external
@@ -86,8 +85,8 @@ contract ShardedWallet is Ownable, TokenSoftTokenV2
 					minter_,
 					name_,
 					symbol_,
-					0,
-					whitelistEnabled_
+					0,           // totalSupply
+					true         // whitelistEnabled
 				);
         artistWallet = artistWallet_;
 
