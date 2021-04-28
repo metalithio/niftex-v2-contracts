@@ -12,6 +12,7 @@ contract('Workflow', function (accounts) {
 		Factory:       { artifact: artifacts.require('ShardedWalletFactory')    },
 		Multicall:     { artifact: artifacts.require('MulticallModule')         },
 		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')     },
+		SWManager:     { artifact: artifacts.require('SWManagerModule')         },
 	};
 	const Mocks = {
 		ERC721:    { artifact: artifacts.require('ERC721Mock'),  args: [ 'ERC721Mock', '721']                                    },
@@ -139,9 +140,9 @@ contract('Workflow', function (accounts) {
 
 	describe('Schedule action', function () {
 		it('perform', async function () {
-			const to    = instance.address;
+			const to    = this.modules.swmanager.address;
 			const value = '0';
-			const data  = instance.contract.methods.updateArtistWallet(artist).encodeABI();
+			const data  = this.modules.swmanager.contract.methods.updateArtistWallet(artist).encodeABI();
 
 			id = web3.utils.keccak256(web3.eth.abi.encodeParameters(
 				[ 'address[]', 'uint256[]', 'bytes[]' ],
@@ -201,9 +202,9 @@ contract('Workflow', function (accounts) {
 
 	describe('Execute action', function () {
 		it('perform', async function () {
-			const to    = instance.address;
+			const to    = this.modules.swmanager.address;
 			const value = '0';
-			const data  = instance.contract.methods.updateArtistWallet(artist).encodeABI();
+			const data  = this.modules.swmanager.contract.methods.updateArtistWallet(artist).encodeABI();
 
 			const { receipt } = await this.modules.action.execute(instance.address, [ to ], [ value ], [ data ], { from: user1 });
 			expectEvent(receipt, 'ActionExecuted', { id, i: '0', to, value, data });
