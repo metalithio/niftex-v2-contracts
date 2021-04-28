@@ -138,7 +138,7 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
-	describe('Schedule action', function () {
+	describe('Schedule action - update artist wallet', function () {
 		it('perform', async function () {
 			const to    = this.modules.swmanager.address;
 			const value = '0';
@@ -177,7 +177,7 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
-	describe('Wait action', function () {
+	describe('Wait action - update artist wallet', function () {
 		it('perform', async function () {
 			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ Number(deadline) - (await web3.eth.getBlock('latest')).timestamp ], id: 0 }, () => {});
 		});
@@ -200,7 +200,7 @@ contract('Workflow', function (accounts) {
 		});
 	});
 
-	describe('Execute action', function () {
+	describe('Execute action - update artist wallet', function () {
 		it('perform', async function () {
 			const to    = this.modules.swmanager.address;
 			const value = '0';
@@ -225,6 +225,181 @@ contract('Workflow', function (accounts) {
 			assert.equal(await instance.balanceOf(other3),                  '0');
 			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
 			assert.equal(await instance.artistWallet(),                     artist);
+			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
+		});
+	});
+
+	describe('Schedule action - update governance', function () {
+		it('perform', async function () {
+			const to    = this.modules.swmanager.address;
+			const value = '0';
+			// use sw manager address as new governance for testing only. 
+			// In real world please use the address of new Governance module
+			const data  = this.modules.swmanager.contract.methods.updateGovernance(to).encodeABI();
+
+			id = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+				[ 'address[]', 'uint256[]', 'bytes[]' ],
+				[[ to ], [ value ], [ data ]],
+			));
+			uid = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+				[ 'address', 'bytes32' ],
+				[ instance.address, id ],
+			));
+
+			const { receipt } = await this.modules.action.schedule(instance.address, [ to ], [ value ], [ data ], { from: user1 });
+			expectEvent(receipt, 'TimerStarted', { timer: uid });
+			expectEvent(receipt, 'ActionScheduled', { wallet: instance.address, uid, id, i: '0', to, value, data });
+			deadline = receipt.logs.find(({ event }) => event == 'TimerStarted').args.deadline;
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                            constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                             'Tokenized NFT');
+			assert.equal(await instance.symbol(),                           'TNFT');
+			assert.equal(await instance.decimals(),                         '18');
+			assert.equal(await instance.totalSupply(),                      '10');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '8');
+			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.balanceOf(user3),                   '0');
+			assert.equal(await instance.balanceOf(other1),                  '0');
+			assert.equal(await instance.balanceOf(other2),                  '0');
+			assert.equal(await instance.balanceOf(other3),                  '0');
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
+			assert.equal(await instance.artistWallet(),                     artist);
+			assert.equal(await instance.governance(),                       this.governance.address);
+			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
+		});
+	});
+
+	describe('Wait action - update governance', function () {
+		it('perform', async function () {
+			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ Number(deadline) - (await web3.eth.getBlock('latest')).timestamp ], id: 0 }, () => {});
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                            constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                             'Tokenized NFT');
+			assert.equal(await instance.symbol(),                           'TNFT');
+			assert.equal(await instance.decimals(),                         '18');
+			assert.equal(await instance.totalSupply(),                      '10');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '8');
+			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.balanceOf(user3),                   '0');
+			assert.equal(await instance.balanceOf(other1),                  '0');
+			assert.equal(await instance.balanceOf(other2),                  '0');
+			assert.equal(await instance.balanceOf(other3),                  '0');
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
+			assert.equal(await instance.artistWallet(),                     artist);
+			assert.equal(await instance.governance(),                       this.governance.address);
+			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
+		});
+	});
+
+	describe('Execute action - update governance, SHOULD FAIL', function () {
+		it('perform', async function () {
+			const to    = this.modules.swmanager.address;
+			const value = '0';
+			// use sw manager address as new governance for testing only. 
+			// In real world please use the address of new Governance module
+			const data  = this.modules.swmanager.contract.methods.updateGovernance(to).encodeABI();
+
+			await expectRevert.unspecified(this.modules.action.execute(instance.address, [ to ], [ value ], [ data ], { from: user1 }));
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                            constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                             'Tokenized NFT');
+			assert.equal(await instance.symbol(),                           'TNFT');
+			assert.equal(await instance.decimals(),                         '18');
+			assert.equal(await instance.totalSupply(),                      '10');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '8');
+			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.balanceOf(user3),                   '0');
+			assert.equal(await instance.balanceOf(other1),                  '0');
+			assert.equal(await instance.balanceOf(other2),                  '0');
+			assert.equal(await instance.balanceOf(other3),                  '0');
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
+			assert.equal(await instance.artistWallet(),                     artist);
+			assert.equal(await instance.governance(),                       this.governance.address);
+			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
+		});
+	});
+
+	describe('Set ALLOW_GOVERNANCE_UPGRADE to 1', function () {
+		before(async function () {
+			assert.equal(await instance.owner(),                            constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                             'Tokenized NFT');
+			assert.equal(await instance.symbol(),                           'TNFT');
+			assert.equal(await instance.decimals(),                         '18');
+			assert.equal(await instance.totalSupply(),                      '10');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '8');
+			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.balanceOf(user3),                   '0');
+			assert.equal(await instance.balanceOf(other1),                  '0');
+			assert.equal(await instance.balanceOf(other2),                  '0');
+			assert.equal(await instance.balanceOf(other3),                  '0');
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
+			assert.equal(await instance.artistWallet(),                     artist);
+			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
+			assert.equal(await this.governance.getConfig(instance.address, await instance.ALLOW_GOVERNANCE_UPGRADE()), 0);
+		});
+
+		it('perform', async function () {
+			const { receipt } = await this.governance.setGlobalConfig(await instance.ALLOW_GOVERNANCE_UPGRADE(), 1);
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                            constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                             'Tokenized NFT');
+			assert.equal(await instance.symbol(),                           'TNFT');
+			assert.equal(await instance.decimals(),                         '18');
+			assert.equal(await instance.totalSupply(),                      '10');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '8');
+			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.balanceOf(user3),                   '0');
+			assert.equal(await instance.balanceOf(other1),                  '0');
+			assert.equal(await instance.balanceOf(other2),                  '0');
+			assert.equal(await instance.balanceOf(other3),                  '0');
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
+			assert.equal(await instance.artistWallet(),                     artist);
+			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
+			assert.equal(await this.governance.getConfig(instance.address, await instance.ALLOW_GOVERNANCE_UPGRADE()), 1);
+		});
+	});
+
+	describe('Execute action - update governance, SHOULD PASS as ALLOW_GOVERNANCE_UPGRADE updated to 1', function () {
+		it('perform', async function () {
+			const to    = this.modules.swmanager.address;
+			const value = '0';
+			// use sw manager address as new governance for testing only. 
+			// In real world please use the address of new Governance module
+			const data  = this.modules.swmanager.contract.methods.updateGovernance(to).encodeABI();
+
+			const { receipt } = await this.modules.action.execute(instance.address, [ to ], [ value ], [ data ], { from: user1 });
+			expectEvent(receipt, 'ActionExecuted', { id, i: '0', to, value, data });
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                            constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                             'Tokenized NFT');
+			assert.equal(await instance.symbol(),                           'TNFT');
+			assert.equal(await instance.decimals(),                         '18');
+			assert.equal(await instance.totalSupply(),                      '10');
+			assert.equal(await instance.balanceOf(instance.address),        '0');
+			assert.equal(await instance.balanceOf(user1),                   '8');
+			assert.equal(await instance.balanceOf(user2),                   '2');
+			assert.equal(await instance.balanceOf(user3),                   '0');
+			assert.equal(await instance.balanceOf(other1),                  '0');
+			assert.equal(await instance.balanceOf(other2),                  '0');
+			assert.equal(await instance.balanceOf(other3),                  '0');
+			assert.equal(await this.mocks.erc721.ownerOf(1),                instance.address);
+			assert.equal(await instance.artistWallet(),                     artist);
+			assert.equal(await instance.governance(),                       this.modules.swmanager.address);
 			assert.equal(await web3.eth.getBalance(instance.address),       web3.utils.toWei('0'));
 		});
 	});
