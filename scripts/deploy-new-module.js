@@ -21,7 +21,7 @@ async function main() {
     // "multicall":           "MulticallModule",
     // "tokenreceiver":       "TokenReceiverModule",
     // "erc20managermodule":  "ERC20ManagerModule",
-    "swmanagermodule":     "SwManagerModule",
+    "swmanagermodule":     "SWManagerModule",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;
