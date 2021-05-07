@@ -20,7 +20,8 @@ async function main() {
     // "factory":             "ShardedWalletFactory",
     // "multicall":           "MulticallModule",
     // "tokenreceiver":       "TokenReceiverModule",
-    "erc20managermodule":  "ERC20ManagerModule",
+    // "erc20managermodule":  "ERC20ManagerModule",
+    "swmanagermodule":     "SWManagerModule",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;

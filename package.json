@@ -10,6 +10,7 @@
     "test": "hardhat test",
     "test:531": "hardhat test ./test/531_bondingcurve3_with_helpers",
     "test:600": "hardhat test ./test/600_erc20ManagerModule",
+    "test:402": "hardhat test ./test/402_action_sw_manager",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
