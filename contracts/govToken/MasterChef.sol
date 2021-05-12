@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./FracToken.sol";
 
@@ -112,7 +112,7 @@ contract MasterChef is Ownable {
         }
         uint256 lastRewardBlock =
             block.number > startBlock ? block.number : startBlock;
-        totalAllocPoint = totalAllocPoint.add(_allocPoint);
+        totalAllocPoint = totalAllocPoint + _allocPoint;
         poolInfo.push(
             PoolInfo({
                 lpToken: _lpToken,
@@ -132,9 +132,9 @@ contract MasterChef is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
+        totalAllocPoint = totalAllocPoint - poolInfo[_pid].allocPoint + 
             _allocPoint
-        );
+        ;
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
@@ -162,13 +162,13 @@ contract MasterChef is Ownable {
         returns (uint256)
     {
         if (_to <= bonusEndBlock) {
-            return _to.sub(_from).mul(BONUS_MULTIPLIER);
+            return (_to - _from) * BONUS_MULTIPLIER;
         } else if (_from >= bonusEndBlock) {
-            return _to.sub(_from);
+            return _to - _from;
         } else {
             return
-                bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
-                    _to.sub(bonusEndBlock)
+                (bonusEndBlock - _from) * BONUS_MULTIPLIER + (
+                    _to - bonusEndBlock
                 );
         }
     }
@@ -187,14 +187,12 @@ contract MasterChef is Ownable {
             uint256 multiplier =
                 getMultiplier(pool.lastRewardBlock, block.number);
             uint256 fracReward =
-                multiplier.mul(fracPerBlock).mul(pool.allocPoint).div(
-                    totalAllocPoint
-                );
-            accFracPerShare = accFracPerShare.add(
-                fracReward.mul(1e12).div(lpSupply)
+                multiplier * fracPerBlock * pool.allocPoint / totalAllocPoint;
+            accFracPerShare = accFracPerShare + (
+                fracReward* 1e12 / lpSupply
             );
         }
-        return user.amount.mul(accFracPerShare).div(1e12).sub(user.rewardDebt);
+        return user.amount * accFracPerShare / 1e12 - user.rewardDebt;
     }
 
     // Update reward vairables for all pools. Be careful of gas spending!
@@ -218,13 +216,12 @@ contract MasterChef is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 fracReward =
-            multiplier.mul(fracPerBlock).mul(pool.allocPoint).div(
-                totalAllocPoint
-            );
-        frac.mint(devaddr, fracReward.div(10));
+            multiplier * fracPerBlock * pool.allocPoint /
+                totalAllocPoint;
+        frac.mint(devaddr, fracReward / 10);
         frac.mint(address(this), fracReward);
-        pool.accFracPerShare = pool.accFracPerShare.add(
-            fracReward.mul(1e12).div(lpSupply)
+        pool.accFracPerShare = pool.accFracPerShare + (
+            fracReward * 1e12 / lpSupply
         );
         pool.lastRewardBlock = block.number;
     }
@@ -236,9 +233,7 @@ contract MasterChef is Ownable {
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending =
-                user.amount.mul(pool.accFracPerShare).div(1e12).sub(
-                    user.rewardDebt
-                );
+                user.amount * pool.accFracPerShare / 1e12 - user.rewardDebt;
             safeFracTransfer(msg.sender, pending);
         }
         pool.lpToken.transferFrom(
@@ -246,8 +241,8 @@ contract MasterChef is Ownable {
             address(this),
             _amount
         );
-        user.amount = user.amount.add(_amount);
-        user.rewardDebt = user.amount.mul(pool.accFracPerShare).div(1e12);
+        user.amount = user.amount + _amount;
+        user.rewardDebt = user.amount * pool.accFracPerShare / 1e12;
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -258,12 +253,10 @@ contract MasterChef is Ownable {
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
         uint256 pending =
-            user.amount.mul(pool.accFracPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
+            user.amount * pool.accFracPerShare / 1e12 - user.rewardDebt;
         safeFracTransfer(msg.sender, pending);
-        user.amount = user.amount.sub(_amount);
-        user.rewardDebt = user.amount.mul(pool.accFracPerShare).div(1e12);
+        user.amount = user.amount - _amount;
+        user.rewardDebt = user.amount * pool.accFracPerShare / 1e12;
         pool.lpToken.transfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
     }
