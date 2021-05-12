@@ -20,9 +20,9 @@ describe("FracToken", function () {
     const name = await this.frac.name()
     const symbol = await this.frac.symbol()
     const decimals = await this.frac.decimals()
-    expect(name, "FracToken")
-    expect(symbol, "frac")
-    expect(decimals, "18")
+    assert.equal(name, 'FRAC - NIFTEX governance token')
+    assert.equal(symbol, 'FRAC')
+    assert.equal(decimals, "18")
   })
 
   it("should only allow owner to mint token", async function () {
@@ -36,10 +36,10 @@ describe("FracToken", function () {
     const aliceBal = await this.frac.balanceOf(this.alice.address)
     const bobBal = await this.frac.balanceOf(this.bob.address)
     const carolBal = await this.frac.balanceOf(this.carol.address)
-    expect(totalSupply, '1100');
-    expect(aliceBal, '100');
-    expect(bobBal, '1000');
-    expect(carolBal, '0');
+    assert.equal(totalSupply, '1100');
+    assert.equal(aliceBal, '100');
+    assert.equal(bobBal, '1000');
+    assert.equal(carolBal, '0');
   })
 
   it("should supply token transfers properly", async function () {
@@ -53,10 +53,10 @@ describe("FracToken", function () {
     const aliceBal = await this.frac.balanceOf(this.alice.address)
     const bobBal = await this.frac.balanceOf(this.bob.address)
     const carolBal = await this.frac.balanceOf(this.carol.address)
-    expect(totalSupply, "1100")
-    expect(aliceBal, "90")
-    expect(bobBal, "900")
-    expect(carolBal, "110")
+    assert.equal(totalSupply, "1100")
+    assert.equal(aliceBal, "90")
+    assert.equal(bobBal, "900")
+    assert.equal(carolBal, "110")
   })
 
   it("should fail if you try to do bad transfers", async function () {
