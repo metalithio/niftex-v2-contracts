@@ -88,7 +88,7 @@ contract MagneticPoolModule {
     function getId(
         address _nftRegistry,
         uint256 _tokenId
-    ) public returns (bytes32) {
+    ) public view returns (bytes32) {
         return keccak256(abi.encode(_nftRegistry, _tokenId));
     }
 
