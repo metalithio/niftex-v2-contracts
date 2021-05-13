@@ -54,7 +54,7 @@ contract MagneticPoolModule {
         require(ShardedWallet(payable(wallet)).transferFrom(owner, address(this), amount));
 
         if (selector == this.reclaimETH.selector) {
-            (bytes32 _id) = abi.decode(data, (bytes4, bytes32));
+            (,bytes32 _id) = abi.decode(data, (bytes4, bytes32));
             require(mapShardedWallet[_id] == msg.sender);
             _reclaimETH(_id, amount, owner);
         } else {
@@ -68,7 +68,6 @@ contract MagneticPoolModule {
         bytes32 _id,
         uint256 _fractionAmount
     ) public {
-        require(ShardedWallet(payable(mapShardedWallet[_id])).owner() == address(this));
         require(ShardedWallet(payable(mapShardedWallet[_id])).transferFrom(msg.sender, address(this), _fractionAmount));
         _reclaimETH(_id, _fractionAmount, msg.sender);
     }
@@ -96,6 +95,7 @@ contract MagneticPoolModule {
         uint256 _fractionAmount,
         address _recipient
     ) internal {
+        require(ShardedWallet(payable(mapShardedWallet[_id])).owner() == address(this));
         uint256 ethToRefund = _fractionAmount * pricePerFraction[_id] / 10**18;
         Address.send(_recipient, ethToRefund);
     }
