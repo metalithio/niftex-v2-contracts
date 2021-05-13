@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract MagneticPoolModule {
+contract MagneticPoolModule is Ownable {
     string public constant override name = type(MagneticPoolModule).name;
+    address public shardedWalletFactory;
     mapping(bytes32 => address) public mapShardedWallet;
     mapping(bytes32 => uint256) public pricePerFraction;
 
@@ -14,7 +15,11 @@ contract MagneticPoolModule {
         _;
     }
 
-    constructor(address walletTemplate) ModuleBase(walletTemplate) {}
+    constructor(
+        address _shardedWalletFactory
+    ) {
+        shardedWalletFactory = _shardedWalletFactory
+    }
 
     // works only for standard ERC721, Kitties contract and ERC1155. 
     // for ERC1155, only 1 item of same nftRegistry,tokenId is allowed
@@ -22,15 +27,14 @@ contract MagneticPoolModule {
         address _nftRegistry, 
         uint256 _tokenId,
         uint256 _pricePerFraction,
-        address _shardedWalletFactory,
         address _governance,
         string  calldata _name,
         string  calldata _symbol,
         address _artistWallet
     ) public payable {
-        bytes32 id = getId(_nftRegistry, _tokenId, _shardedWalletFactory);
+        bytes32 id = getId(_nftRegistry, _tokenId);
         require(mapShardedWallet[id] == address(0));
-        address newShardedWallet = ShardedWalletFactory(_shardedWalletFactory).mintWallet(
+        address newShardedWallet = ShardedWalletFactory(shardedWalletFactory).mintWallet(
             _governance,
             address(this),
             _name,
@@ -84,10 +88,9 @@ contract MagneticPoolModule {
 
     function getId(
         address _nftRegistry,
-        uint256 _tokenId,
-        address _shardedWalletFactory
+        uint256 _tokenId
     ) public returns (bytes32) {
-        return keccak256(abi.encode(_nftRegistry, _tokenId, _shardedWalletFactory));
+        return keccak256(abi.encode(_nftRegistry, _tokenId));
     }
 
     function _reclaimETH (
