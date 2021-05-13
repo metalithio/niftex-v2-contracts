@@ -85,15 +85,6 @@ contract MagneticPoolModule {
         _reclaimETH(_id, _fractionAmount, msg.sender);
     }
 
-    function _contribute(
-        bytes32 _id, 
-        address _contributor,
-        uint256 _amount
-    ) internal isPoolActive(_id) {
-        uint256 fractions = _amount * 10**18 / pricePerFraction[_id];
-        ShardedWallet(payable(mapShardedWallet[_id])).moduleMint(_contributor, fractions);
-    }
-
     function getId(
         address _nftRegistry,
         uint256 _tokenId
@@ -120,6 +111,16 @@ contract MagneticPoolModule {
         IERC1155 nftRegistry = IERC1155(_nftRegistry);
         nftRegistry.safeTransferFrom(msg.sender, mapShardedWallet[id], _tokenId, 1, _data);
         _finalizePool(id, msg.sender);
+    }
+
+    // internal functions start here
+    function _contribute(
+        bytes32 _id, 
+        address _contributor,
+        uint256 _amount
+    ) internal isPoolActive(_id) {
+        uint256 fractions = _amount * 10**18 / pricePerFraction[_id];
+        ShardedWallet(payable(mapShardedWallet[_id])).moduleMint(_contributor, fractions);
     }
 
     function _reclaimETH (
