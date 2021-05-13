@@ -113,11 +113,12 @@ contract MagneticPoolModule {
 
     function acceptBidERC1155(
         address _nftRegistry,
-        uint256 _tokenId
+        uint256 _tokenId,
+        bytes calldata _data,
     ) public {
         bytes32 id = getId(_nftRegistry, _tokenId);
         IERC1155 nftRegistry = IERC1155(_nftRegistry);
-        nftRegistry.safeTransferFrom(msg.sender, mapShardedWallet[id], _tokenId, 1, 0x);
+        nftRegistry.safeTransferFrom(msg.sender, mapShardedWallet[id], _tokenId, 1, _data);
         _finalizePool(id, msg.sender);
     }
 
