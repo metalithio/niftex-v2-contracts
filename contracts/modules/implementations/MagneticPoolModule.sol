@@ -100,6 +100,7 @@ contract MagneticPoolModule {
     ) internal {
         require(ShardedWallet(payable(mapShardedWallet[_id])).owner() == address(this));
         uint256 ethToRefund = _fractionAmount * pricePerFraction[_id] / 10**18;
+        ShardedWallet(payable(mapShardedWallet[_id])).burn(_fractionAmount); 
         Address.send(_recipient, ethToRefund);
     }
 }
