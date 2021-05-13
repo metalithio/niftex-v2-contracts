@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 contract MagneticPoolModule {
     string public constant override name = type(MagneticPoolModule).name;
@@ -12,6 +14,11 @@ contract MagneticPoolModule {
 
     modifier isValidPool(bytes32 _id) {
         require(mapShardedWallet[_id] != address(0));
+        _;
+    }
+
+    modifier isPoolActive(bytes32 _id) {
+        require(ShardedWallet(payable(mapShardedWallet[_id])).owner() == address(this));
         _;
     }
 
@@ -34,6 +41,8 @@ contract MagneticPoolModule {
     ) public payable {
         bytes32 id = getId(_nftRegistry, _tokenId);
         require(mapShardedWallet[id] == address(0));
+        // initial owner of new sharded wallet MUST be this contract
+        // to prevent unexpected minting because of ActionModule or ERC20ManagerModule
         address newShardedWallet = ShardedWalletFactory(shardedWalletFactory).mintWallet(
             _governance,
             address(this),
@@ -80,8 +89,7 @@ contract MagneticPoolModule {
         bytes32 _id, 
         address _contributor,
         uint256 _amount
-    ) internal {
-        require(ShardedWallet(payable(mapShardedWallet[_id])).owner() == address(this));
+    ) internal isPoolActive(_id) {
         uint256 fractions = _amount * 10**18 / pricePerFraction[_id];
         ShardedWallet(payable(mapShardedWallet[_id])).moduleMint(_contributor, fractions);
     }
@@ -93,14 +101,43 @@ contract MagneticPoolModule {
         return keccak256(abi.encode(_nftRegistry, _tokenId));
     }
 
+    function acceptBidERC721(
+        address _nftRegistry,
+        uint256 _tokenId
+    ) public {
+        bytes32 id = getId(_nftRegistry, _tokenId);
+        IERC721 nftRegistry = IERC721(_nftRegistry);
+        nftRegistry.transferFrom(msg.sender, mapShardedWallet[id], _tokenId);
+        _finalizePool(id, nftOwner);
+    }
+
+    function acceptBidERC1155(
+        address _nftRegistry,
+        uint256 _tokenId
+    ) public {
+        bytes32 id = getId(_nftRegistry, _tokenId);
+        IERC1155 nftRegistry = IERC1155(_nftRegistry);
+        nftRegistry.safeTransferFrom(msg.sender, mapShardedWallet[id], _tokenId, 1, 0x);
+        _finalizePool(id, msg.sender);
+    }
+
     function _reclaimETH (
         bytes32 _id,
         uint256 _fractionAmount,
         address _recipient
-    ) internal {
-        require(ShardedWallet(payable(mapShardedWallet[_id])).owner() == address(this));
+    ) internal isPoolActive(_id) {
         uint256 ethToRefund = _fractionAmount * pricePerFraction[_id] / 10**18;
         ShardedWallet(payable(mapShardedWallet[_id])).burn(_fractionAmount); 
         Address.send(_recipient, ethToRefund);
+    }
+
+    function _finalizePool(bytes32 _id, address _nftOwner) internal isPoolActive(_id) {
+        ShardedWallet wallet = ShardedWallet(payable(mapShardedWallet[_id]));
+        uint256 totalSupply = wallet.totalSupply();
+        uint256 ethToPay = pricePerFraction[_id] * totalSupply / 10**18;
+        mapShardedWallet[_id] = address(0);
+        pricePerFraction[_id] = 0;
+        wallet.moduleTransferOwnership(address(0));
+        Address.send(_nftOwner, ethToPay);
     }
 }
