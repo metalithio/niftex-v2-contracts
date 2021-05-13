@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract MagneticPoolModule is Ownable {
+contract MagneticPoolModule {
     string public constant override name = type(MagneticPoolModule).name;
     address public shardedWalletFactory;
     mapping(bytes32 => address) public mapShardedWallet;
