@@ -2,6 +2,7 @@ require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-truffle5');
 require('@nomiclabs/hardhat-solhint');
 require('@openzeppelin/hardhat-upgrades');
+require("@nomiclabs/hardhat-etherscan");
 require('solidity-coverage');
 require('dotenv').config();
 
@@ -36,6 +37,10 @@ if (process.env.MAINNET_PRIVATE_KEY) {
       process.env.MAINNET_PRIVATE_KEY.startsWith('0x')
       ? process.env.MAINNET_PRIVATE_KEY
       : '0x' + process.env.MAINNET_PRIVATE_KEY,
-    ],
-  }
+  ],
+  timeout: 60*1000*10,
+}
+
+module.exports.etherscan = {
+  apiKey: process.env.ETHERSCAN_API_KEY,
 }

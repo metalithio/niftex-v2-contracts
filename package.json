@@ -9,16 +9,21 @@
     "coverage": "hardhat coverage",
     "test": "hardhat test",
     "test:531": "hardhat test ./test/531_bondingcurve3_with_helpers",
+    "test:600": "hardhat test ./test/600_erc20ManagerModule",
+    "test:402": "hardhat test ./test/402_action_sw_manager",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
-    "deploy:mainnet": "npx hardhat run scripts/deploy.js --network mainnet"
+    "deploy:mainnet": "npx hardhat run scripts/deploy.js --network mainnet",
+    "deployNewModule:rinkeby": "npx hardhat run scripts/deploy-new-module.js --network rinkeby",
+    "deployNewModule:mainnet": "npx hardhat run scripts/deploy-new-module.js --network mainnet"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.1.0"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
+    "@nomiclabs/hardhat-etherscan": "^2.1.1",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@nomiclabs/hardhat-truffle5": "^2.0.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
