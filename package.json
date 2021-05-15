@@ -15,8 +15,7 @@
     "deploy:mainnet": "npx hardhat run scripts/deploy.js --network mainnet"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.0.0",
-    "env-cmd": "^10.1.0"
+    "@openzeppelin/contracts": "^4.1.0"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
@@ -26,6 +25,7 @@
     "@openzeppelin/hardhat-upgrades": "^1.6.0",
     "@openzeppelin/test-helpers": "^0.5.9",
     "dotenv": "^8.2.0",
+    "env-cmd": "^10.1.0",
     "ethers": "^5.0.29",
     "ganache-cli": "^6.12.1",
     "hardhat": "^2.0.4",
