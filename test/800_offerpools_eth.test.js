@@ -33,7 +33,7 @@ contract('Workflow', function (accounts) {
 			[key.toLowerCase()]: await artifact.new(this.template.address, ...(this.extraargs || []))
 		}), Promise.resolve({}));
 		// Extra module (OfferPools)
-		this.modules.offerpools = await artifacts.require('OfferPools').new(this.modules.factory.address);
+		this.modules.offerpools = await artifacts.require('OfferPools').new(this.modules.factory.address, this.governance.address);
 		// whitelist modules
 		await this.governance.initialize(); // Performed by proxy
 		for ({ address } of Object.values(this.modules))
@@ -69,7 +69,6 @@ contract('Workflow', function (accounts) {
 					this.mocks.erc721.address,
 					1,
 					constants.ZERO_ADDRESS, // use ETH
-					this.governance.address,
 					'MyOfferPoolWallet',
 					'MOPW',
 					constants.ZERO_ADDRESS, // artist

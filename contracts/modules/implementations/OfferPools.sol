@@ -13,6 +13,7 @@ contract OfferPools is IModule, ModuleBase
     string public constant override name = type(OfferPools).name;
 
     ShardedWalletFactory public immutable shardedwalletfactory;
+    address              public immutable governance;
 
     // registry => tokenId => asset
     mapping(address => mapping(uint256 => mapping(address => address))) private _pools;
@@ -22,10 +23,11 @@ contract OfferPools is IModule, ModuleBase
     event Withdraw(address indexed registry, uint256 indexed tokenId, address indexed asset, address account, uint256 amount);
     event OfferAccepted(address indexed registry, uint256 indexed tokenId, address indexed asset, address account);
 
-    constructor(address shardedwalletfactory_)
+    constructor(address shardedwalletfactory_, address governance_)
     ModuleBase(ShardedWalletFactory(shardedwalletfactory_).walletTemplate())
     {
         shardedwalletfactory = ShardedWalletFactory(shardedwalletfactory_);
+        governance           = governance_;
     }
 
     function getPool(address registry, uint256 tokenId, address asset)
@@ -38,7 +40,6 @@ contract OfferPools is IModule, ModuleBase
         address registry,
         uint256 tokenId,
         address asset,
-        address walletGovernance,
         string memory walletName,
         string memory walletSymbol,
         address walletArtist
@@ -47,7 +48,7 @@ contract OfferPools is IModule, ModuleBase
     {
         require(_pools[registry][tokenId][asset] == address(0), "Pool already initialized");
         instance = shardedwalletfactory.mintWallet(
-            walletGovernance,
+            governance,
             address(this),
             walletName,
             walletSymbol,
