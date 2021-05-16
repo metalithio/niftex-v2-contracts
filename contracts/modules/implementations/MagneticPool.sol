@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "../ModuleBase.sol";
 import "./ShardedWalletFactory.sol";
 
-contract OfferPools is IModule, ModuleBase
+contract MagneticPool is IModule, ModuleBase
 {
-    string public constant override name = type(OfferPools).name;
+    string public constant override name = type(MagneticPool).name;
 
     ShardedWalletFactory public immutable shardedwalletfactory;
     address              public immutable governance;
