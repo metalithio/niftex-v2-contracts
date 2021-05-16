@@ -118,10 +118,10 @@ contract('Workflow', function (accounts) {
 			});
 		});
 
-		describe('#4 AcceptOffer', function () {
+		describe('#4 AcceptOfferERC721', function () {
 			it('perform', async function () {
 				await this.mocks.erc721.approve(this.modules.offerpools.address, 1, { from: user1 });
-				const { receipt } = await this.modules.offerpools.acceptOffer(this.mocks.erc721.address, 1, this.mocks.erc20.address, web3.utils.toWei('8'), { from: user1 });
+				const { receipt } = await this.modules.offerpools.acceptOfferERC721(this.mocks.erc721.address, 1, this.mocks.erc20.address, web3.utils.toWei('8'), { from: user1 });
 			});
 			after(async function () {
 				assert.equal(await this.modules.offerpools.getPool(this.mocks.erc721.address, 1, this.mocks.erc20.address), constants.ZERO_ADDRESS);

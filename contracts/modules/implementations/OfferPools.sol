@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "../ModuleBase.sol";
 import "./ShardedWalletFactory.sol";
 
@@ -66,10 +67,6 @@ contract OfferPools is IModule, ModuleBase
     public
     {
         address wallet = _pools[registry][tokenId][address(0)];
-        if (wallet == address(0)) {
-            wallet = createPool(registry, tokenId, address(0));
-        }
-
         ShardedWallet(payable(wallet)).moduleBurn(msg.sender, amount);
         Address.sendValue(payable(msg.sender), amount);
 
@@ -94,27 +91,35 @@ contract OfferPools is IModule, ModuleBase
     public
     {
         address wallet = _pools[registry][tokenId][asset];
-        if (wallet == address(0)) {
-            wallet = createPool(registry, tokenId, asset);
-        }
-
         ShardedWallet(payable(wallet)).moduleBurn(msg.sender, amount);
         SafeERC20.safeTransfer(IERC20(asset), msg.sender, amount);
 
         emit Withdraw(registry, tokenId, asset, amount);
     }
 
-    function acceptOffer(address registry, uint256 tokenId, address asset, uint256 minimum)
+    function acceptOfferERC721(address registry, uint256 tokenId, address asset, uint256 minimum)
     public
     {
         address wallet = _pools[registry][tokenId][asset];
+        IERC721(registry).transferFrom(msg.sender, wallet, tokenId);
+        _acceptOffer(registry, tokenId, asset, minimum);
+    }
 
+    function acceptOfferERC1155(address registry, uint256 tokenId, address asset, uint256 minimum)
+    public
+    {
+        address wallet = _pools[registry][tokenId][asset];
+        IERC1155(registry).safeTransferFrom(msg.sender, wallet, tokenId, 1, "");
+        _acceptOffer(registry, tokenId, asset, minimum);
+    }
+
+    function _acceptOffer(address registry, uint256 tokenId, address asset, uint256 minimum)
+    internal
+    {
+        address wallet = _pools[registry][tokenId][asset];
         // protection against frontrunning.
         uint256 amount = ShardedWallet(payable(wallet)).totalSupply();
         require(amount >= minimum, "OfferPools: not enough value in pool");
-
-        // transfer token to sharded wallet
-        IERC721(registry).transferFrom(msg.sender, address(wallet), tokenId);
 
         // detach wallet
         ShardedWallet(payable(wallet)).renounceOwnership();
