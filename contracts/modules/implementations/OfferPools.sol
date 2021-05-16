@@ -19,8 +19,8 @@ contract OfferPools is IModule, ModuleBase
     mapping(address => mapping(uint256 => mapping(address => address))) private _pools;
 
     event NewPool(address indexed registry, uint256 indexed tokenId, address indexed asset, address pool);
-    event Deposit(address indexed registry, uint256 indexed tokenId, address indexed asset, uint256 amount);
-    event Withdraw(address indexed registry, uint256 indexed tokenId, address indexed asset, uint256 amount);
+    event Deposit(address indexed registry, uint256 indexed tokenId, address indexed asset, address account, uint256 amount);
+    event Withdraw(address indexed registry, uint256 indexed tokenId, address indexed asset, address account, uint256 amount);
     event OfferAccepted(address indexed registry, uint256 indexed tokenId, address indexed asset, address account);
 
     constructor(address shardedwalletfactory_, address governance_)
@@ -50,53 +50,58 @@ contract OfferPools is IModule, ModuleBase
         emit NewPool(registry, tokenId, asset, instance);
     }
 
-    function depositETH(address registry, uint256 tokenId)
-    public payable
-    {
-        address wallet = _pools[registry][tokenId][address(0)];
-        if (wallet == address(0)) {
-            wallet = createPool(registry, tokenId, address(0));
-        }
-
-        ShardedWallet(payable(wallet)).moduleMint(msg.sender, msg.value);
-
-        emit Deposit(registry, tokenId, address(0), msg.value);
-    }
-
-    function withdrawETH(address registry, uint256 tokenId, uint256 amount)
-    public
-    {
-        address wallet = _pools[registry][tokenId][address(0)];
-        ShardedWallet(payable(wallet)).moduleBurn(msg.sender, amount);
-        Address.sendValue(payable(msg.sender), amount);
-
-        emit Withdraw(registry, tokenId, address(0), amount);
-    }
-
+    /**
+     * Deposit funds to mint option shards
+     */
     function deposit(address registry, uint256 tokenId, address asset, uint256 amount)
     public
     {
+        SafeERC20.safeTransferFrom(IERC20(asset), msg.sender, address(this), amount);
+        _deposit(registry, tokenId, asset, msg.sender, amount);
+    }
+
+    function depositETH(address registry, uint256 tokenId)
+    public payable
+    {
+        _deposit(registry, tokenId, address(0), msg.sender, msg.value);
+    }
+
+    function _deposit(address registry, uint256 tokenId, address asset, address account, uint256 amount) internal {
         address wallet = _pools[registry][tokenId][asset];
         if (wallet == address(0)) {
             wallet = createPool(registry, tokenId, asset);
         }
 
-        SafeERC20.safeTransferFrom(IERC20(asset), msg.sender, address(this), amount);
-        ShardedWallet(payable(wallet)).moduleMint(msg.sender, amount);
-
-        emit Deposit(registry, tokenId, asset, amount);
+        ShardedWallet(payable(wallet)).moduleMint(account, amount);
+        emit Deposit(registry, tokenId, asset, account, amount);
     }
 
+    /**
+     * Burn option shards to withdraw funds
+     */
     function withdraw(address registry, uint256 tokenId, address asset, uint256 amount)
     public
     {
-        address wallet = _pools[registry][tokenId][asset];
-        ShardedWallet(payable(wallet)).moduleBurn(msg.sender, amount);
+        _withdraw(registry, tokenId, asset, msg.sender, amount);
         SafeERC20.safeTransfer(IERC20(asset), msg.sender, amount);
-
-        emit Withdraw(registry, tokenId, asset, amount);
     }
 
+    function withdrawETH(address registry, uint256 tokenId, uint256 amount)
+    public
+    {
+        _withdraw(registry, tokenId, address(0), msg.sender, amount);
+        Address.sendValue(payable(msg.sender), amount);
+    }
+
+    function _withdraw(address registry, uint256 tokenId, address asset, address account, uint256 amount) internal {
+        address wallet = _pools[registry][tokenId][asset];
+        ShardedWallet(payable(wallet)).moduleBurn(account, amount);
+        emit Withdraw(registry, tokenId, asset, account, amount);
+    }
+
+    /**
+     * Accept offer and get corresponding funds
+     */
     function acceptOfferERC721(address registry, uint256 tokenId, address asset, uint256 minimum)
     public
     {
