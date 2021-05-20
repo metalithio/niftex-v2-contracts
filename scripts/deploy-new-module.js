@@ -15,13 +15,13 @@ async function main() {
   const modules = await Object.entries({
     // "action":              "ActionModule",
     // "basicdistribution":   "BasicDistributionModule",
-    // "buyout":              "BuyoutModule",
+    "buyout":              "BuyoutModule",
     // "crowdsale":           "FixedPriceSaleModule",
     // "factory":             "ShardedWalletFactory",
     // "multicall":           "MulticallModule",
     // "tokenreceiver":       "TokenReceiverModule",
     // "erc20managermodule":  "ERC20ManagerModule",
-    "swmanagermodule":     "SWManagerModule",
+    // "swmanagermodule":     "SWManagerModule",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;
