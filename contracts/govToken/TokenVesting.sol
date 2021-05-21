@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../../initializable/Ownable.sol";
 
 /**
  * @title TokenVesting
@@ -48,6 +48,12 @@ contract TokenVesting is Ownable {
      * @param duration duration in seconds of the period in which the tokens will vest
      * @param revocable whether the vesting is revocable or not
      */
+
+    // The multisig should be the owner of this wallet
+    constructor(address _owner) {
+        Ownable._setOwner(_owner)
+    }
+
     function initialize(address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, bool revocable) public {
         // avoid re-entrancy
         require(_beneficiary == address(0));
