@@ -2,14 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import "../../utils/CloneFactory.sol";
-import "../ModuleBase.sol";
+import "../utils/CloneFactory.sol";
+import "./TokenVesting.sol";
 
 contract TokenVestingFactory is CloneFactory
 {
-    string public constant override name = type(TokenVestingFactory).name;
+    string public constant name = type(TokenVestingFactory).name;
 
     constructor(address vestingTemplate) CloneFactory(vestingTemplate) {}
+
+    event MintTokenVesting(address indexed _instance, address _beneficiary);
 
     function mintTokenVesting(
         address beneficiary, 
@@ -29,5 +31,7 @@ contract TokenVestingFactory is CloneFactory
             duration,
             revocable
         );
+
+        emit MintTokenVesting(instance, beneficiary);
     }
 }
