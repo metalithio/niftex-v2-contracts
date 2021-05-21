@@ -48,7 +48,9 @@ contract TokenVesting is Ownable {
      * @param duration duration in seconds of the period in which the tokens will vest
      * @param revocable whether the vesting is revocable or not
      */
-    constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, bool revocable) public {
+    function initialize(address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, bool revocable) public {
+        // avoid re-entrancy
+        require(_beneficiary == address(0));
         require(beneficiary != address(0), "TokenVesting: beneficiary is the zero address");
         // solhint-disable-next-line max-line-length
         require(cliffDuration <= duration, "TokenVesting: cliff is longer than duration");
