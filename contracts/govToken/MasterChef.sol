@@ -300,4 +300,8 @@ contract MasterChef is Ownable {
         require(msg.sender == devaddr, "dev: wut?");
         devaddr = _devaddr;
     }
+
+    function blockNumber() public view returns(uint256) {
+        return block.number;
+    }
 }
