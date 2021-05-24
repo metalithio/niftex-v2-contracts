@@ -69,24 +69,13 @@ contract MagneticPool is IModule, ModuleBase
     external
     {
         SafeERC20.safeTransferFrom(IERC20(asset), msg.sender, address(this), amount);
-
-        (address admin, uint256 fee) = _computeFees(registry, tokenId, asset, amount);
-        if (fee > 0) {
-            SafeERC20.safeTransfer(IERC20(asset), admin, fee);
-        }
-
-        _deposit(registry, tokenId, asset, msg.sender, amount - fee);
+        _deposit(registry, tokenId, asset, msg.sender, amount);
     }
 
     function depositETH(address registry, uint256 tokenId)
     external payable
     {
-        (address admin, uint256 fee) = _computeFees(registry, tokenId, address(0), msg.value);
-        if (fee > 0) {
-            Address.sendValue(payable(admin), fee);
-        }
-
-        _deposit(registry, tokenId, address(0), msg.sender, msg.value - fee);
+        _deposit(registry, tokenId, address(0), msg.sender, msg.value);
     }
 
     function _deposit(address registry, uint256 tokenId, address asset, address account, uint256 amount)
@@ -150,9 +139,13 @@ contract MagneticPool is IModule, ModuleBase
     internal
     {
         address wallet = _pools[registry][tokenId][asset];
+        IGovernance walletGovernance = ShardedWallet(payable(wallet)).governance();
+
         // protection against frontrunning.
         uint256 amount = ShardedWallet(payable(wallet)).totalSupply();
-        require(amount >= minimum, "OfferPools: not enough value in pool");
+        uint256 fee    = amount * walletGovernance.getConfig(wallet, MAGNETIC_FEE_NIFTEX) / 10**18;
+        address admin  = walletGovernance.getNiftexWallet();
+        require(amount - fee >= minimum, "OfferPools: not enough value in pool");
 
         // detach wallet
         ShardedWallet(payable(wallet)).renounceOwnership();
@@ -160,21 +153,13 @@ contract MagneticPool is IModule, ModuleBase
 
         // pay the sender
         if (address(asset) == address(0)) {
-            Address.sendValue(payable(msg.sender), amount);
+            Address.sendValue(payable(msg.sender), amount - fee);
+            Address.sendValue(payable(admin), fee);
         } else {
-            SafeERC20.safeTransfer(IERC20(asset), msg.sender, amount);
+            SafeERC20.safeTransfer(IERC20(asset), msg.sender, amount - fee);
+            SafeERC20.safeTransfer(IERC20(asset), admin, fee);
         }
 
         emit OfferAccepted(registry, tokenId, asset, msg.sender);
-    }
-
-    function _computeFees(address registry, uint256 tokenId, address asset, uint256 amount)
-    internal view returns (address admin, uint256 fee)
-    {
-        address wallet = _pools[registry][tokenId][asset];
-        IGovernance walletGovernance = ShardedWallet(payable(wallet)).governance();
-
-        admin = walletGovernance.getNiftexWallet();
-        fee   = amount * walletGovernance.getConfig(wallet, MAGNETIC_FEE_NIFTEX) / 10**18;
     }
 }
