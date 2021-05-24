@@ -180,7 +180,7 @@ contract MasterChef is Ownable {
         }
     }
 
-    // View function to see pending SUSHIs on frontend.
+    // View function to see pending FRACs on frontend.
     function pendingFrac(uint256 _pid, address _user)
         external
         view
@@ -299,9 +299,5 @@ contract MasterChef is Ownable {
     function dev(address _devaddr) public {
         require(msg.sender == devaddr, "dev: wut?");
         devaddr = _devaddr;
-    }
-
-    function blockNumber() public view returns(uint256) {
-        return block.number;
     }
 }

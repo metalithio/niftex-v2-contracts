@@ -180,8 +180,9 @@ contract("MasterChef", function (accounts) {
       assert.equal(await this.frac.balanceOf(this.chef.address), "30000");
       assert.equal(await this.frac.balanceOf(this.bob.address), "0")
       assert.equal(await this.frac.balanceOf(this.dev.address), "0")
-      assert.equal(await this.lp.balanceOf(this.bob.address), "990")
-      await advanceBlockTo("219")
+      assert.equal(await this.lp.balanceOf(this.bob.address), "990");
+
+      await advanceBlockTo('219');
       await this.chef.withdraw(0, "10", { from: this.bob.address }) // block 220
       assert.equal(await this.frac.balanceOf(this.chef.address), "29980");
       assert.equal(await this.frac.balanceOf(this.bob.address), "20")
