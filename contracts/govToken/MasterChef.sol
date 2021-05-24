@@ -66,7 +66,7 @@ contract MasterChef is Ownable {
     // SUSHI tokens created per block.
     uint256 public fracPerBlock;
     // Bonus muliplier for early frac makers.
-    uint256 public constant BONUS_MULTIPLIER = 15 * 1e17; // 1.5 times in first year
+    uint256 public bonusMultiplier = 10**18; // no bonus in first year
     // The migrator contract. It has a lot of power. Can only be set through governance (owner).
     IMigratorChef public migrator;
     // Info of each pool.
@@ -92,6 +92,7 @@ contract MasterChef is Ownable {
         uint256 _startBlock,
         uint256 _bonusEndBlock,
         uint256 _endBlock,
+        uint256 _bonusMultiplier
     ) public {
         frac = _frac;
         devaddr = _devaddr;
@@ -99,6 +100,7 @@ contract MasterChef is Ownable {
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
         endBlock = _endBlock;
+        bonusMultiplier = _bonusMultiplier;
     }
 
     function poolLength() external view returns (uint256) {
@@ -167,12 +169,12 @@ contract MasterChef is Ownable {
         returns (uint256)
     {
         if (_to <= bonusEndBlock) {
-            return (_to - _from) * BONUS_MULTIPLIER / 1e18;
+            return (_to - _from) * bonusMultiplier / 10**18;
         } else if (_from >= bonusEndBlock) {
             return _to - _from;
         } else {
             return
-                (bonusEndBlock - _from) * BONUS_MULTIPLIER / 1e18 + (
+                (bonusEndBlock - _from) * bonusMultiplier / 10**18 + (
                     _to - bonusEndBlock
                 );
         }

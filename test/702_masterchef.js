@@ -1,4 +1,4 @@
-const { ethers } = require("hardhat");
+const { ethers, web3 } = require("hardhat");
 const { expect } = require("chai");
 const { expectRevert } = require('@openzeppelin/test-helpers');
 const { advanceBlockTo } = require("../utils/test-timer");
@@ -12,21 +12,21 @@ describe("MasterChef", function () {
     this.dev = this.signers[3]
     this.minter = this.signers[4]
 
-    this.MasterChef = await ethers.getContractFactory("MasterChef")
-    this.FracToken = await ethers.getContractFactory("FracToken")
-    this.ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.minter)
+    this.MasterChef = await ethers.getContractFactory("MasterChef");
+    this.FracToken = await ethers.getContractFactory("ERC20Mock", this.minter);
+    this.ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.minter);
   })
 
   beforeEach(async function () {
-    this.frac = await this.FracToken.deploy()
-    await this.frac.deployed()
+    this.frac = await this.FracToken.deploy("FRAC - NIFTEX Governance token", "FRAC");
+    await this.frac.deployed();
+    await this.frac.mint(this.minter, web3.utils.toWei('3000000'));
   })
 
   it("should set correct state variables", async function () {
     this.chef = await this.MasterChef.deploy(this.frac.address, this.dev.address, "1000", "0", "1000")
-    await this.chef.deployed()
-
-    await this.frac.transferOwnership(this.chef.address)
+    await this.chef.deployed();
+    await this.frac.transfer(this.chef.address, web3.utils.toWei('3000000'));
 
     const frac = await this.chef.frac()
     const devaddr = await this.chef.devaddr()
