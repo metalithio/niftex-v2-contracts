@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./FracToken.sol";
 
 interface IMigratorChef {
@@ -60,10 +61,12 @@ contract MasterChef is Ownable {
     address public devaddr;
     // Block number when bonus FRAC period ends.
     uint256 public bonusEndBlock;
+    // end block number
+    uint256 public endBlock;
     // SUSHI tokens created per block.
     uint256 public fracPerBlock;
     // Bonus muliplier for early frac makers.
-    uint256 public constant BONUS_MULTIPLIER = 10;
+    uint256 public constant BONUS_MULTIPLIER = 15 * 1e17; // 1.5 times in first year
     // The migrator contract. It has a lot of power. Can only be set through governance (owner).
     IMigratorChef public migrator;
     // Info of each pool.
@@ -87,13 +90,15 @@ contract MasterChef is Ownable {
         address _devaddr,
         uint256 _fracPerBlock,
         uint256 _startBlock,
-        uint256 _bonusEndBlock
+        uint256 _bonusEndBlock, // 2628000 blocks after startBlock (~ 365 days)
+        uint256 _endBlock, // 2628000 *2 blocks after startBlock (~365 * 2 days)
     ) public {
         frac = _frac;
         devaddr = _devaddr;
         fracPerBlock = _fracPerBlock;
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
+        endBlock = _endBlock;
     }
 
     function poolLength() external view returns (uint256) {
@@ -111,7 +116,7 @@ contract MasterChef is Ownable {
             massUpdatePools();
         }
         uint256 lastRewardBlock =
-            block.number > startBlock ? block.number : startBlock;
+            Math.min(block.number, endBlock) > startBlock ? Math.min(block.number, endBlock) : startBlock;
         totalAllocPoint = totalAllocPoint + _allocPoint;
         poolInfo.push(
             PoolInfo({
@@ -162,12 +167,12 @@ contract MasterChef is Ownable {
         returns (uint256)
     {
         if (_to <= bonusEndBlock) {
-            return (_to - _from) * BONUS_MULTIPLIER;
+            return (_to - _from) * BONUS_MULTIPLIER / 1e18;
         } else if (_from >= bonusEndBlock) {
             return _to - _from;
         } else {
             return
-                (bonusEndBlock - _from) * BONUS_MULTIPLIER + (
+                (bonusEndBlock - _from) * BONUS_MULTIPLIER / 1e18 + (
                     _to - bonusEndBlock
                 );
         }
@@ -183,9 +188,9 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accFracPerShare = pool.accFracPerShare;
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
-        if (block.number > pool.lastRewardBlock && lpSupply != 0) {
+        if (Math.min(block.number, endBlock) > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier =
-                getMultiplier(pool.lastRewardBlock, block.number);
+                getMultiplier(pool.lastRewardBlock, Math.min(block.number, endBlock));
             uint256 fracReward =
                 multiplier * fracPerBlock * pool.allocPoint / totalAllocPoint;
             accFracPerShare = accFracPerShare + (
@@ -206,24 +211,22 @@ contract MasterChef is Ownable {
     // Update reward variables of the given pool to be up-to-date.
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
-        if (block.number <= pool.lastRewardBlock) {
+        if (Math.min(block.number, endBlock) <= pool.lastRewardBlock) {
             return;
         }
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (lpSupply == 0) {
-            pool.lastRewardBlock = block.number;
+            pool.lastRewardBlock = Math.min(block.number, endBlock);
             return;
         }
-        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, Math.min(block.number, endBlock));
         uint256 fracReward =
             multiplier * fracPerBlock * pool.allocPoint /
                 totalAllocPoint;
-        frac.mint(devaddr, fracReward / 10);
-        frac.mint(address(this), fracReward);
         pool.accFracPerShare = pool.accFracPerShare + (
             fracReward * 1e12 / lpSupply
         );
-        pool.lastRewardBlock = block.number;
+        pool.lastRewardBlock = Math.min(block.number, endBlock);
     }
 
     // Deposit LP tokens to MasterChef for SUSHI allocation.
