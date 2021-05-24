@@ -2,9 +2,11 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "../../initializable/BondingCurve3.sol";
 import "../ModuleBase.sol";
 import "./ShardedWalletFactory.sol";
 
@@ -14,6 +16,8 @@ contract MagneticPool is IModule, ModuleBase
 
     // bytes32 public constant MAGNETIC_FEE_NIFTEX = bytes32(uint256(keccak256("MAGNETIC_FEE_NIFTEX")) - 1);
     bytes32 public constant MAGNETIC_FEE_NIFTEX  = 0x56607a74616b4fa14c14943f0e02b9b315c4525dafdf1b55857c00d254d7950c;
+    // bytes32 public constant CURVE_TEMPLATE          = bytes32(uint256(keccak256("CURVE_TEMPLATE")) - 1);
+    bytes32 public constant CURVE_TEMPLATE          = 0x3cec7c13345ae32e688f81840d184c63978bb776762e026e7e61d891bb2dd84b;
 
     ShardedWalletFactory public immutable shardedwalletfactory;
     address              public immutable governance;
@@ -25,6 +29,7 @@ contract MagneticPool is IModule, ModuleBase
     event Deposit(address indexed registry, uint256 indexed tokenId, address indexed asset, address account, uint256 amount);
     event Withdraw(address indexed registry, uint256 indexed tokenId, address indexed asset, address account, uint256 amount);
     event OfferAccepted(address indexed registry, uint256 indexed tokenId, address indexed asset, address account);
+    event NewBondingCurve(ShardedWallet indexed wallet, address indexed curve);
 
     constructor(address shardedwalletfactory_, address governance_)
     ModuleBase(ShardedWalletFactory(shardedwalletfactory_).walletTemplate())
@@ -138,17 +143,17 @@ contract MagneticPool is IModule, ModuleBase
     function _acceptOffer(address registry, uint256 tokenId, address asset, uint256 minimum)
     internal
     {
-        address wallet = _pools[registry][tokenId][asset];
-        IGovernance walletGovernance = ShardedWallet(payable(wallet)).governance();
+        ShardedWallet wallet           = ShardedWallet(payable(_pools[registry][tokenId][asset]));
+        IGovernance   walletGovernance = wallet.governance();
 
         // protection against frontrunning.
-        uint256 amount = ShardedWallet(payable(wallet)).totalSupply();
-        uint256 fee    = amount * walletGovernance.getConfig(wallet, MAGNETIC_FEE_NIFTEX) / 10**18;
+        uint256 amount = wallet.totalSupply();
+        uint256 fee    = amount * walletGovernance.getConfig(address(wallet), MAGNETIC_FEE_NIFTEX) / 10**18;
         address admin  = walletGovernance.getNiftexWallet();
         require(amount - fee >= minimum, "OfferPools: not enough value in pool");
 
         // detach wallet
-        ShardedWallet(payable(wallet)).renounceOwnership();
+        wallet.renounceOwnership();
         delete _pools[registry][tokenId][asset];
 
         // pay the sender
@@ -158,6 +163,14 @@ contract MagneticPool is IModule, ModuleBase
         } else {
             SafeERC20.safeTransfer(IERC20(asset), msg.sender, amount - fee);
             SafeERC20.safeTransfer(IERC20(asset), admin, fee);
+        }
+
+        // create curve
+        address template = address(uint160(walletGovernance.getConfig(address(wallet), CURVE_TEMPLATE)));
+        if (template != address(0)) {
+            address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
+            BondingCurve3(curve).initialize(0, address(wallet), address(0), 10**18);
+            emit NewBondingCurve(wallet, curve);
         }
 
         emit OfferAccepted(registry, tokenId, asset, msg.sender);
