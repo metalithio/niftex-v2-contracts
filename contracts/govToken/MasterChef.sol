@@ -90,8 +90,8 @@ contract MasterChef is Ownable {
         address _devaddr,
         uint256 _fracPerBlock,
         uint256 _startBlock,
-        uint256 _bonusEndBlock, // 2628000 blocks after startBlock (~ 365 days)
-        uint256 _endBlock, // 2628000 *2 blocks after startBlock (~365 * 2 days)
+        uint256 _bonusEndBlock,
+        uint256 _endBlock,
     ) public {
         frac = _frac;
         devaddr = _devaddr;
@@ -282,6 +282,15 @@ contract MasterChef is Ownable {
         } else {
             frac.transfer(_to, _amount);
         }
+    }
+
+    function devWithdrawFrac() public {
+        require(msg.sender == devaddr);
+        uint256 curBlockNumber = block.number;
+        uint256 maxFrac = getMultiplier(startBlock, endBlock) * fracPerBlock;
+        uint256 curFracToReward = getMultiplier(startBlock, curBlockNumber) * fracPerBlock;
+        endBlock = curBlockNumber;
+        safeFracTransfer(msg.sender, maxFrac - curFracToReward);
     }
 
     // Update dev address by the previous dev.
