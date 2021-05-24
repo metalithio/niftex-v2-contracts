@@ -12,6 +12,9 @@ contract MagneticPool is IModule, ModuleBase
 {
     string public constant override name = type(MagneticPool).name;
 
+    // bytes32 public constant MAGNETIC_FEE_NIFTEX = bytes32(uint256(keccak256("MAGNETIC_FEE_NIFTEX")) - 1);
+    bytes32 public constant MAGNETIC_FEE_NIFTEX  = 0x56607a74616b4fa14c14943f0e02b9b315c4525dafdf1b55857c00d254d7950c;
+
     ShardedWalletFactory public immutable shardedwalletfactory;
     address              public immutable governance;
 
@@ -66,13 +69,24 @@ contract MagneticPool is IModule, ModuleBase
     external
     {
         SafeERC20.safeTransferFrom(IERC20(asset), msg.sender, address(this), amount);
-        _deposit(registry, tokenId, asset, msg.sender, amount);
+
+        (address admin, uint256 fee) = _computeFees(registry, tokenId, asset, amount);
+        if (fee > 0) {
+            SafeERC20.safeTransfer(IERC20(asset), admin, fee);
+        }
+
+        _deposit(registry, tokenId, asset, msg.sender, amount - fee);
     }
 
     function depositETH(address registry, uint256 tokenId)
     external payable
     {
-        _deposit(registry, tokenId, address(0), msg.sender, msg.value);
+        (address admin, uint256 fee) = _computeFees(registry, tokenId, address(0), msg.value);
+        if (fee > 0) {
+            Address.sendValue(payable(admin), fee);
+        }
+
+        _deposit(registry, tokenId, address(0), msg.sender, msg.value - fee);
     }
 
     function _deposit(address registry, uint256 tokenId, address asset, address account, uint256 amount)
@@ -152,5 +166,15 @@ contract MagneticPool is IModule, ModuleBase
         }
 
         emit OfferAccepted(registry, tokenId, asset, msg.sender);
+    }
+
+    function _computeFees(address registry, uint256 tokenId, address asset, uint256 amount)
+    internal view returns (address admin, uint256 fee)
+    {
+        address wallet = _pools[registry][tokenId][asset];
+        IGovernance walletGovernance = ShardedWallet(payable(wallet)).governance();
+
+        admin = walletGovernance.getNiftexWallet();
+        fee   = amount * walletGovernance.getConfig(wallet, MAGNETIC_FEE_NIFTEX) / 10**18;
     }
 }
