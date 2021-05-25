@@ -252,29 +252,27 @@ contract("MasterChef", function (accounts) {
       // accFracPerShare for pool 0 @340: [2 * 4 * 1e12 / 10] + [2* 4 * 1e12 / 30] + [2 * 2 * 1e12 / 60] + [2 * 10 * 1e12 / 70] + [2 * 10 * 1e12 / 65]
       // = 800000000000 + 266666666666 + 66666666666 + 285714285714 + 307692307692 = 1726739926738
       assert.equal((await this.chef.poolInfo(0)).accFracPerShare, '1726739926738');
-      // assert.equal(await this.frac.balanceOf(this.bob.address), '12'); // 1419047619046 * 20 / 1e12 - 800000000000 * 20 / 1e12 = 28 - 16 = 12
-      // assert.equal(await this.frac.balanceOf(this.chef.address), "29977"); // 29989 - 12
+      // console.log('bal of alice: ', new BigNumber(await this.frac.balanceOf(this.alice.address)).toFixed());
+      assert.equal(await this.frac.balanceOf(this.alice.address), '23'); // manual calc, 11.3 @320 + 11.8 @340 = 23
+      assert.equal(await this.frac.balanceOf(this.chef.address), "29965");
 
 
-      // await advanceBlockTo("349")
-      // await this.chef.withdraw(0, "15", { from: this.bob.address })
+      await advanceBlockTo("349")
+      await this.chef.withdraw(0, "15", { from: this.bob.address })
+      assert.equal(await this.frac.balanceOf(this.bob.address), '23'); // manual calc
+      assert.equal(await this.frac.balanceOf(this.chef.address), "29954");
 
 
+      await advanceBlockTo("359")
+      await this.chef.withdraw(0, "30", { from: this.carol.address });
+      // console.log('bal of carol: ', new BigNumber(await this.frac.balanceOf(this.carol.address)).toFixed());
+      assert.equal(await this.frac.balanceOf(this.carol.address), '54'); // manual calc
+      assert.equal(await this.frac.balanceOf(this.chef.address), "29900");
 
-      // await advanceBlockTo("359")
-      // await this.chef.withdraw(0, "30", { from: this.carol.address })
-      // assert.equal(await this.frac.totalSupply(), "55000")
-      // assert.equal(await this.frac.balanceOf(this.dev.address), "5000")
-      // // Alice should have: 5666 + 10*2/7*1000 + 10*2/6.5*1000 = 11600
-      // assert.equal(await this.frac.balanceOf(this.alice.address), "11600")
-      // // Bob should have: 6190 + 10*1.5/6.5 * 1000 + 10*1.5/4.5*1000 = 11831
-      // assert.equal(await this.frac.balanceOf(this.bob.address), "11831")
-      // // Carol should have: 2*3/6*1000 + 10*3/7*1000 + 10*3/6.5*1000 + 10*3/4.5*1000 + 10*1000 = 26568
-      // assert.equal(await this.frac.balanceOf(this.carol.address), "26568")
-      // // All of them should have 1000 LPs back.
-      // assert.equal(await this.lp.balanceOf(this.alice.address), "1000")
-      // assert.equal(await this.lp.balanceOf(this.bob.address), "1000")
-      // assert.equal(await this.lp.balanceOf(this.carol.address), "1000")
+      // All of them should have 1000 LPs back.
+      assert.equal(await this.lp.balanceOf(this.alice.address), "1000")
+      assert.equal(await this.lp.balanceOf(this.bob.address), "1000")
+      assert.equal(await this.lp.balanceOf(this.carol.address), "1000")
     })
 
     // it("should give proper FRACs allocation to each pool", async function () {
