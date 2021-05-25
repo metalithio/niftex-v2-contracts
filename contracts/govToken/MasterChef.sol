@@ -57,8 +57,8 @@ contract MasterChef is Ownable {
     }
     // The FRAC TOKEN!
     FracToken public frac;
-    // Dev address.
-    address public devaddr;
+    // NIFTEX DAO address.
+    address public daoaddr;
     // Block number when bonus FRAC period ends.
     uint256 public bonusEndBlock;
     // end block number
@@ -66,7 +66,9 @@ contract MasterChef is Ownable {
     // SUSHI tokens created per block.
     uint256 public fracPerBlock;
     // Bonus muliplier for early frac makers.
-    uint256 public bonusMultiplier = 10**18; // no bonus in first year
+    uint256 public bonusMultiplier = 10**18;
+    // vault to transfer FRAC from
+    address public fracVault;
     // The migrator contract. It has a lot of power. Can only be set through governance (owner).
     IMigratorChef public migrator;
     // Info of each pool.
@@ -87,20 +89,22 @@ contract MasterChef is Ownable {
 
     constructor(
         FracToken _frac,
-        address _devaddr,
+        address _daoaddr,
         uint256 _fracPerBlock,
         uint256 _startBlock,
         uint256 _bonusEndBlock,
         uint256 _endBlock,
-        uint256 _bonusMultiplier
+        uint256 _bonusMultiplier,
+        address _fracVault
     ) public {
         frac = _frac;
-        devaddr = _devaddr;
+        daoaddr = _daoaddr;
         fracPerBlock = _fracPerBlock;
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
         endBlock = _endBlock;
         bonusMultiplier = _bonusMultiplier;
+        fracVault = _fracVault;
     }
 
     function poolLength() external view returns (uint256) {
@@ -276,28 +280,25 @@ contract MasterChef is Ownable {
         user.rewardDebt = 0;
     }
 
+    // please use this responsibly
+    function disableMining() public {
+        require(msg.sender == daoaddr);
+        endBlock = Math.min(endBlock, block.number);
+    }
+
     // Safe sushi transfer function, just in case if rounding error causes pool to not have enough SUSHIs.
     function safeFracTransfer(address _to, uint256 _amount) internal {
-        uint256 fracBal = frac.balanceOf(address(this));
+        uint256 fracBal = frac.balanceOf(fracVault);
         if (_amount > fracBal) {
-            frac.transfer(_to, fracBal);
+            frac.transferFrom(fracVault, _to, fracBal);
         } else {
-            frac.transfer(_to, _amount);
+            frac.transferFrom(fracVault, _to, _amount);
         }
     }
 
-    function devWithdrawFrac() public {
-        require(msg.sender == devaddr);
-        uint256 curBlockNumber = block.number;
-        uint256 maxFrac = getMultiplier(startBlock, endBlock) * fracPerBlock;
-        uint256 curFracToReward = getMultiplier(startBlock, curBlockNumber) * fracPerBlock;
-        endBlock = curBlockNumber;
-        safeFracTransfer(msg.sender, maxFrac - curFracToReward);
-    }
-
-    // Update dev address by the previous dev.
-    function dev(address _devaddr) public {
-        require(msg.sender == devaddr, "dev: wut?");
-        devaddr = _devaddr;
+    // Update dao address by the previous dao.
+    function dao(address _daoaddr) public {
+        require(msg.sender == daoaddr, "dao: wut?");
+        daoaddr = _daoaddr;
     }
 }
