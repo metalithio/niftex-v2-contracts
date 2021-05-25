@@ -275,49 +275,68 @@ contract("MasterChef", function (accounts) {
       assert.equal(await this.lp.balanceOf(this.carol.address), "1000")
     })
 
-    // it("should give proper FRACs allocation to each pool", async function () {
-    //   // 100 per block farming rate starting at block 400 with bonus until block 1000
-    //   this.chef = await this.MasterChef.deploy(this.frac.address, this.dev.address, "100", "400", "1000")
-    //   await this.frac.transferOwnership(this.chef.address)
-    //   await this.lp.connect(this.alice).approve(this.chef.address, "1000", { from: this.alice.address })
-    //   await this.lp2.connect(this.bob).approve(this.chef.address, "1000", { from: this.bob.address })
-    //   // Add first LP to the pool with allocation 1
-    //   await this.chef.add("10", this.lp.address, true)
-    //   // Alice deposits 10 LPs at block 410
-    //   await advanceBlockTo("409")
-    //   await this.chef.connect(this.alice).deposit(0, "10", { from: this.alice.address })
-    //   // Add LP2 to the pool with allocation 2 at block 420
-    //   await advanceBlockTo("419")
-    //   await this.chef.add("20", this.lp2.address, true)
-    //   // Alice should have 10*1000 pending reward
-    //   assert.equal(await this.chef.pendingFrac(0, this.alice.address), "10000")
-    //   // Bob deposits 10 LP2s at block 425
-    //   await advanceBlockTo("424")
-    //   await this.chef.connect(this.bob).deposit(1, "5", { from: this.bob.address })
-    //   // Alice should have 10000 + 5*1/3*1000 = 11666 pending reward
-    //   assert.equal(await this.chef.pendingFrac(0, this.alice.address), "11666")
-    //   await advanceBlockTo("430")
-    //   // At block 430. Bob should get 5*2/3*1000 = 3333. Alice should get ~1666 more.
-    //   assert.equal(await this.chef.pendingFrac(0, this.alice.address), "13333")
-    //   assert.equal(await this.chef.pendingFrac(1, this.bob.address), "3333")
-    // })
+    it("should give proper FRACs allocation to each pool", async function () {
+      // 100 per block farming rate starting at block 400 with bonus until block 1000
+      this.chef = await this.MasterChef.new(
+        this.frac.address, 
+        this.dev.address, 
+        "100", 
+        "400", 
+        "1000",
+        "2000",
+        web3.utils.toWei('10')
+      );
 
-    // it("should stop giving bonus FRACs after the bonus period ends", async function () {
-    //   // 100 per block farming rate starting at block 500 with bonus until block 600
-    //   this.chef = await this.MasterChef.deploy(this.frac.address, this.dev.address, "100", "500", "600")
-    //   await this.frac.transferOwnership(this.chef.address)
-    //   await this.lp.connect(this.alice).approve(this.chef.address, "1000", { from: this.alice.address })
-    //   await this.chef.add("1", this.lp.address, true)
-    //   // Alice deposits 10 LPs at block 590
-    //   await advanceBlockTo("589")
-    //   await this.chef.connect(this.alice).deposit(0, "10", { from: this.alice.address })
-    //   // At block 605, she should have 1000*10 + 100*5 = 10500 pending.
-    //   await advanceBlockTo("605")
-    //   assert.equal(await this.chef.pendingFrac(0, this.alice.address), "10500")
-    //   // At block 606, Alice withdraws all pending rewards and should get 10600.
-    //   await this.chef.connect(this.alice).deposit(0, "0", { from: this.alice.address })
-    //   assert.equal(await this.chef.pendingFrac(0, this.alice.address), "0")
-    //   assert.equal(await this.frac.balanceOf(this.alice.address), "10600")
-    // })
+      await this.frac.transfer(this.chef.address, '300000', { from: this.minter.address });
+      await this.lp.approve(this.chef.address, "1000", { from: this.alice.address })
+      await this.lp2.approve(this.chef.address, "1000", { from: this.bob.address })
+      // Add first LP to the pool with allocation 1
+      await this.chef.add("10", this.lp.address, true)
+      // Alice deposits 10 LPs at block 410
+      await advanceBlockTo("409")
+      await this.chef.deposit(0, "10", { from: this.alice.address })
+      // Add LP2 to the pool with allocation 2 at block 420
+      await advanceBlockTo("419")
+      await this.chef.add("20", this.lp2.address, true)
+      // Alice should have 10*1000 pending reward
+      assert.equal(await this.chef.pendingFrac(0, this.alice.address), "10000")
+      // Bob deposits 10 LP2s at block 425
+      await advanceBlockTo("424")
+      await this.chef.deposit(1, "5", { from: this.bob.address })
+      // Alice should have 10000 + 5*1/3*1000 = 11666 pending reward
+      assert.equal(await this.chef.pendingFrac(0, this.alice.address), "11666")
+      await advanceBlockTo("430")
+      // At block 430. Bob should get 5*2/3*1000 = 3333. Alice should get ~1666 more.
+      assert.equal(await this.chef.pendingFrac(0, this.alice.address), "13333")
+      assert.equal(await this.chef.pendingFrac(1, this.bob.address), "3333")
+    })
+
+    it("should stop giving bonus FRACs after the bonus period ends", async function () {
+      // 100 per block farming rate starting at block 500 with bonus until block 600
+      this.chef = await this.MasterChef.new(
+        this.frac.address, 
+        this.dev.address, 
+        "100", 
+        "500", 
+        "600",
+        "2000",
+        web3.utils.toWei('10')
+      );
+
+      await this.frac.transfer(this.chef.address, '300000', { from: this.minter.address });
+
+      await this.lp.approve(this.chef.address, "1000", { from: this.alice.address })
+      await this.chef.add("1", this.lp.address, true)
+      // Alice deposits 10 LPs at block 590
+      await advanceBlockTo("589")
+      await this.chef.deposit(0, "10", { from: this.alice.address })
+      // At block 605, she should have 1000*10 + 100*5 = 10500 pending.
+      await advanceBlockTo("605")
+      assert.equal(await this.chef.pendingFrac(0, this.alice.address), "10500")
+      // At block 606, Alice withdraws all pending rewards and should get 10600.
+      await this.chef.deposit(0, "0", { from: this.alice.address })
+      assert.equal(await this.chef.pendingFrac(0, this.alice.address), "0")
+      assert.equal(await this.frac.balanceOf(this.alice.address), "10600")
+    })
   })
 })
