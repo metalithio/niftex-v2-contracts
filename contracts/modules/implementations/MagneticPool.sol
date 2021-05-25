@@ -165,13 +165,17 @@ contract MagneticPool is IModule, ModuleBase
             SafeERC20.safeTransfer(IERC20(asset), admin, fee);
         }
 
-        // create curve
-        address template = address(uint160(walletGovernance.getConfig(address(wallet), CURVE_TEMPLATE)));
-        if (template != address(0)) {
-            address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
-            BondingCurve3(curve).initialize(0, address(wallet), address(0), 10**18);
-            emit NewBondingCurve(wallet, curve);
+        if (address(asset) == address(0)) {
+            // create curve
+            address template = address(uint160(walletGovernance.getConfig(address(wallet), CURVE_TEMPLATE)));
+            if (template != address(0)) {
+                address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
+                BondingCurve3(curve).initialize(0, address(wallet), address(0), 10**18);
+                emit NewBondingCurve(wallet, curve);
+            }
         }
+       
+        
 
         emit OfferAccepted(registry, tokenId, asset, msg.sender);
     }
