@@ -61,7 +61,7 @@ contract("MasterChef", function (accounts) {
 
     assert.equal(await this.chef.daoaddr(), this.dao.address)
 
-    await expectRevert(this.chef.dao(this.bob.address, { from: this.bob.address }),"dao: wut?");
+    await expectRevert.unspecified(this.chef.dao(this.bob.address, { from: this.bob.address }));
 
     await this.chef.dao(this.bob.address, { from: this.dao.address })
 
@@ -234,15 +234,12 @@ contract("MasterChef", function (accounts) {
       // Bob deposits 20 LPs at block 314
       await advanceBlockTo("313")
       await this.chef.deposit(0, "20", { from: this.bob.address })
-      console.log('accFracPerShare @314: ', new BigNumber((await this.chef.poolInfo(0)).accFracPerShare).toFixed());
       // Carol deposits 30 LPs at block 318
       await advanceBlockTo("317")
       await this.chef.deposit(0, "30", { from: this.carol.address })
-      console.log('accFracPerShare @318: ', new BigNumber((await this.chef.poolInfo(0)).accFracPerShare).toFixed());
       await advanceBlockTo("319")
       // console.log('pending Frac for alice: ', new BigNumber(await this.chef.pendingFrac(0, this.alice.address)).toFixed());
       await this.chef.deposit(0, "10", { from: this.alice.address }) // block 320
-      console.log('accFracPerShare @320: ', new BigNumber((await this.chef.poolInfo(0)).accFracPerShare).toFixed());
       // accFracPerShare for pool 0 @320: [2 * 4 * 1e12 / 10] + [2* 4 * 1e12 / 30] + [2 * 2 * 1e12 / 60]
       // = 800000000000 + 266666666666 + 66666666666 = 1133333333332
       assert.equal((await this.chef.poolInfo(0)).accFracPerShare, '1133333333332');
@@ -251,7 +248,6 @@ contract("MasterChef", function (accounts) {
       // Bob withdraws 5 LPs at block 330. At this point:
       await advanceBlockTo("329")
       await this.chef.withdraw(0, "5", { from: this.bob.address });
-      console.log('accFracPerShare @330: ', new BigNumber((await this.chef.poolInfo(0)).accFracPerShare).toFixed());
       // accFracPerShare for pool 0 @330: [2 * 4 * 1e12 / 10] + [2* 4 * 1e12 / 30] + [2 * 2 * 1e12 / 60] + [2 * 10 * 1e12 / 70]
       // = 800000000000 + 266666666666 + 66666666666 + 285714285714 = 1419047619046
       assert.equal((await this.chef.poolInfo(0)).accFracPerShare, '1419047619046');
@@ -262,7 +258,6 @@ contract("MasterChef", function (accounts) {
       // Carol withdraws 30 LPs at block 360.
       await advanceBlockTo("339")
       await this.chef.withdraw(0, "20", { from: this.alice.address });
-      console.log('accFracPerShare @340: ', new BigNumber((await this.chef.poolInfo(0)).accFracPerShare).toFixed());
       // accFracPerShare for pool 0 @340: [2 * 4 * 1e12 / 10] + [2* 4 * 1e12 / 30] + [2 * 2 * 1e12 / 60] + [2 * 10 * 1e12 / 70] + [2 * 10 * 1e12 / 65]
       // = 800000000000 + 266666666666 + 66666666666 + 285714285714 + 307692307692 = 1726739926738
       assert.equal((await this.chef.poolInfo(0)).accFracPerShare, '1726739926738');
@@ -397,6 +392,11 @@ contract("MasterChef", function (accounts) {
       // At block 730. Bob should get 5*2/3*1000 = 3333. Alice should get ~1666 more.
       assert.equal(await this.chef.pendingFrac(0, this.alice.address), "13333")
       assert.equal(await this.chef.pendingFrac(1, this.bob.address), "3333")
+      await advanceBlockTo('3000');
+      await this.chef.withdraw(0, '10', { from: this.alice.address });
+      await this.chef.withdraw(1, '5', { from: this.bob.address });
+      assert.equal(await this.frac.balanceOf(this.alice.address), "13333");
+      assert.equal(await this.frac.balanceOf(this.bob.address), "3333");
     })
   })
 })

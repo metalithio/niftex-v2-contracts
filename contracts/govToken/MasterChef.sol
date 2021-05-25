@@ -8,19 +8,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./FracToken.sol";
 
-interface IMigratorChef {
-    // Perform LP token migration from legacy UniswapV2 to SushiSwap.
-    // Take the current LP token address and return the new LP token address.
-    // Migrator should have full access to the caller's LP token.
-    // Return the new LP token address.
-    //
-    // XXX Migrator must have allowance access to UniswapV2 LP tokens.
-    // SushiSwap must mint EXACTLY the same amount of SushiSwap LP tokens or
-    // else something bad will happen. Traditional UniswapV2 does not
-    // do that so be careful!
-    function migrate(IERC20 token) external returns (IERC20);
-}
-
 // MasterChef is the master of frac. He can make Sushi and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
@@ -69,8 +56,6 @@ contract MasterChef is Ownable {
     uint256 public bonusMultiplier = 10**18;
     // vault to transfer FRAC from
     address public fracVault;
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
-    IMigratorChef public migrator;
     // Info of each pool.
     PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
@@ -86,6 +71,11 @@ contract MasterChef is Ownable {
         uint256 indexed pid,
         uint256 amount
     );
+
+    modifier isDao() {
+        require(msg.sender == daoaddr);
+        _;
+    }
 
     constructor(
         FracToken _frac,
@@ -147,23 +137,6 @@ contract MasterChef is Ownable {
             _allocPoint
         ;
         poolInfo[_pid].allocPoint = _allocPoint;
-    }
-
-    // Set the migrator contract. Can only be called by the owner.
-    function setMigrator(IMigratorChef _migrator) public onlyOwner {
-        migrator = _migrator;
-    }
-
-    // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
-    function migrate(uint256 _pid) public {
-        require(address(migrator) != address(0), "migrate: no migrator");
-        PoolInfo storage pool = poolInfo[_pid];
-        IERC20 lpToken = pool.lpToken;
-        uint256 bal = lpToken.balanceOf(address(this));
-        lpToken.approve(address(migrator), bal);
-        IERC20 newLpToken = migrator.migrate(lpToken);
-        require(bal == newLpToken.balanceOf(address(this)), "migrate: bad");
-        pool.lpToken = newLpToken;
     }
 
     // Return reward multiplier over the given _from to _to block.
@@ -281,8 +254,7 @@ contract MasterChef is Ownable {
     }
 
     // please use this responsibly
-    function disableMining() public {
-        require(msg.sender == daoaddr);
+    function disableMining() public isDao {
         endBlock = Math.min(endBlock, block.number);
     }
 
@@ -297,8 +269,7 @@ contract MasterChef is Ownable {
     }
 
     // Update dao address by the previous dao.
-    function dao(address _daoaddr) public {
-        require(msg.sender == daoaddr, "dao: wut?");
+    function dao(address _daoaddr) public isDao {
         daoaddr = _daoaddr;
     }
 }
