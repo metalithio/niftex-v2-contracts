@@ -3,8 +3,8 @@ pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
 // FracToken with Governance.
-// Copied and modified from Frac.sol code:
-// https://raw.githubusercontent.com/Fracound-finance/Fracound-protocol/master/contracts/Governance/Frac.sol
+// Copied and modified from Comp.sol code:
+// https://raw.githubusercontent.com/compound-finance/comcound-protocol/master/contracts/Governance/Comp.sol
 
 contract Frac {
     /// @notice EIP-20 token name for this token
