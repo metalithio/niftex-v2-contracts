@@ -38,19 +38,15 @@ contract TokenVesting is Ownable {
     mapping (address => uint256) private _released;
     mapping (address => bool) private _revoked;
 
-    /**
-     * @dev Creates a vesting contract that vests its balance of any ERC20 token to the
-     * beneficiary, gradually in a linear fashion until start + duration. By then all
-     * of the balance will have vested.
-     * @param _owner owner of this contract
-     */
-
-    // The multisig should be the owner of this wallet
-    constructor(address _owner) {
-        Ownable._setOwner(_owner);
-    }
-
-    function initialize(address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, bool revocable) public {
+    // anyone can initialize but NIFTEX only collects the related contracts
+    function initialize(
+        address beneficiary, 
+        uint256 start, 
+        uint256 cliffDuration, 
+        uint256 duration, 
+        bool revocable,
+        address owner
+    ) public {
         // avoid re-entrancy
         require(_beneficiary == address(0));
         require(beneficiary != address(0), "TokenVesting: beneficiary is the zero address");
@@ -65,6 +61,7 @@ contract TokenVesting is Ownable {
         _duration = duration;
         _cliff = start + cliffDuration;
         _start = start;
+        Ownable._setOwner(owner);
     }
 
     /**

@@ -18,7 +18,8 @@ contract TokenVestingFactory is CloneFactory
         uint256 start, 
         uint256 cliffDuration, 
         uint256 duration, 
-        bool revocable
+        bool revocable,
+        address owner
     )
 
     external returns (address instance)
@@ -29,7 +30,8 @@ contract TokenVestingFactory is CloneFactory
             start,
             cliffDuration,
             duration,
-            revocable
+            revocable,
+            owner
         );
 
         emit MintTokenVesting(instance, beneficiary);

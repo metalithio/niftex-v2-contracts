@@ -5,6 +5,7 @@ const { expect } = require('chai');
 
 const ERC20Mintable = artifacts.require('FracToken');
 const TokenVesting = artifacts.require('TokenVesting');
+const TokenVestingFactory = artifacts.require('TokenVestingFactory');
 
 contract('TokenVesting', function (accounts) {
   const [ owner, beneficiary ] = accounts;
@@ -16,6 +17,8 @@ contract('TokenVesting', function (accounts) {
     this.start = (await time.latest()).add(time.duration.minutes(1));
     this.cliffDuration = time.duration.years(1);
     this.duration = time.duration.years(2);
+    this.tvTemplate = await TokenVesting.new();
+    this.tvFactory = await TokenVestingFactory.new(this.tvTemplate.address);
   });
 
   it('reverts with a duration shorter than the cliff', async function () {
@@ -25,14 +28,14 @@ contract('TokenVesting', function (accounts) {
     expect(cliffDuration).to.be.bignumber.that.is.at.least(duration);
 
     await expectRevert(
-      TokenVesting.new(beneficiary, this.start, cliffDuration, duration, true, { from: owner }),
+      this.tvFactory.mintTokenVesting(beneficiary, this.start, cliffDuration, duration, true, owner, { from: owner }),
       'TokenVesting: cliff is longer than duration'
     );
   });
 
   it('reverts with a null beneficiary', async function () {
     await expectRevert(
-      TokenVesting.new(ZERO_ADDRESS, this.start, this.cliffDuration, this.duration, true, { from: owner }),
+      this.tvFactory.mintTokenVesting(ZERO_ADDRESS, this.start, this.cliffDuration, this.duration, true, owner, { from: owner }),
       'TokenVesting: beneficiary is the zero address'
     );
   });
@@ -40,7 +43,7 @@ contract('TokenVesting', function (accounts) {
   it('reverts with a null duration', async function () {
     // cliffDuration should also be 0, since the duration must be larger than the cliff
     await expectRevert(
-      TokenVesting.new(beneficiary, this.start, 0, 0, true, { from: owner }), 'TokenVesting: duration is 0'
+      this.tvFactory.mintTokenVesting(beneficiary, this.start, 0, 0, true, owner, { from: owner }), 'TokenVesting: duration is 0'
     );
   });
 
@@ -49,15 +52,18 @@ contract('TokenVesting', function (accounts) {
 
     this.start = now.sub(this.duration).sub(time.duration.minutes(1));
     await expectRevert(
-      TokenVesting.new(beneficiary, this.start, this.cliffDuration, this.duration, true, { from: owner }),
+      this.tvFactory.mintTokenVesting(beneficiary, this.start, this.cliffDuration, this.duration, true, owner, { from: owner }),
       'TokenVesting: final time is before current time'
     );
   });
 
   context('once deployed', function () {
     beforeEach(async function () {
-      this.vesting = await TokenVesting.new(
-        beneficiary, this.start, this.cliffDuration, this.duration, true, { from: owner });
+      const { receipt } = await this.tvFactory.mintTokenVesting(
+        beneficiary, this.start, this.cliffDuration, this.duration, true, owner, { from: owner }
+      );
+
+      this.vesting = await TokenVesting.at(receipt.logs.find(({ event }) => event === 'MintTokenVesting').args._instance);
 
       this.token = await ERC20Mintable.new({ from: owner });
       await this.token.mint(this.vesting.address, amount, { from: owner });
@@ -79,8 +85,8 @@ contract('TokenVesting', function (accounts) {
 
     it('can be released after cliff', async function () {
       await time.increaseTo(this.start.add(this.cliffDuration).add(time.duration.weeks(1)));
-      const { logs } = await this.vesting.release(this.token.address);
-      expectEvent.inLogs(logs, 'TokensReleased', {
+      const { receipt } = await this.vesting.release(this.token.address);
+      expectEvent(receipt, 'TokensReleased', {
         token: this.token.address,
         amount: await this.token.balanceOf(beneficiary),
       });
@@ -120,16 +126,17 @@ contract('TokenVesting', function (accounts) {
     });
 
     it('should be revoked by owner if revocable is set', async function () {
-      const { logs } = await this.vesting.revoke(this.token.address, { from: owner });
-      expectEvent.inLogs(logs, 'TokenVestingRevoked', { token: this.token.address });
+      const { receipt } = await this.vesting.revoke(this.token.address, { from: owner });
+      expectEvent(receipt, 'TokenVestingRevoked', { token: this.token.address });
       expect(await this.vesting.revoked(this.token.address)).to.equal(true);
     });
 
     it('should fail to be revoked by owner if revocable not set', async function () {
-      const vesting = await TokenVesting.new(
-        beneficiary, this.start, this.cliffDuration, this.duration, false, { from: owner }
+      const { receipt } = await this.tvFactory.mintTokenVesting(
+        beneficiary, this.start, this.cliffDuration, this.duration, false, owner, { from: owner }
       );
 
+      const vesting = await TokenVesting.at(receipt.logs.find(({ event }) => event === 'MintTokenVesting').args._instance);
       await expectRevert(vesting.revoke(this.token.address, { from: owner }),
         'TokenVesting: cannot revoke'
       );
