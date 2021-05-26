@@ -6,6 +6,10 @@ function advanceBlock() {
   return ethers.provider.send("evm_mine", [])
 }
 
+async function mineBlock() {
+  await advanceBlock();
+}
+
 async function advanceBlockTo(blockNumber) {
   for (let i = await ethers.provider.getBlockNumber(); i < blockNumber; i++) {
     await advanceBlock()
@@ -53,6 +57,7 @@ const duration = {
 }
 
 module.exports = {
+  mineBlock,
   advanceBlockTo,
   increase,
   latest,
