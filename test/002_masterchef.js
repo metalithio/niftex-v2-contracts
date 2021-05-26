@@ -1,3 +1,9 @@
+/*
+  Need to run this test first, to ensure block.number is correct
+  It putting this back to 702, the starting block.number before this test
+  will be wrong (not at 0), hence all numbers in the test are wrong.
+*/
+
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
 const { expectRevert, constants } = require('@openzeppelin/test-helpers');
