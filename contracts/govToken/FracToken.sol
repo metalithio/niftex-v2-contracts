@@ -193,7 +193,7 @@ contract Frac {
 
     /**
      * @notice Burn tokens
-     * @param rawAmount The number of tokens to be minted
+     * @param rawAmount The number of tokens to be burnt
      */
 
     function burn(uint rawAmount) external {
