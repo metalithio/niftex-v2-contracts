@@ -25,5 +25,8 @@ CONTRACTS
 8  mar 2021: 11h→12h : 1   (total 11)
 18 mar 2021: 14h→15h : 1   (total 12)
 28 mar 2021: 15h→16h : 1   (total 13) → PAID
-15 mai 2021: 18h→19h : 1   (total 1) // OfferPools
+15 mai 2021: 18h→19h : 1   (total 1) // MagneticPool
 15 mai 2021: 21h→23h : 2   (total 3)
+16 mai 2021: 14h→15h : 1   (total 4)
+20 mai 2021:  9h→10h : 1   (total 5) review
+24 mai 2021:  9h→10h : 1   (total 6)
