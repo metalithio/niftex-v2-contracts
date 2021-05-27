@@ -201,7 +201,7 @@ contract Frac {
         uint96 amount = safe96(rawAmount, "Frac::burn: amount exceeds 96 bits");
         totalSupply = sub96(totalSupply, amount, "Frac::burn: burn amount exceeds totalSupply");
         balances[msg.sender] = sub96(balances[msg.sender], amount, "Frac::burn: burn amount exceeds balance");
-        emit Transfer(src, address(0), amount);
+        emit Transfer(msg.sender, address(0), amount);
 
         // move delegates
         _moveDelegates(delegates[msg.sender], address(0), amount);
