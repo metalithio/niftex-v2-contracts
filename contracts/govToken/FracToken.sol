@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 // FracToken with Governance.
 // Copied and modified from Comp.sol code:
-// https://raw.githubusercontent.com/compound-finance/comcound-protocol/master/contracts/Governance/Comp.sol
+// https://raw.githubusercontent.com/compound-finance/compound-protocol/master/contracts/Governance/Comp.sol
 
 contract Frac {
     /// @notice EIP-20 token name for this token
