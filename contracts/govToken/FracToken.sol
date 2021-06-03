@@ -181,7 +181,7 @@ contract Frac {
 
         // mint the amount
         uint96 amount = safe96(rawAmount, "Frac::mint: amount exceeds 96 bits");
-        totalSupply = add96(totalSupply, amount, "Frac::mint: totalSupply exceeds 96 bits");
+        totalSupply = add96(uint96(totalSupply), amount, "Frac::mint: totalSupply exceeds 96 bits");
 
         // transfer the amount to the recipient
         balances[dst] = add96(balances[dst], amount, "Frac::mint: transfer amount overflows");
@@ -199,7 +199,7 @@ contract Frac {
     function burn(uint rawAmount) external {
         // burn the amount
         uint96 amount = safe96(rawAmount, "Frac::burn: amount exceeds 96 bits");
-        totalSupply = sub96(totalSupply, amount, "Frac::burn: burn amount exceeds totalSupply");
+        totalSupply = sub96(uint96(totalSupply), amount, "Frac::burn: burn amount exceeds totalSupply");
         balances[msg.sender] = sub96(balances[msg.sender], amount, "Frac::burn: burn amount exceeds balance");
         emit Transfer(msg.sender, address(0), amount);
 

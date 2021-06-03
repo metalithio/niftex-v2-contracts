@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "./FracToken.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // MasterChef is the master of frac. He can make Sushi and he is a fair guy.
 //
@@ -43,7 +43,7 @@ contract MasterChef is Ownable {
         uint256 accFracPerShare; // Accumulated SUSHIs per share, times 1e12. See below.
     }
     // The FRAC TOKEN!
-    FracToken public frac;
+    ERC20 public frac;
     // NIFTEX DAO address.
     address public daoaddr;
     // Block number when bonus FRAC period ends.
@@ -78,7 +78,7 @@ contract MasterChef is Ownable {
     }
 
     constructor(
-        FracToken _frac,
+        ERC20 _frac,
         address _daoaddr,
         uint256 _fracPerBlock,
         uint256 _startBlock,

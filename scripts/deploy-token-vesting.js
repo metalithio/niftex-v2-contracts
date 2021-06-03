@@ -9,7 +9,7 @@ async function main() {
 
   // Deploy TokenVesting instance
   const TokenVesting = await ethers.getContractFactory("TokenVesting");
-  const tokenVesting = await TokenVesting.deploy(deployer.address);
+  const tokenVesting = await TokenVesting.deploy();
   console.log(`TokenVesting address: ${tokenVesting.address}`);
 
   // Deploy TokenVesting factory
@@ -27,15 +27,16 @@ async function main() {
       revocable
     } = investors[i];
 
-    const txnHash = await tokenVestingFactory.mintTokenVesting(
+    const tx = await tokenVestingFactory.mintTokenVesting(
         beneficiary,
         start,
         cliffDuration,
         duration,
-        revocable
+        revocable,
+        process.env.MULTISIG_ADDRESS
       );
 
-    console.log({ txnHash });
+    const txnResult = await tx.wait();
   }
 
   // const TokenVesting = await ethers.getContractFactory('TokenVesting');
