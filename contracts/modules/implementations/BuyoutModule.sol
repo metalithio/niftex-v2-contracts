@@ -42,6 +42,7 @@ contract BuyoutModule is IModule, ModuleBase, Timers
     buyoutAuthorized(wallet, msg.sender)
     onlyBeforeTimer(bytes32(uint256(uint160(address(wallet)))))
     {
+        require(wallet.owner() == address(0));
         uint256 ownedshards = wallet.balanceOf(msg.sender);
         uint256 buyoutprice = (wallet.totalSupply() - ownedshards) * pricePerShard / 10**18;
 
