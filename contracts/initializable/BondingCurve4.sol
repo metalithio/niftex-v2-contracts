@@ -119,7 +119,7 @@ contract BondingCurve4 is IERC1363Spender {
             // setup curve
             uint256 decimals_ = ShardedWallet(payable(wallet_)).decimals();
             curve.x = recordedTotalSupply * 4 / 10;
-            curve.k = recordedTotalSupply * recordedTotalSupply * 16 * price / 10**decimals_ / 100;
+            curve.k = recordedTotalSupply * recordedTotalSupply * price / 10**decimals_ * 16 / 100;
         }
 
         // mint liquidity
