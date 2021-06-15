@@ -13,10 +13,15 @@ async function main() {
   const shardedWalletTemplate = process.env.SHARDED_WALLET_TEMPLATE;
   console.log(`SHARDED_WALLET_TEMPLATE: ${shardedWalletTemplate}`);
 
-  // Deploy BondingCurve4
-  const BondingCurve = await ethers.getContractFactory("BondingCurve4");
-  const bondingcurve = await BondingCurve.deploy();
-  console.log(`BondingCurve4 address: ${bondingcurve.address}`);
+  // // Deploy BondingCurve4
+  // const BondingCurve = await ethers.getContractFactory("BondingCurve4");
+  // const bondingcurve = await BondingCurve.deploy();
+  // console.log(`BondingCurve4 address: ${bondingcurve.address}`);
+
+  // Deploy MagneticPool.sol
+  const MagneticPool = await ethers.getContractFactory('MagneticPool');
+  const magneticpool = await MagneticPool.deploy(process.env.SHARDED_WALLET_TEMPLATE, process.env.GOVERNANCE);
+  console.log(`MagneticPool address: ${magneticpool.address}`);
 
   const modules = await Object.entries({
     // "action":              "ActionModule",
