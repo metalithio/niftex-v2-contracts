@@ -8,3 +8,4 @@ generated/
 package-lock.json
 utils/investors.js
 .env*
+utils/investors.js

@@ -44,10 +44,9 @@ if (process.env.MAINNET_PRIVATE_KEY) {
       process.env.MAINNET_PRIVATE_KEY.startsWith('0x')
       ? process.env.MAINNET_PRIVATE_KEY
       : '0x' + process.env.MAINNET_PRIVATE_KEY,
-    ],
-    gasPrice: 80000000000,
-    timeout: 60*1000*10,
-  }
+  ],
+  gasPrice: 14000000000, // 14 gwei
+  timeout: 60*1000*10,
 }
 
 module.exports.etherscan = {
