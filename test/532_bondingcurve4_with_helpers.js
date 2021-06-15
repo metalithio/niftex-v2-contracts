@@ -17,12 +17,12 @@ const {
 		cBuyer2: 30 fractions
 */
 
-contract('BondingCurve3 with helpers', function (accounts) {
+contract('BondingCurve 4 with helpers', function (accounts) {
 	const [ admin, nftOwner, cBuyer1, cBuyer2, mBuyer1, mBuyer2, artist, newAdmin, claimant1, claimant2 ] = accounts;
 	const CURVE_PREMINT_RESERVE = '0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9';
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
-	const BondingCurve         = artifacts.require('BondingCurve3');
+	const BondingCurve         = artifacts.require('BondingCurve4');
 	const Governance           = artifacts.require('Governance');
 	const Modules = {
 		Action:        { artifact: artifacts.require('ActionModule')         },
