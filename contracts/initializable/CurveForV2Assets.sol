@@ -391,7 +391,7 @@ contract CurveForV2Assets is IERC1363Spender {
 
     function updateK(uint256 newK_) public {
         require(msg.sender == wallet);
-        curve.x = curve.x * sqrt(newK_ * 10**12 / curve.k);
+        curve.x = curve.x * sqrt(newK_ * 10**12 / curve.k) / 10**6;
         curve.k = newK_;
         assert(curve.k > 0);
         assert(curve.x > 0);
