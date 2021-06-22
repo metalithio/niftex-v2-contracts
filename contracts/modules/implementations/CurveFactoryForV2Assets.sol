@@ -24,7 +24,6 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
         ShardedWallet wallet,
         uint256 fractionsToProvide_,
         address recipient_, // the wallet access to timelocked liquidity
-        address sourceOfFractions_,
         uint256 k_,
         uint256 x_
     )
@@ -34,15 +33,14 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
         require(governance.hasRole(msg.sender, CURVE_DEPLOYER));
         IGovernance governance = wallet.governance();
 
-        address     template   = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_V2_ASSETS)));
+        address template = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_V2_ASSETS)));
         if (template != address(0)) {
             curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
-            wallet.approve(curve, shardsToCurve);
+            wallet.approve(curve, fractionsToProvide_);
             CurveForV2Assets(curve).initialize{value: msg.value}(
                 fractionsToProvide_,
                 address(wallet),
                 recipient_,
-                sourceOfFractions_,
                 k_,
                 x_
             );
