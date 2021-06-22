@@ -38,8 +38,6 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
         address template = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_V2_ASSETS)));
         if (template != address(0)) {
             curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
-            wallet.transferFrom(msg.sender, address(this), fractionsToProvide_);
-            wallet.approve(curve, fractionsToProvide_);
             CurveForV2Assets(curve).initialize{value: msg.value}(
                 fractionsToProvide_,
                 address(wallet),
