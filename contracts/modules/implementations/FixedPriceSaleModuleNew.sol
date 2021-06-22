@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
 import "../../initializable/BondingCurve3.sol";
 import "../../governance/IGovernance.sol";
 import "../../utils/Timers.sol";
@@ -148,11 +147,11 @@ contract FixedPriceSaleModuleNew is IModule, ModuleBase, Timers
     internal returns (address)
     {
         IGovernance governance = wallet.governance();
-        address factoryAddress = address(uint160(governance.getConfig(address(wallet), CURVE_FACTORY_V2_ASSETS)));
+        CurveFactoryForV2Assets factory = CurveFactoryForV2Assets(address(uint160(governance.getConfig(address(wallet), CURVE_FACTORY_V2_ASSETS))));
         uint256 k;
         uint256 x;
         if (factoryAddress != address(0)) {
-            wallet.transfer(factoryAddress, shardsToCurve);
+            wallet.approve(factory.newCurveAddress(wallet), shardsToCurve);
             {
                 // setup curve
                 uint256 decimals = ShardedWallet(payable(wallet_)).decimals();
@@ -164,7 +163,7 @@ contract FixedPriceSaleModuleNew is IModule, ModuleBase, Timers
                 wallet,
                 shardsToCurve,
                 recipients[wallet],
-                address(0),
+                address(this),
                 k,
                 x
             );

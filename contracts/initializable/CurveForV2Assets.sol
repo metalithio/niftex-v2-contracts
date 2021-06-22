@@ -91,6 +91,7 @@ contract CurveForV2Assets is IERC1363Spender {
         uint256 supply,
         address wallet_,
         address recipient_,
+        address sourceOfFractions_,
         uint256 k_,
         uint256 x_,
     )
@@ -113,7 +114,7 @@ contract CurveForV2Assets is IERC1363Spender {
 
         // transfer assets
         if (supply > 0) {
-            require(ShardedWallet(payable(wallet_)).transferFrom(msg.sender, address(this), supply));
+            require(ShardedWallet(payable(wallet_)).transferFrom(sourceOfFractions_, address(this), supply));
         }
 
         {

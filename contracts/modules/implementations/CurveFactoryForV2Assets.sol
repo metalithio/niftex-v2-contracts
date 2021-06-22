@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../utils/Timers.sol";
@@ -24,6 +25,7 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
         ShardedWallet wallet,
         uint256 fractionsToProvide_,
         address recipient_, // the wallet access to timelocked liquidity
+        address sourceOfFractions_,
         uint256 k_,
         uint256 x_
     )
@@ -36,11 +38,13 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
         address template = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_V2_ASSETS)));
         if (template != address(0)) {
             curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
+            wallet.transferFrom(msg.sender, address(this), fractionsToProvide_);
             wallet.approve(curve, fractionsToProvide_);
             CurveForV2Assets(curve).initialize{value: msg.value}(
                 fractionsToProvide_,
                 address(wallet),
                 recipient_,
+                sourceOfFractions_,
                 k_,
                 x_
             );
@@ -48,5 +52,11 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
         } else {
             return address(0);
         }
+    }
+
+    function newCurveAddress(ShardedWallet wallet) public view returns (address) {
+        IGovernance governance = wallet.governance();
+        address template = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_V2_ASSETS)));
+        return Clones.predictDeterministicAddress(template, bytes32(uint256(uint160(address(wallet)))));
     }
 }
