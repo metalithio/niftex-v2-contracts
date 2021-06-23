@@ -22,8 +22,8 @@ contract FixedPriceSaleModuleNew is IModule, ModuleBase, Timers
     address public constant CURVE_PREMINT_RESERVE   = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
     // bytes32 public constant PCT_ETH_TO_CURVE        = bytes32(uint256(keccak256("PCT_ETH_TO_CURVE")) - 1);
     bytes32 public constant PCT_ETH_TO_CURVE        = 0xd6b8be26fe56c2461902fe9d3f529cdf9f02521932f09d2107fe448477d59e9f;
-    // bytes32 public constant CURVE_TEMPLATE          = bytes32(uint256(keccak256("CURVE_TEMPLATE")) - 1);
-    bytes32 public constant CURVE_TEMPLATE          = 0x3cec7c13345ae32e688f81840d184c63978bb776762e026e7e61d891bb2dd84b;
+    // bytes32 public constant CURVE_FACTORY_V2_ASSETS  = bytes32(uint256(keccak256("CURVE_FACTORY_V2_ASSETS")) - 1);
+    bytes32 public constant CURVE_FACTORY_V2_ASSETS = 0x3196913a2a5f43f2fb3b08e7b67c1ea747b72e77ca673c0468475f4f1ba9f0a7;
 
     mapping(ShardedWallet => address)                     public recipients;
     mapping(ShardedWallet => uint256)                     public prices;
@@ -150,7 +150,7 @@ contract FixedPriceSaleModuleNew is IModule, ModuleBase, Timers
         CurveFactoryForV2Assets factory = CurveFactoryForV2Assets(address(uint160(governance.getConfig(address(wallet), CURVE_FACTORY_V2_ASSETS))));
         uint256 k;
         uint256 x;
-        if (factoryAddress != address(0)) {
+        if (address(factory) != address(0)) {
             wallet.approve(factory.newCurveAddress(wallet), shardsToCurve);
             {
                 // setup curve

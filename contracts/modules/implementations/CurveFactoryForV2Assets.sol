@@ -24,8 +24,8 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
     function createCurve(
         ShardedWallet wallet,
         uint256 fractionsToProvide_,
-        address recipient_, // the wallet access to timelocked liquidity
-        address sourceOfFractions_,
+        address recipient_, // owner of timelocked liquidity
+        address sourceOfFractions_, // wallet to transfer fractions from
         uint256 k_,
         uint256 x_
     )
