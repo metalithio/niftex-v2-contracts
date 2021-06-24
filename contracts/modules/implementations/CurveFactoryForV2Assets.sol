@@ -59,4 +59,11 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
         address template = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_V2_ASSETS)));
         return Clones.predictDeterministicAddress(template, bytes32(uint256(uint160(address(wallet)))));
     }
+
+    function defaultCurveCoordinates(ShardedWallet wallet, uint256 price) public view returns (uint256 k, uint256 x) {
+        uint256 decimals = wallet.decimals();
+        uint256 totalSupply = wallet.totalSupply();
+        k = totalSupply * totalSupply * price / 10**decimals * 16 / 100;
+        x = totalSupply * 4 / 10;
+    }
 }

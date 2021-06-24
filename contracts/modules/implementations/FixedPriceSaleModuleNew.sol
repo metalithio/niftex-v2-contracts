@@ -152,13 +152,7 @@ contract FixedPriceSaleModuleNew is IModule, ModuleBase, Timers
         uint256 x;
         if (address(factory) != address(0)) {
             wallet.approve(factory.newCurveAddress(wallet), shardsToCurve);
-            {
-                // setup curve
-                uint256 decimals = ShardedWallet(payable(wallet)).decimals();
-                uint256 totalSupply = ShardedWallet(payable(wallet)).totalSupply();
-                k = totalSupply * 4 / 10;
-                x = totalSupply * totalSupply * prices[wallet] / 10**decimals * 16 / 100;
-            }
+            (uint256 k, uint256 x) = factory.defaultCurveCoordinates(wallet, prices[wallet]);
             address curve = factory.createCurve{value: valueToCurve}(
                 wallet,
                 shardsToCurve,
