@@ -34,9 +34,9 @@ contract CustomPricingCurveDeployer is IModule, ModuleBase
     returns (address curve) {
         ShardedWallet wallet = ShardedWallet(payable(msg.sender));
         IGovernance governance = wallet.governance();
-        address factoryAddress = address(uint160(governance.getConfig(msg.sender, CURVE_FACTORY_V2_ASSETS)));
-        if (factoryAddress != address(0)) {
-            curve = CurveFactoryForV2Assets(factoryAddress).createCurve{value: msg.value}(
+        CurveFactoryForV2Assets factory = CurveFactoryForV2Assets(address(uint160(governance.getConfig(msg.sender, CURVE_FACTORY_V2_ASSETS))));
+        if (address(factory) != address(0)) {
+            curve = factory.createCurve{value: msg.value}(
                 wallet,
                 fractionsToProvide_,
                 recipient_,

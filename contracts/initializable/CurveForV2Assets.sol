@@ -80,7 +80,7 @@ contract CurveForV2Assets is IERC1363Spender {
     event EtherSupplied(address indexed provider, uint256 amount);
     event ShardsWithdrawn(address indexed provider, uint256 payout, uint256 shards, uint256 amountLPToken);
     event EtherWithdrawn(address indexed provider, uint256 value, uint256 payout, uint256 amountLPToken);
-    event KUpdated(uint256 newK);
+    event KUpdated(uint256 newK, uint256 newX);
 
     constructor() {
         _template = new LiquidityToken();
@@ -387,11 +387,12 @@ contract CurveForV2Assets is IERC1363Spender {
     }
 
     function updateK(uint256 newK_) public {
-        require(msg.sender == wallet || ShardedWallet(payable(wallet)).balanceOf(msg.sender) == ShardedWallet(payable(wallet)).totalSupply());
+        require(msg.sender == wallet);
         curve.x = curve.x * sqrt(newK_ * 10**12 / curve.k) / 10**6;
         curve.k = newK_;
         assert(curve.k > 0);
         assert(curve.x > 0);
+        emit KUpdated(curve.k, curve.x);
     }
 
     function transferTimelockLiquidity() public {
