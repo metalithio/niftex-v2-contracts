@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "../../governance/Governance.sol";
+import "../../initializable/CurveForV2Assets.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
 
@@ -29,12 +31,12 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
         uint256 k_,
         uint256 x_
     )
-    external payable returns (address curve)
+    external payable 
     onlyShardedWallet(wallet)
+    returns (address curve)
     {
-        require(governance.hasRole(msg.sender, CURVE_DEPLOYER));
-        IGovernance governance = wallet.governance();
-
+        Governance governance = Governance(address(wallet.governance()));
+        require(governance.hasRole(CURVE_DEPLOYER, msg.sender));
         address template = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_V2_ASSETS)));
         if (template != address(0)) {
             curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));

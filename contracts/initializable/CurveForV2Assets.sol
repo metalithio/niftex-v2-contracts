@@ -93,12 +93,11 @@ contract CurveForV2Assets is IERC1363Spender {
         address recipient_,
         address sourceOfFractions_,
         uint256 k_,
-        uint256 x_,
+        uint256 x_
     )
     public payable
     {
         require(wallet == address(0));
-        recordedTotalSupply   = ShardedWallet(payable(wallet_)).totalSupply();
         string memory name_   = ShardedWallet(payable(wallet_)).name();
         string memory symbol_ = ShardedWallet(payable(wallet_)).symbol();
 
@@ -119,7 +118,6 @@ contract CurveForV2Assets is IERC1363Spender {
 
         {
             // setup curve
-            uint256 decimals_ = ShardedWallet(payable(wallet_)).decimals();
             curve.x = x_;
             curve.k = k_;
         }
@@ -389,7 +387,7 @@ contract CurveForV2Assets is IERC1363Spender {
     }
 
     function updateK(uint256 newK_) public {
-        require(msg.sender == wallet || ShardedWallet(payable(wallet_)).balanceOf(msg.sender) == ShardedWallet(payable(wallet_)).totalSupply());
+        require(msg.sender == wallet || ShardedWallet(payable(wallet)).balanceOf(msg.sender) == ShardedWallet(payable(wallet)).totalSupply());
         curve.x = curve.x * sqrt(newK_ * 10**12 / curve.k) / 10**6;
         curve.k = newK_;
         assert(curve.k > 0);

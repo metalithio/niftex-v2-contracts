@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
-import "../../initializable/BondingCurve3.sol";
+import "./CurveFactoryForV2Assets.sol";
 import "../../governance/IGovernance.sol";
 import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
@@ -16,7 +16,7 @@ struct Allocation
 
 contract FixedPriceSaleModuleNew is IModule, ModuleBase, Timers
 {
-    string public constant override name = type(FixedPriceSaleModule).name;
+    string public constant override name = type(FixedPriceSaleModuleNew).name;
 
     // address public constant CURVE_PREMINT_RESERVE   = address(uint160(uint256(keccak256("CURVE_PREMINT_RESERVE")) - 1));
     address public constant CURVE_PREMINT_RESERVE   = 0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9;
@@ -154,12 +154,12 @@ contract FixedPriceSaleModuleNew is IModule, ModuleBase, Timers
             wallet.approve(factory.newCurveAddress(wallet), shardsToCurve);
             {
                 // setup curve
-                uint256 decimals = ShardedWallet(payable(wallet_)).decimals();
-                uint256 totalSupply = ShardedWallet(payable(wallet_)).totalSupply();
+                uint256 decimals = ShardedWallet(payable(wallet)).decimals();
+                uint256 totalSupply = ShardedWallet(payable(wallet)).totalSupply();
                 k = totalSupply * 4 / 10;
                 x = totalSupply * totalSupply * prices[wallet] / 10**decimals * 16 / 100;
             }
-            address curve = CurveFactoryForV2Assets(factoryAddress).createCurve{value: valueToCurve}(
+            address curve = factory.createCurve{value: valueToCurve}(
                 wallet,
                 shardsToCurve,
                 recipients[wallet],
