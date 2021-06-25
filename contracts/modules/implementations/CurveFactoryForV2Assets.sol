@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../governance/Governance.sol";
 import "../../governance/IGovernance.sol";
 import "../../initializable/CurveForV2Assets.sol";
-import "../../utils/Timers.sol";
 import "../ModuleBase.sol";
 
 contract CurveFactoryForV2Assets is IModule, ModuleBase

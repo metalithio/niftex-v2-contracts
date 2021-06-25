@@ -11,6 +11,8 @@
     "test:531": "hardhat test ./test/531_bondingcurve3_with_helpers",
     "test:600": "hardhat test ./test/600_erc20ManagerModule",
     "test:402": "hardhat test ./test/402_action_sw_manager",
+    "test:900": "hardhat test ./test/900_configurable_curve_no_buyout.js",
+    "test:901": "hardhat test ./test/901_configurable_curve_with_helpers.js",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
