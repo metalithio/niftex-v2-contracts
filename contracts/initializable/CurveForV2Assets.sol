@@ -387,10 +387,19 @@ contract CurveForV2Assets is IERC1363Spender {
     }
 
     function updateK(uint256 newK_) public {
+        require(msg.sender == wallet);
+        curve.x = curve.x * sqrt(newK_ * 10**12 / curve.k) / 10**6;
+        curve.k = newK_;
+        assert(curve.k > 0);
+        assert(curve.x > 0);
+        emit KUpdated(curve.k, curve.x);
+    }
+
+    function updateKAndX(uint256 newK_, uint256 newX_) public {
         ShardedWallet sw = ShardedWallet(payable(wallet));
         uint256 effectiveShardBal = sw.balanceOf(msg.sender) + shardLPToken.balanceOf(msg.sender) * sw.balanceOf(address(this)) / shardLPToken.totalSupply();
-        require(msg.sender == wallet || effectiveShardBal == sw.totalSupply());
-        curve.x = curve.x * sqrt(newK_ * 10**12 / curve.k) / 10**6;
+        require(effectiveShardBal == sw.totalSupply());
+        curve.x = newX_;
         curve.k = newK_;
         assert(curve.k > 0);
         assert(curve.x > 0);

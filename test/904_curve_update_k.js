@@ -461,17 +461,9 @@ contract('CurveForV2Assets manual check - curve deployer: CustomPricingCurveDepl
 		});
 	})
 
-	describe('nftOwner directly curveInstance.updateK, should pass as he effectively owns 100% fraction supply', function () {
+	describe('nftOwner directly curveInstance.updateKAndX, should pass as he effectively owns 100% fraction supply', function () {
 		it('perform', async function () {
-			const shardLPTokenBal = await curveInstance.getShardLPTokens(nftOwner);
-			const shardLPTokenSupply = await(await ShardedWallet.at(await curveInstance.shardLPToken())).totalSupply();
-
-			console.log({
-				shardLPTokenBal: new BigNumber(shardLPTokenBal).toFixed(),
-				shardLPTokenSupply: new BigNumber(shardLPTokenSupply).toFixed()
-			});
-
-			await curveInstance.updateK('160000000000000000000000000000000000000', { from: nftOwner })
+			await curveInstance.updateKAndX('160000000000000000000000000000000000000', web3.utils.toWei('400'),{ from: nftOwner });
 		});
 
 		after(async function () {
