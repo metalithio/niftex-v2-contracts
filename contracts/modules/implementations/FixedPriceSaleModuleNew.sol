@@ -149,7 +149,7 @@ contract FixedPriceSaleModuleNew is IModule, ModuleBase, Timers
         IGovernance governance = wallet.governance();
         CurveFactoryForV2Assets factory = CurveFactoryForV2Assets(address(uint160(governance.getConfig(address(wallet), CURVE_FACTORY_V2_ASSETS))));
         // factory exists and no curve created for this fixedPriceSaleModule yet
-        if (address(factory) != address(0) && factory.walletToCurve[wallet] == address(0)) {
+        if (address(factory) != address(0) && factory.walletToCurve(wallet) == address(0)) {
             wallet.approve(factory.newCurveAddress(wallet), shardsToCurve);
             (uint256 k, uint256 x) = factory.defaultCurveCoordinates(wallet, prices[wallet]);
             require(k > 0 && x > 0);
