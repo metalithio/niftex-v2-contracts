@@ -2,47 +2,53 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "../ModuleBase.sol";
 import "../../governance/IGovernance.sol";
-import "./CurveFactoryForV2Assets.sol";
+import "./CustomPricingCurve.sol";
 
 contract CustomPricingCurveDeployer is IModule, ModuleBase
 {
     string public constant override name = type(CustomPricingCurveDeployer).name;
 
-    // bytes32 public constant CURVE_FACTORY_V2_ASSETS = bytes32(uint256(keccak256("CURVE_FACTORY_V2_ASSETS")) - 1);
-    bytes32 public constant CURVE_FACTORY_V2_ASSETS = 0x3196913a2a5f43f2fb3b08e7b67c1ea747b72e77ca673c0468475f4f1ba9f0a7;
+    // bytes32 public constant CURVE_TEMPLATE_CUSTOM_PRICING = bytes32(uint256(keccak256("CURVE_TEMPLATE_CUSTOM_PRICING")) - 1);
+    bytes32 public constant CURVE_TEMPLATE_CUSTOM_PRICING = 0x015ac18e18061bd4ed0d69c024a10bd206e68a8c90479081e4e55738eb8d069d;
 
     event NewBondingCurve(ShardedWallet indexed wallet_, address indexed curve_);
 
-    modifier isAllowed() {
-        require(ShardedWallet(payable(msg.sender)).owner() == address(0));
+    modifier isAllowed(ShardedWallet wallet) {
+        require(wallet.owner() == address(0));
         _;
     }
 
     constructor(address walletTemplate) ModuleBase(walletTemplate) {}
 
     function createCurve(
+        ShardedWallet wallet,
         uint256 fractionsToProvide_,
         address recipient_, // owner of timelocked liquidity
         address sourceOfFractions_, // wallet to transfer fractions from
         uint256 k_,
-        uint256 x_
+        uint256 x_,
+        uint256 liquidityTimelock_
     ) public payable
-    isAllowed
-    onlyShardedWallet(ShardedWallet(payable(msg.sender))) 
+    isAllowed(wallet)
+    onlyShardedWallet(wallet) 
     returns (address curve) {
-        ShardedWallet wallet = ShardedWallet(payable(msg.sender));
+        // only sharded wallet OR one owning 100% fraction supply can create custom pricing curve
+        require(msg.sender == address(wallet) || wallet.balanceOf(msg.sender) == wallet.totalSupply());
         IGovernance governance = wallet.governance();
-        CurveFactoryForV2Assets factory = CurveFactoryForV2Assets(address(uint160(governance.getConfig(msg.sender, CURVE_FACTORY_V2_ASSETS))));
-        if (address(factory) != address(0)) {
-            curve = factory.createCurve{value: msg.value}(
-                wallet,
+        address template = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_CUSTOM_PRICING)));
+        if (address(template) != address(0)) {
+            address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
+            CustomPricingCurve(curve).initialize{value: msg.value}(
                 fractionsToProvide_,
+                address(wallet),
                 recipient_,
                 sourceOfFractions_,
                 k_,
-                x_
+                x_,
+                liquidityTimelock_
             );
             emit NewBondingCurve(wallet, curve);
         }

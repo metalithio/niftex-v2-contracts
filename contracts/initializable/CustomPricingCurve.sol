@@ -41,7 +41,8 @@ contract LiquidityToken is ERC20 {
     }
 }
 
-contract CurveForV2Assets is IERC1363Spender {
+// used by CustomPricingCurveDeployer.sol
+contract CustomPricingCurve is IERC1363Spender {
     struct CurveCoordinates {
         uint256 x;
         uint256 k;
@@ -61,8 +62,6 @@ contract CurveForV2Assets is IERC1363Spender {
     bytes32 public constant PCT_FEE_ARTIST     = 0xdd0618e2e2a17ff193a933618181c8f8909dc169e9707cce1921893a88739ca0;
     // bytes32 public constant PCT_FEE_NIFTEX    = bytes32(uint256(keccak256("PCT_FEE_NIFTEX")) - 1);
     bytes32 public constant PCT_FEE_NIFTEX     = 0xcfb1dd89e6f4506eca597e7558fbcfe22dbc7e0b9f2b3956e121d0e344d6f7aa;
-    // bytes32 public constant LIQUIDITY_TIMELOCK   = bytes32(uint256(keccak256("LIQUIDITY_TIMELOCK")) - 1);
-    bytes32 public constant LIQUIDITY_TIMELOCK = 0x4babff57ebd34f251a515a845400ed950a51f0a64c92e803a3e144fc40623fa8;
 
     LiquidityToken   public   etherLPToken;
     LiquidityToken   public   shardLPToken;
@@ -93,7 +92,8 @@ contract CurveForV2Assets is IERC1363Spender {
         address recipient_,
         address sourceOfFractions_,
         uint256 k_,
-        uint256 x_
+        uint256 x_,
+        uint256 liquidityTimelock_
     )
     public payable
     {
@@ -108,7 +108,7 @@ contract CurveForV2Assets is IERC1363Spender {
 
         wallet    = wallet_;
         recipient = recipient_;
-        deadline  = block.timestamp + ShardedWallet(payable(wallet_)).governance().getConfig(wallet_, LIQUIDITY_TIMELOCK);
+        deadline  = block.timestamp + liquidityTimelock_;
         emit Initialized(wallet_);
 
         // transfer assets
@@ -122,13 +122,14 @@ contract CurveForV2Assets is IERC1363Spender {
             curve.k = k_;
         }
 
+        address mintTo = liquidityTimelock_ == 0 ? recipient_ : address(this);
         // mint liquidity
-        etherLPToken.controllerMint(address(this), msg.value);
-        shardLPToken.controllerMint(address(this), supply);
+        etherLPToken.controllerMint(mintTo, msg.value);
+        shardLPToken.controllerMint(mintTo, supply);
         _etherLPExtra.underlyingSupply = msg.value;
         _shardLPExtra.underlyingSupply = supply;
-        emit EtherSupplied(address(this), msg.value);
-        emit ShardsSupplied(address(this), supply);
+        emit EtherSupplied(mintTo, msg.value);
+        emit ShardsSupplied(mintTo, supply);
     }
 
     function buyShards(uint256 amount, uint256 maxCost) public payable {
