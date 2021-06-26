@@ -342,8 +342,6 @@ contract('CurveForV2Assets manual check - curve deployer: CustomPricingCurveDepl
 				this.curvefactory.address, // deployer
 			);
 
-			console.log('predicted', predicted);
-
 			await instance.approve(predicted, web3.utils.toWei('400'), { from: nftOwner });
 			await expectRevert.unspecified(this.curvefactory.createCurve(
 				instance.address,
@@ -380,14 +378,14 @@ contract('CurveForV2Assets manual check - curve deployer: CustomPricingCurveDepl
 			const value = web3.utils.toWei('0');
 			console.log(
 				instance.address,
-				web3.utils.toWei('400'),
+				web3.utils.toWei('80'),
 				nftOwner,
 				nftOwner,
 				'160000000000000000000000000000000000000', // k
 				'400000000000000000000' // x
 			);
 			const data  = this.customPricingCurveDeployer.contract.methods.createCurve(
-				web3.utils.toWei('400'),
+				web3.utils.toWei('80'),
 				nftOwner,
 				nftOwner,
 				'160000000000000000000000000000000000000', // k
@@ -458,7 +456,7 @@ contract('CurveForV2Assets manual check - curve deployer: CustomPricingCurveDepl
 			const to    = this.customPricingCurveDeployer.address;
 			const value = web3.utils.toWei('0');
 			const data  = this.customPricingCurveDeployer.contract.methods.createCurve(
-				web3.utils.toWei('400'),
+				web3.utils.toWei('80'),
 				nftOwner,
 				nftOwner,
 				'160000000000000000000000000000000000000', // k
@@ -467,6 +465,14 @@ contract('CurveForV2Assets manual check - curve deployer: CustomPricingCurveDepl
 
 			const { receipt } = await this.modules.action.execute(instance.address, [ to ], [ value ], [ data ], { from: nftOwner });
 			expectEvent(receipt, 'ActionExecuted', { id, i: '0', to, value, data });
+
+			const predicted = predictClone(
+				this.bondingcurve.address,      // template
+				instance.address,               // salt
+				this.curvefactory.address, // deployer
+			);
+
+			curveInstance = await BondingCurve.at(predicted);
 		});
 
 		after(async function () {
@@ -476,7 +482,7 @@ contract('CurveForV2Assets manual check - curve deployer: CustomPricingCurveDepl
 			assert.equal(await instance.decimals(),                                                           '18');
 			assert.equal(await instance.totalSupply(),                                                        web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),                                          web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('420'));
+			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('740'));
 			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
 			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('80'));
@@ -488,248 +494,248 @@ contract('CurveForV2Assets manual check - curve deployer: CustomPricingCurveDepl
 		});
 	});
 
-	// describe('mBuyer1 buy 5 shards', () => {
-	// 	it('perform', async() => {
-	// 		const amount      = web3.utils.toWei('5');
-	// 		const maxCost     = web3.utils.toWei('10');
-	// 		const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: mBuyer1, value: maxCost });
-	// 		console.log('buyShards gasUsed: ', receipt.gasUsed);
+	describe('mBuyer1 buy 5 shards', () => {
+		it('perform', async() => {
+			const amount      = web3.utils.toWei('5');
+			const maxCost     = web3.utils.toWei('10');
+			const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: mBuyer1, value: maxCost });
+			console.log('buyShards gasUsed: ', receipt.gasUsed);
 
-	// 		const curve       = await curveInstance.curve();
-	// 		const etherInPool = await web3.eth.getBalance(curveInstance.address);
-	// 		const shardInPool = await instance.balanceOf(curveInstance.address);
-	// 		console.log({
-	// 			x:           curve[0].toString(),
-	// 			k:           curve[1].toString(),
-	// 			etherInPool: web3.utils.fromWei(etherInPool),
-	// 			shardInPool: web3.utils.fromWei(shardInPool),
-	// 		});
-	// 	});
+			const curve       = await curveInstance.curve();
+			const etherInPool = await web3.eth.getBalance(curveInstance.address);
+			const shardInPool = await instance.balanceOf(curveInstance.address);
+			console.log({
+				x:           curve[0].toString(),
+				k:           curve[1].toString(),
+				etherInPool: web3.utils.fromWei(etherInPool),
+				shardInPool: web3.utils.fromWei(shardInPool),
+			});
+		});
 
-	// 	after(async function () {
-	// 		assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
-	// 		assert.equal(await instance.name(),                                  'Tokenized NFT');
-	// 		assert.equal(await instance.symbol(),                                'TNFT');
-	// 		assert.equal(await instance.decimals(),                              '18');
-	// 		assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
-	// 		assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-	// 		assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-	// 		assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('75'));
-	// 	});
-	// });
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('75'));
+		});
+	});
 
-	// describe('cBuyer1 buy 5 shards', () => {
-	// 	it('perform', async() => {
-	// 		const amount      = web3.utils.toWei('5');
-	// 		const maxCost     = web3.utils.toWei('10');
-	// 		const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: cBuyer1, value: maxCost });
-	// 		console.log('buyShards gasUsed: ', receipt.gasUsed);
+	describe('cBuyer1 buy 5 shards', () => {
+		it('perform', async() => {
+			const amount      = web3.utils.toWei('5');
+			const maxCost     = web3.utils.toWei('10');
+			const { receipt } = await curveInstance.buyShards(amount, maxCost, { from: cBuyer1, value: maxCost });
+			console.log('buyShards gasUsed: ', receipt.gasUsed);
 
-	// 		const curve       = await curveInstance.curve();
-	// 		const etherInPool = await web3.eth.getBalance(curveInstance.address);
-	// 		const shardInPool = await instance.balanceOf(curveInstance.address);
-	// 		console.log({
-	// 			x:           curve[0].toString(),
-	// 			k:           curve[1].toString(),
-	// 			etherInPool: web3.utils.fromWei(etherInPool),
-	// 			shardInPool: web3.utils.fromWei(shardInPool),
-	// 		});
-	// 	});
+			const curve       = await curveInstance.curve();
+			const etherInPool = await web3.eth.getBalance(curveInstance.address);
+			const shardInPool = await instance.balanceOf(curveInstance.address);
+			console.log({
+				x:           curve[0].toString(),
+				k:           curve[1].toString(),
+				etherInPool: web3.utils.fromWei(etherInPool),
+				shardInPool: web3.utils.fromWei(shardInPool),
+			});
+		});
 
-	// 	after(async function () {
-	// 		assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
-	// 		assert.equal(await instance.name(),                                  'Tokenized NFT');
-	// 		assert.equal(await instance.symbol(),                                'TNFT');
-	// 		assert.equal(await instance.decimals(),                              '18');
-	// 		assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
-	// 		assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-	// 		assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-	// 		assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('70'));
-	// 	});
-	// });
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('70'));
+		});
+	});
 
-	// describe('cBuyer2 supply 30 shards', () => {
-	// 	it('perform', async() => {
-	// 		const amount      = web3.utils.toWei('30');
-	// 		await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: cBuyer2 });
-	// 		const { receipt } = await curveInstance.supplyShards(amount, { from: cBuyer2 });
-	// 		console.log('supplyShards gasUsed: ', receipt.gasUsed);
+	describe('cBuyer2 supply 30 shards', () => {
+		it('perform', async() => {
+			const amount      = web3.utils.toWei('30');
+			await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: cBuyer2 });
+			const { receipt } = await curveInstance.supplyShards(amount, { from: cBuyer2 });
+			console.log('supplyShards gasUsed: ', receipt.gasUsed);
 
-	// 		const curve       = await curveInstance.curve();
-	// 		const etherInPool = await web3.eth.getBalance(curveInstance.address);
-	// 		const shardInPool = await instance.balanceOf(curveInstance.address);
-	// 		console.log({
-	// 			x:           curve[0].toString(),
-	// 			k:           curve[1].toString(),
-	// 			etherInPool: web3.utils.fromWei(etherInPool),
-	// 			shardInPool: web3.utils.fromWei(shardInPool),
-	// 		});
-	// 	});
+			const curve       = await curveInstance.curve();
+			const etherInPool = await web3.eth.getBalance(curveInstance.address);
+			const shardInPool = await instance.balanceOf(curveInstance.address);
+			console.log({
+				x:           curve[0].toString(),
+				k:           curve[1].toString(),
+				etherInPool: web3.utils.fromWei(etherInPool),
+				shardInPool: web3.utils.fromWei(shardInPool),
+			});
+		});
 
-	// 	after(async function () {
-	// 		assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
-	// 		assert.equal(await instance.name(),                                  'Tokenized NFT');
-	// 		assert.equal(await instance.symbol(),                                'TNFT');
-	// 		assert.equal(await instance.decimals(),                              '18');
-	// 		assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
-	// 		assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-	// 		assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-	// 		assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('100'));
-	// 	});
-	// });
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('100'));
+		});
+	});
 
-	// describe('cBuyer1 supply 0.001 ETH', () => {
-	// 	it('perform', async() => {
-	// 		const value       = web3.utils.toWei('.001');
-	// 		const { receipt } = await curveInstance.supplyEther({ from: cBuyer1, value });
-	// 		console.log('supplyEther gasUsed: ', receipt.gasUsed);
+	describe('cBuyer1 supply 0.001 ETH', () => {
+		it('perform', async() => {
+			const value       = web3.utils.toWei('.001');
+			const { receipt } = await curveInstance.supplyEther({ from: cBuyer1, value });
+			console.log('supplyEther gasUsed: ', receipt.gasUsed);
 
-	// 		const curve       = await curveInstance.curve();
-	// 		const etherInPool = await web3.eth.getBalance(curveInstance.address);
-	// 		const shardInPool = await instance.balanceOf(curveInstance.address);
-	// 		console.log({
-	// 			x:           curve[0].toString(),
-	// 			k:           curve[1].toString(),
-	// 			etherInPool: web3.utils.fromWei(etherInPool),
-	// 			shardInPool: web3.utils.fromWei(shardInPool),
-	// 		});
-	// 	});
+			const curve       = await curveInstance.curve();
+			const etherInPool = await web3.eth.getBalance(curveInstance.address);
+			const shardInPool = await instance.balanceOf(curveInstance.address);
+			console.log({
+				x:           curve[0].toString(),
+				k:           curve[1].toString(),
+				etherInPool: web3.utils.fromWei(etherInPool),
+				shardInPool: web3.utils.fromWei(shardInPool),
+			});
+		});
 
-	// 	after(async function () {
-	// 		assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
-	// 		assert.equal(await instance.name(),                                  'Tokenized NFT');
-	// 		assert.equal(await instance.symbol(),                                'TNFT');
-	// 		assert.equal(await instance.decimals(),                              '18');
-	// 		assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
-	// 		assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-	// 		assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-	// 		assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('100'));
-	// 	});
-	// });
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('100'));
+		});
+	});
 
-	// describe('mBuyer1 sells 5 shards', () => {
-	// 	it('perform', async() => {
-	// 		const amount      = web3.utils.toWei('5');
-	// 		const minPayout   = web3.utils.toWei('0'); // TODO (.05)
-	// 		await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: mBuyer1 });
-	// 		const { receipt } = await curveInstance.sellShards(amount, minPayout, { from: mBuyer1 });
-	// 		console.log('sellShards gasUsed: ', receipt.gasUsed);
+	describe('mBuyer1 sells 5 shards', () => {
+		it('perform', async() => {
+			const amount      = web3.utils.toWei('5');
+			const minPayout   = web3.utils.toWei('0'); // TODO (.05)
+			await instance.approve(curveInstance.address, constants.MAX_UINT256, { from: mBuyer1 });
+			const { receipt } = await curveInstance.sellShards(amount, minPayout, { from: mBuyer1 });
+			console.log('sellShards gasUsed: ', receipt.gasUsed);
 
-	// 		const curve       = await curveInstance.curve();
-	// 		const etherInPool = await web3.eth.getBalance(curveInstance.address);
-	// 		const shardInPool = await instance.balanceOf(curveInstance.address);
-	// 		console.log({
-	// 			x:           curve[0].toString(),
-	// 			k:           curve[1].toString(),
-	// 			etherInPool: web3.utils.fromWei(etherInPool),
-	// 			shardInPool: web3.utils.fromWei(shardInPool),
-	// 		});
-	// 	});
+			const curve       = await curveInstance.curve();
+			const etherInPool = await web3.eth.getBalance(curveInstance.address);
+			const shardInPool = await instance.balanceOf(curveInstance.address);
+			console.log({
+				x:           curve[0].toString(),
+				k:           curve[1].toString(),
+				etherInPool: web3.utils.fromWei(etherInPool),
+				shardInPool: web3.utils.fromWei(shardInPool),
+			});
+		});
 
-	// 	after(async function () {
-	// 		assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
-	// 		assert.equal(await instance.name(),                                  'Tokenized NFT');
-	// 		assert.equal(await instance.symbol(),                                'TNFT');
-	// 		assert.equal(await instance.decimals(),                              '18');
-	// 		assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
-	// 		assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-	// 		assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-	// 		assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
-	// 	});
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
+		});
 
-	// 	it('Move till end of timelock', async function () {
-	// 		await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 100800 ], id: 0 }, () => {});
-	// 	});
-	// });
+		it('Move till end of timelock', async function () {
+			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ 100800 ], id: 0 }, () => {});
+		});
+	});
 
-	// describe('nftOwner transfer timelock', () => {
-	// 	it('perform', async() => {
-	// 		const buyShardsTxn = await curveInstance.transferTimelockLiquidity();
+	describe('nftOwner transfer timelock', () => {
+		it('perform', async() => {
+			const buyShardsTxn = await curveInstance.transferTimelockLiquidity();
 
-	// 		const curve       = await curveInstance.curve();
-	// 		const etherInPool = await web3.eth.getBalance(curveInstance.address);
-	// 		const shardInPool = await instance.balanceOf(curveInstance.address);
-	// 		console.log({
-	// 			x:           curve[0].toString(),
-	// 			k:           curve[1].toString(),
-	// 			etherInPool: web3.utils.fromWei(etherInPool),
-	// 			shardInPool: web3.utils.fromWei(shardInPool),
-	// 		});
-	// 	});
+			const curve       = await curveInstance.curve();
+			const etherInPool = await web3.eth.getBalance(curveInstance.address);
+			const shardInPool = await instance.balanceOf(curveInstance.address);
+			console.log({
+				x:           curve[0].toString(),
+				k:           curve[1].toString(),
+				etherInPool: web3.utils.fromWei(etherInPool),
+				shardInPool: web3.utils.fromWei(shardInPool),
+			});
+		});
 
-	// 	after(async function () {
-	// 		assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
-	// 		assert.equal(await instance.name(),                                  'Tokenized NFT');
-	// 		assert.equal(await instance.symbol(),                                'TNFT');
-	// 		assert.equal(await instance.decimals(),                              '18');
-	// 		assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
-	// 		assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-	// 		assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
-	// 		assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
-	// 	});
-	// });
+		after(async function () {
+			assert.equal(await instance.owner(),                                 constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                  'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                'TNFT');
+			assert.equal(await instance.decimals(),                              '18');
+			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
+			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
+		});
+	});
 
-	// const LPAccounts = [ nftOwner, cBuyer1, cBuyer2 ];
+	const LPAccounts = [ nftOwner, cBuyer1, cBuyer2 ];
 
-	// describe('3 LPs withdraw liquidity', () => {
-	// 	for (let i = 0; i < 3; i++) {
-	// 		it(`${LPAccounts[i]} withdraw ETH liquidity`, async() => {
-	// 			const ethLPTokensAmount = await curveInstance.getEthLPTokens(LPAccounts[i]);
-	// 			console.log(`${LPAccounts[i]}'s ethLPTokensAmount: ${ethLPTokensAmount.toString()}`);
+	describe('3 LPs withdraw liquidity', () => {
+		for (let i = 0; i < 3; i++) {
+			it(`${LPAccounts[i]} withdraw ETH liquidity`, async() => {
+				const ethLPTokensAmount = await curveInstance.getEthLPTokens(LPAccounts[i]);
+				console.log(`${LPAccounts[i]}'s ethLPTokensAmount: ${ethLPTokensAmount.toString()}`);
 
-	// 			if (ethLPTokensAmount > 0) {
-	// 				const { receipt, logs } = await curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]});
-	// 				console.log('withdrawEth.gasUsed:', receipt.gasUsed);
+				if (ethLPTokensAmount > 0) {
+					const { receipt, logs } = await curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]});
+					console.log('withdrawEth.gasUsed:', receipt.gasUsed);
 
-	// 				const { value, payout } = logs.find(({ event }) => event === 'EtherWithdrawn').args;
-	// 				console.log(`${LPAccounts[i]} withdraw ${web3.utils.fromWei(value)} ETH and ${web3.utils.fromWei(payout)} Shards`);
-	// 			} else {
-	// 				await expectRevert.unspecified(curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]}));
-	// 			}
-	// 		});
-	// 	}
+					const { value, payout } = logs.find(({ event }) => event === 'EtherWithdrawn').args;
+					console.log(`${LPAccounts[i]} withdraw ${web3.utils.fromWei(value)} ETH and ${web3.utils.fromWei(payout)} Shards`);
+				} else {
+					await expectRevert.unspecified(curveInstance.withdrawSuppliedEther(ethLPTokensAmount, { from: LPAccounts[i]}));
+				}
+			});
+		}
 
-	// 	for (let i = 0; i < 3; i++) {
-	// 		it(`${LPAccounts[i]} withdraw Shard liquidity`, async() => {
-	// 			const shardLPTokensAmount = await curveInstance.getShardLPTokens(LPAccounts[i]);
-	// 			console.log(`${LPAccounts[i]}'s shardLPTokensAmount: ${shardLPTokensAmount.toString()}`);
+		for (let i = 0; i < 3; i++) {
+			it(`${LPAccounts[i]} withdraw Shard liquidity`, async() => {
+				const shardLPTokensAmount = await curveInstance.getShardLPTokens(LPAccounts[i]);
+				console.log(`${LPAccounts[i]}'s shardLPTokensAmount: ${shardLPTokensAmount.toString()}`);
 
-	// 			if (shardLPTokensAmount > 0) {
-	// 				const { receipt, logs } = await curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]});
-	// 				console.log('withdrawShard.gasUsed:', receipt.gasUsed);
+				if (shardLPTokensAmount > 0) {
+					const { receipt, logs } = await curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]});
+					console.log('withdrawShard.gasUsed:', receipt.gasUsed);
 
-	// 				const { payout, shards } = logs.find(({ event }) => event === 'ShardsWithdrawn').args;
-	// 				console.log(`${LPAccounts[i]} withdraw ${web3.utils.fromWei(payout)} ETH and ${web3.utils.fromWei(shards)} Shards`);
-	// 			} else {
-	// 				await expectRevert.unspecified(curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]}));
-	// 			}
-	// 		});
-	// 	}
+					const { payout, shards } = logs.find(({ event }) => event === 'ShardsWithdrawn').args;
+					console.log(`${LPAccounts[i]} withdraw ${web3.utils.fromWei(payout)} ETH and ${web3.utils.fromWei(shards)} Shards`);
+				} else {
+					await expectRevert.unspecified(curveInstance.withdrawSuppliedShards(shardLPTokensAmount, { from: LPAccounts[i]}));
+				}
+			});
+		}
 
-	// 	it('check if ethInPool and shardsInPool are both the remaining for artist and NIFTEX', async() => {
-	// 		const curve          = await curveInstance.curve();
-	// 		const etherInPool    = await web3.eth.getBalance(curveInstance.address);
-	// 		const shardInPool    = await instance.balanceOf(curveInstance.address);
-	// 		const ethSuppliers   = await curveInstance.getEthSuppliers();
-	// 		const shardSuppliers = await curveInstance.getShardSuppliers();
-	// 		console.log({
-	// 			x:           curve[0].toString(),
-	// 			k:           curve[1].toString(),
-	// 			etherInPool: web3.utils.fromWei(etherInPool),
-	// 			shardInPool: web3.utils.fromWei(shardInPool),
-	// 			ethSuppliers: {
-	// 				underlyingSupply: web3.utils.fromWei(ethSuppliers[0]),
-	// 				totalSupply:      web3.utils.fromWei(ethSuppliers[1]),
-	// 				feeToNiftex:      web3.utils.fromWei(ethSuppliers[2]),
-	// 				feeToArtist:      web3.utils.fromWei(ethSuppliers[3]),
-	// 			},
-	// 			shardSuppliers: {
-	// 				underlyingSupply: web3.utils.fromWei(shardSuppliers[0]),
-	// 				totalSupply:      web3.utils.fromWei(shardSuppliers[1]),
-	// 				feeToNiftex:      web3.utils.fromWei(shardSuppliers[2]),
-	// 				feeToArtist:      web3.utils.fromWei(shardSuppliers[3]),
-	// 			},
-	// 		});
-	// 	});
-	// });
+		it('check if ethInPool and shardsInPool are both the remaining for artist and NIFTEX', async() => {
+			const curve          = await curveInstance.curve();
+			const etherInPool    = await web3.eth.getBalance(curveInstance.address);
+			const shardInPool    = await instance.balanceOf(curveInstance.address);
+			const ethSuppliers   = await curveInstance.getEthSuppliers();
+			const shardSuppliers = await curveInstance.getShardSuppliers();
+			console.log({
+				x:           curve[0].toString(),
+				k:           curve[1].toString(),
+				etherInPool: web3.utils.fromWei(etherInPool),
+				shardInPool: web3.utils.fromWei(shardInPool),
+				ethSuppliers: {
+					underlyingSupply: web3.utils.fromWei(ethSuppliers[0]),
+					totalSupply:      web3.utils.fromWei(ethSuppliers[1]),
+					feeToNiftex:      web3.utils.fromWei(ethSuppliers[2]),
+					feeToArtist:      web3.utils.fromWei(ethSuppliers[3]),
+				},
+				shardSuppliers: {
+					underlyingSupply: web3.utils.fromWei(shardSuppliers[0]),
+					totalSupply:      web3.utils.fromWei(shardSuppliers[1]),
+					feeToNiftex:      web3.utils.fromWei(shardSuppliers[2]),
+					feeToArtist:      web3.utils.fromWei(shardSuppliers[3]),
+				},
+			});
+		});
+	});
 });
