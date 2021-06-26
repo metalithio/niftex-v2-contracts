@@ -15,6 +15,7 @@
     "test:901": "hardhat test ./test/901_configurable_curve_with_helpers.js",
     "test:902": "hardhat test ./test/902_configurable_curve_custom_pricing.js",
     "test:903": "hardhat test ./test/903_curve_custom_with_helpers.js",
+    "test:904": "hardhat test ./test/904_curve_update_k.js",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
