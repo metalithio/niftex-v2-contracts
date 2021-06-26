@@ -20,6 +20,8 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
     bytes32 public constant CURVE_TEMPLATE_V2_ASSETS = 0xbef8d45a153692c431be2463fb0142a9343492571a9105b35dca3fb6bc9e0c64;
     // bytes32 public constant CURVE_STRETCH = bytes32(uint256(keccak256("CURVE_STRETCH")) - 1);
     bytes32 public constant CURVE_STRETCH = 0x93dd957c7b5128fa849cb38b3ebc75f4cb0ed832255ea21c35a997582634caa4;
+
+    mapping(ShardedWallet => address) public walletToCurve;
     event NewBondingCurve(ShardedWallet indexed wallet, address indexed curve);
 
     constructor(address walletTemplate) ModuleBase(walletTemplate) {}
@@ -49,6 +51,8 @@ contract CurveFactoryForV2Assets is IModule, ModuleBase
                 k_,
                 x_
             );
+
+            walletToCurve[wallet] = curve;
             emit NewBondingCurve(wallet, curve);
         } else {
             return address(0);
