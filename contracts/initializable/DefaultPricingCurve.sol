@@ -130,13 +130,14 @@ contract DefaultPricingCurve is IERC1363Spender {
             curve.x = totalSupply * curveStretch / 10;
         }
 
+        address mintTo = deadline == block.timestamp ? recipient_ : address(this);
         // mint liquidity
-        etherLPToken.controllerMint(address(this), msg.value);
-        shardLPToken.controllerMint(address(this), supply);
+        etherLPToken.controllerMint(mintTo, msg.value);
+        shardLPToken.controllerMint(mintTo, supply);
         _etherLPExtra.underlyingSupply = msg.value;
         _shardLPExtra.underlyingSupply = supply;
-        emit EtherSupplied(address(this), msg.value);
-        emit ShardsSupplied(address(this), supply);
+        emit EtherSupplied(mintTo, msg.value);
+        emit ShardsSupplied(mintTo, supply);
     }
 
     function buyShards(uint256 amount, uint256 maxCost) public payable {

@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "../ModuleBase.sol";
 import "../../governance/IGovernance.sol";
-import "./CustomPricingCurve.sol";
+import "../../initializable/CustomPricingCurve.sol";
 
 contract CustomPricingCurveDeployer is IModule, ModuleBase
 {
@@ -39,17 +39,20 @@ contract CustomPricingCurveDeployer is IModule, ModuleBase
         require(msg.sender == address(wallet) || wallet.balanceOf(msg.sender) == wallet.totalSupply());
         IGovernance governance = wallet.governance();
         address template = address(uint160(governance.getConfig(address(wallet), CURVE_TEMPLATE_CUSTOM_PRICING)));
-        if (address(template) != address(0)) {
-            address curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
-            CustomPricingCurve(curve).initialize{value: msg.value}(
-                fractionsToProvide_,
-                address(wallet),
-                recipient_,
-                sourceOfFractions_,
-                k_,
-                x_,
-                liquidityTimelock_
-            );
+        if (template != address(0)) {
+            curve = Clones.cloneDeterministic(template, bytes32(uint256(uint160(address(wallet)))));
+            {
+                CustomPricingCurve(curve).initialize{value: msg.value}(
+                    fractionsToProvide_,
+                    address(wallet),
+                    recipient_,
+                    sourceOfFractions_,
+                    k_,
+                    x_,
+                    liquidityTimelock_
+                );
+            }
+            
             emit NewBondingCurve(wallet, curve);
         }
     }
