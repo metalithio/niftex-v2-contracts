@@ -17,7 +17,7 @@ const {
 		cBuyer2: 30 fractions
 */
 
-contract('BondingCurve3 with helpers', function (accounts) {
+contract('CurveForV2Assets with helpers', function (accounts) {
 	const [ admin, nftOwner, cBuyer1, cBuyer2, mBuyer1, mBuyer2, artist, newAdmin, claimant1, claimant2 ] = accounts;
 	const CURVE_PREMINT_RESERVE = '0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9';
 
@@ -52,7 +52,7 @@ contract('BondingCurve3 with helpers', function (accounts) {
 		// Deploy governance
 		this.governance = await Governance.new();
 		governanceInstance = this.governance;
-		
+
 		console.log(this.template.address , 'sw template');
 		console.log(this.bondingcurve.address, 'curve template');
 		console.log(this.curvefactory.address, 'curve factory address');
@@ -80,6 +80,7 @@ contract('BondingCurve3 with helpers', function (accounts) {
 		await this.governance.setGlobalConfig(await this.bondingcurve.LIQUIDITY_TIMELOCK(),     100800); // timelock for 1 month
 		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_FACTORY_V2_ASSETS(), this.curvefactory.address);
 		await this.governance.setGlobalConfig(await this.curvefactory.CURVE_TEMPLATE_V2_ASSETS(),this.bondingcurve.address);
+		await this.governance.setGlobalConfig(await this.curvefactory.CURVE_STRETCH(), 4);
 		// grant role for FixedPriceSaleNew as CURVE_DEPLOYER
 		await this.governance.grantRole(await this.curvefactory.CURVE_DEPLOYER(), this.modules.crowdsale.address);
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
