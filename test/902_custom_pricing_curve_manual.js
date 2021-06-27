@@ -20,19 +20,19 @@ function predictClone(template, salt, deployer) {
 	);
 }
 
-contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNew', function (accounts) {
+contract('CustomPricingCurve manual check - curve deployer: CustomPricingCurveDeployer', function (accounts) {
 	const [ admin, nftOwner, cBuyer1, cBuyer2, mBuyer1, mBuyer2, artist, newAdmin, claimant1, claimant2 ] = accounts;
 	const CURVE_PREMINT_RESERVE = '0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9';
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const Governance           = artifacts.require('Governance');
-	const CurveFactory         = artifacts.require('CurveFactoryForV2Assets');
-	const BondingCurve         = artifacts.require('CurveForV2Assets');
+	const CustomPricingCurveDeployer = artifacts.require('CustomPricingCurveDeployer');
+	const BondingCurve         = artifacts.require('CustomPricingCurve');
 
 	const Modules = {
 		Action:        { artifact: artifacts.require('ActionModule')         },
 		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
-		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModuleNew') },
+		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
 		Factory:       { artifact: artifacts.require('ShardedWalletFactory') },
 		Multicall:     { artifact: artifacts.require('MulticallModule')      },
 		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
@@ -50,13 +50,13 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 		// Deploy factory
 		this.template     = await ShardedWallet.new();
 		this.bondingcurve = await BondingCurve.new();
-		this.curvefactory = await CurveFactory.new(this.template.address);
+		this.customPricingCurveDeployer = await CustomPricingCurveDeployer.new(this.template.address);
 		// Deploy governance
 		this.governance = await Governance.new();
 		console.log(this.template.address , 'sw template');
 		console.log(this.bondingcurve.address, 'curve template');
-		console.log(this.curvefactory.address, 'curve factory address');
 		console.log(this.governance.address, 'governance.address');
+		console.log(this.customPricingCurveDeployer.address, 'custom pricing curve deployer address');
 		// Deploy modules
 		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({
 			...await acc,
@@ -77,12 +77,8 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 		await this.governance.setGlobalConfig(await this.bondingcurve.PCT_FEE_NIFTEX(),         web3.utils.toWei('0.001')); // 0% to niftex initially
 		await this.governance.setGlobalConfig(await this.bondingcurve.PCT_FEE_ARTIST(),         web3.utils.toWei('0.001')); // 0.1% to artist initially
 		await this.governance.setGlobalConfig(await this.bondingcurve.PCT_FEE_SUPPLIERS(),      web3.utils.toWei('0.003')); // 0.3% to providers initially
-		await this.governance.setGlobalConfig(await this.bondingcurve.LIQUIDITY_TIMELOCK(),     100800); // timelock for 1 month
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_FACTORY_V2_ASSETS(), this.curvefactory.address);
-		await this.governance.setGlobalConfig(await this.curvefactory.CURVE_TEMPLATE_V2_ASSETS(),this.bondingcurve.address);
-		await this.governance.setGlobalConfig(await this.curvefactory.CURVE_STRETCH(), 4);
-		// grant role for FixedPriceSaleNew as CURVE_DEPLOYER
-		await this.governance.grantRole(await this.curvefactory.CURVE_DEPLOYER(), this.modules.crowdsale.address);
+		await this.governance.setGlobalConfig(await this.customPricingCurveDeployer.CURVE_TEMPLATE_CUSTOM_PRICING(),    this.bondingcurve.address);
+
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
 			await this.governance.setGlobalModule(funcSig, this.modules.tokenreceiver.address);
@@ -331,18 +327,24 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 		});
 	});
 
-	describe('withdraw and trigger bonding curve', function () {
+	describe('nftOwner directly curvefactory.createCurve, should fail', function () {
 		it('perform', async function () {
 			const predicted = predictClone(
 				this.bondingcurve.address,      // template
 				instance.address,               // salt
-				this.curvefactory.address, // deployer
+				this.customPricingCurveDeployer.address, // deployer
 			);
-			const { receipt } = await this.modules.crowdsale.withdraw(instance.address, { from: nftOwner });
-			expectEvent(receipt, 'NewBondingCurve', { wallet: instance.address, curve: predicted });
-			curveInstance = await BondingCurve.at(predicted);
-			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
-			console.log('curveInstance:', curveInstance.address);
+
+			await instance.approve(predicted, web3.utils.toWei('400'), { from: nftOwner });
+			await expectRevert.unspecified(this.customPricingCurveDeployer.createCurve(
+				instance.address,
+				web3.utils.toWei('80'),
+				nftOwner,
+				nftOwner,
+				'160000000000000000000000000000000000000', // k
+				'400000000000000000000', // x
+				'0', //liquidityTimelock duration
+				))
 		});
 
 		after(async function () {
@@ -355,10 +357,128 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('820'));
 			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
 			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
-			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('0'));
-			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('80'));
+			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
 			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('0'));
-			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
+		});
+	});
+
+	describe('Schedule action - customPricingCurveDeployer.createCurve via governance', function () {
+		it('perform', async function () {
+			const to    = this.customPricingCurveDeployer.address;
+			const value = web3.utils.toWei('0');
+			const data  = this.customPricingCurveDeployer.contract.methods.createCurve(
+				instance.address,
+				web3.utils.toWei('80'),
+				nftOwner,
+				nftOwner,
+				'160000000000000000000000000000000000000', // k
+				'400000000000000000000', // x
+				'0', //liquidityTimelock duration
+			).encodeABI();
+
+			console.log('data', data);
+			id = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+				[ 'address[]', 'uint256[]', 'bytes[]' ],
+				[[ to ], [ value ], [ data ]],
+			));
+			uid = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+				[ 'address', 'bytes32' ],
+				[ instance.address, id ],
+			));
+
+			const { receipt } = await this.modules.action.schedule(instance.address, [ to ], [ value ], [ data ], { from: nftOwner });
+			expectEvent(receipt, 'TimerStarted', { timer: uid });
+			expectEvent(receipt, 'ActionScheduled', { wallet: instance.address, uid, id, i: '0', to, value, data });
+			deadline = receipt.logs.find(({ event }) => event == 'TimerStarted').args.deadline;
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                                              constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                                               'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                                             'TNFT');
+			assert.equal(await instance.decimals(),                                                           '18');
+			assert.equal(await instance.totalSupply(),                                                        web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),                                          web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
+			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
+			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('80'));
+			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
+		});
+	});
+
+	describe('Wait action - customPricingCurveDeployer.createCurve via governance', function () {
+		it('perform', async function () {
+			await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ Number(deadline) - (await web3.eth.getBlock('latest')).timestamp ], id: 0 }, () => {});
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                                              constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                                               'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                                             'TNFT');
+			assert.equal(await instance.decimals(),                                                           '18');
+			assert.equal(await instance.totalSupply(),                                                        web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),                                          web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
+			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
+			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('80'));
+			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
+		});
+	});
+
+	describe('Execute action - customPricingCurveDeployer.createCurve via governance', function () {
+		it('perform', async function () {
+			const to    = this.customPricingCurveDeployer.address;
+			const value = web3.utils.toWei('0');
+			const data  = this.customPricingCurveDeployer.contract.methods.createCurve(
+				instance.address,
+				web3.utils.toWei('80'),
+				nftOwner,
+				nftOwner,
+				'160000000000000000000000000000000000000', // k
+				'400000000000000000000', // x
+				'0', //liquidityTimelock duration
+			).encodeABI();
+
+			const { receipt } = await this.modules.action.execute(instance.address, [ to ], [ value ], [ data ], { from: nftOwner });
+			expectEvent(receipt, 'ActionExecuted', { id, i: '0', to, value, data });
+
+			const predicted = predictClone(
+				this.bondingcurve.address,      // template
+				instance.address,               // salt
+				this.customPricingCurveDeployer.address, // deployer
+			);
+
+			curveInstance = await BondingCurve.at(predicted);
+		});
+
+		after(async function () {
+			assert.equal(await instance.owner(),                                                              constants.ZERO_ADDRESS);
+			assert.equal(await instance.name(),                                                               'Tokenized NFT');
+			assert.equal(await instance.symbol(),                                                             'TNFT');
+			assert.equal(await instance.decimals(),                                                           '18');
+			assert.equal(await instance.totalSupply(),                                                        web3.utils.toWei('1000'));
+			assert.equal(await instance.balanceOf(instance.address),                                          web3.utils.toWei('0'));
+			assert.equal(await instance.balanceOf(nftOwner),                                                  web3.utils.toWei('740'));
+			assert.equal(await instance.balanceOf(cBuyer1),                                                   web3.utils.toWei('70'));
+			assert.equal(await instance.balanceOf(cBuyer2),                                                   web3.utils.toWei('30'));
+			assert.equal(await instance.balanceOf(this.modules.crowdsale.address),                            web3.utils.toWei('80'));
+			assert.equal(await web3.eth.getBalance(this.modules.crowdsale.address),                           web3.utils.toWei('0.100'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, nftOwner),              web3.utils.toWei('0'));
+			assert.equal(await this.modules.crowdsale.premintShards(instance.address, CURVE_PREMINT_RESERVE), web3.utils.toWei('80'));
 			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer1),                web3.utils.toWei('0'));
 			assert.equal(await this.modules.crowdsale.boughtShards(instance.address, cBuyer2),                web3.utils.toWei('0'));
 		});
@@ -389,7 +509,7 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
 			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('75'));
 		});
 	});
@@ -419,7 +539,7 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
 			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('70'));
 		});
 	});
@@ -449,7 +569,7 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
 			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('100'));
 		});
 	});
@@ -478,7 +598,7 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
 			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('100'));
 		});
 	});
@@ -509,7 +629,7 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
 			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
 		});
 
@@ -540,7 +660,7 @@ contract('CurveForV2Assets manual check - curve deployer: FixedPriceSaleModuleNe
 			assert.equal(await instance.decimals(),                              '18');
 			assert.equal(await instance.totalSupply(),                           web3.utils.toWei('1000'));
 			assert.equal(await instance.balanceOf(instance.address),             web3.utils.toWei('0'));
-			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('820'));
+			assert.equal(await instance.balanceOf(nftOwner),                     web3.utils.toWei('740'));
 			assert.equal(await instance.balanceOf(curveInstance.address),        web3.utils.toWei('105'));
 		});
 	});

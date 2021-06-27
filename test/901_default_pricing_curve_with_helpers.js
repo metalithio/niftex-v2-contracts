@@ -17,19 +17,18 @@ const {
 		cBuyer2: 30 fractions
 */
 
-contract('CurveForV2Assets with helpers', function (accounts) {
+contract('DefaultPricingCurve with helpers', function (accounts) {
 	const [ admin, nftOwner, cBuyer1, cBuyer2, mBuyer1, mBuyer2, artist, newAdmin, claimant1, claimant2 ] = accounts;
 	const CURVE_PREMINT_RESERVE = '0x3cc5B802b34A42Db4cBe41ae3aD5c06e1A4481c9';
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const Governance           = artifacts.require('Governance');
-	const CurveFactory         = artifacts.require('CurveFactoryForV2Assets');
-	const BondingCurve         = artifacts.require('CurveForV2Assets');
+	const BondingCurve         = artifacts.require('DefaultPricingCurve');
 
 	const Modules = {
 		Action:        { artifact: artifacts.require('ActionModule')         },
 		Buyout:        { artifact: artifacts.require('BuyoutModule')         },
-		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModuleNew') },
+		Crowdsale:     { artifact: artifacts.require('FixedPriceSaleModule') },
 		Factory:       { artifact: artifacts.require('ShardedWalletFactory') },
 		Multicall:     { artifact: artifacts.require('MulticallModule')      },
 		TokenReceiver: { artifact: artifacts.require('TokenReceiverModule')  },
@@ -48,14 +47,12 @@ contract('CurveForV2Assets with helpers', function (accounts) {
 		// Deploy factory
 		this.template     = await ShardedWallet.new();
 		this.bondingcurve = await BondingCurve.new();
-		this.curvefactory = await CurveFactory.new(this.template.address);
 		// Deploy governance
 		this.governance = await Governance.new();
 		governanceInstance = this.governance;
 
 		console.log(this.template.address , 'sw template');
 		console.log(this.bondingcurve.address, 'curve template');
-		console.log(this.curvefactory.address, 'curve factory address');
 		console.log(this.governance.address, 'governance.address');
 		// Deploy modules
 		this.modules = await Object.entries(Modules).reduce(async (acc, [ key, { artifact, args } ]) => ({
@@ -78,11 +75,9 @@ contract('CurveForV2Assets with helpers', function (accounts) {
 		await this.governance.setGlobalConfig(await this.bondingcurve.PCT_FEE_ARTIST(),         web3.utils.toWei('0.001')); // 0.1% to artist initially
 		await this.governance.setGlobalConfig(await this.bondingcurve.PCT_FEE_SUPPLIERS(),      web3.utils.toWei('0.003')); // 0.3% to providers initially
 		await this.governance.setGlobalConfig(await this.bondingcurve.LIQUIDITY_TIMELOCK(),     100800); // timelock for 1 month
-		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_FACTORY_V2_ASSETS(), this.curvefactory.address);
-		await this.governance.setGlobalConfig(await this.curvefactory.CURVE_TEMPLATE_V2_ASSETS(),this.bondingcurve.address);
-		await this.governance.setGlobalConfig(await this.curvefactory.CURVE_STRETCH(), 4);
-		// grant role for FixedPriceSaleNew as CURVE_DEPLOYER
-		await this.governance.grantRole(await this.curvefactory.CURVE_DEPLOYER(), this.modules.crowdsale.address);
+		await this.governance.setGlobalConfig(await this.modules.crowdsale.CURVE_TEMPLATE(),    this.bondingcurve.address);
+		await this.governance.setGlobalConfig(await this.bondingcurve.CURVE_STRETCH(), 4);
+
 		for (funcSig of Object.keys(this.modules.tokenreceiver.methods).map(web3.eth.abi.encodeFunctionSignature))
 		{
 			await this.governance.setGlobalModule(funcSig, this.modules.tokenreceiver.address);
