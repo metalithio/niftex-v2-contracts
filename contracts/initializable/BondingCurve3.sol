@@ -9,8 +9,9 @@ import "../wallet/ShardedWallet.sol";
 import "../governance/IGovernance.sol";
 import "../interface/IERC1363Receiver.sol";
 import "../interface/IERC1363Spender.sol";
+import "../utils/Multicall.sol";
 
-contract LiquidityToken is ERC20 {
+contract LiquidityToken is ERC20, Multicall {
     address public controler;
 
     modifier onlyControler() {
@@ -41,7 +42,7 @@ contract LiquidityToken is ERC20 {
     }
 }
 
-contract BondingCurve3 is IERC1363Spender {
+contract BondingCurve3 is IERC1363Spender, Multicall {
     struct CurveCoordinates {
         uint256 x;
         uint256 k;

@@ -2,10 +2,11 @@
 
 pragma solidity ^0.8.0;
 
+import "../utils/Multicall.sol";
 import "../wallet/ShardedWallet.sol";
 import "./IModule.sol";
 
-abstract contract ModuleBase is IModule
+abstract contract ModuleBase is IModule, Multicall
 {
     address immutable public walletTemplate;
 
