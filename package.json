@@ -21,7 +21,9 @@
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
     "deploy:mainnet": "npx hardhat run scripts/deploy.js --network mainnet",
     "deployNewModule:rinkeby": "npx hardhat run scripts/deploy-new-module.js --network rinkeby",
-    "deployNewModule:mainnet": "npx hardhat run scripts/deploy-new-module.js --network mainnet"
+    "deployNewModule:mainnet": "npx hardhat run scripts/deploy-new-module.js --network mainnet",
+    "deployCurves:rinkeby": "npx hardhat run scripts/deploy-configurable-curves.js --network rinkeby",
+    "deployCurves:mainnet": "npx hardhat run scripts/deploy-configurable-curves.js --network mainnet"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.0.0",

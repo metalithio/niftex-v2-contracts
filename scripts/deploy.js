@@ -10,10 +10,15 @@ async function main() {
   const shardedwallet = await ShardedWallet.deploy();
   console.log(`ShardedWallet address: ${shardedwallet.address}`);
 
-  // Deploy BondingCurve
-  const BondingCurve = await ethers.getContractFactory("BondingCurve3");
+  // Deploy DefaultPricingCurve
+  const BondingCurve = await ethers.getContractFactory("DefaultPricingCurve");
   const bondingcurve = await BondingCurve.deploy();
-  console.log(`BondingCurve address: ${bondingcurve.address}`);
+  console.log(`DefaultPricingCurve address: ${bondingcurve.address}`);
+
+  // Deploy CustomPricingCurve
+  const CustomPricingCurve = await ethers.getContractFactory("CustomPricingCurve");
+  const custompricingcurve = await BondingCurve.deploy();
+  console.log(`CustomPricingCurve address: ${custompricingcurve.address}`);
 
   // Deploy BatchTransferHelper
   const BatchTransferHelper = await ethers.getContractFactory("BatchTransferHelper");
@@ -42,6 +47,7 @@ async function main() {
     "tokenreceiver":       "TokenReceiverModule",
     "erc20managermodule":  "ERC20ManagerModule",
     "swmanagermodule":     "SWManagerModule",
+    "custompricingcurvedeployer": "CustomPricingCurveDeployer",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;
@@ -77,6 +83,8 @@ async function main() {
     [ await modules.action.ACTION_DURATION()              ]: 432000,
     [ await modules.buyout.BUYOUT_DURATION()              ]: 432000,
     [ await modules.crowdsale.CURVE_TEMPLATE()            ]: bondingcurve.address,
+    [ await modules.custompricingcurvedeployer.CURVE_TEMPLATE_CUSTOM_PRICING()]: custompricingcurve.address,
+    [ await bondingcurve.CURVE_STRETCH()                  ]: 4,
     [ await modules.basicdistribution.PCT_SHARDS_NIFTEX() ]: ethers.utils.parseEther('0.01'),
     [ await modules.crowdsale.PCT_ETH_TO_CURVE()          ]: ethers.utils.parseEther('0.20'),
     [ await bondingcurve.PCT_FEE_NIFTEX()                 ]: ethers.utils.parseEther('0'),
