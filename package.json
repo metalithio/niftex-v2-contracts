@@ -11,12 +11,19 @@
     "test:531": "hardhat test ./test/531_bondingcurve3_with_helpers",
     "test:600": "hardhat test ./test/600_erc20ManagerModule",
     "test:402": "hardhat test ./test/402_action_sw_manager",
+    "test:900": "hardhat test ./test/900_default_pricing_curve_manual.js",
+    "test:901": "hardhat test ./test/901_default_pricing_curve_with_helpers.js",
+    "test:902": "hardhat test ./test/902_custom_pricing_curve_manual.js",
+    "test:903": "hardhat test ./test/903_curve_custom_with_helpers.js",
+    "test:904": "hardhat test ./test/904_custom_pricing_curve_update_k.js",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
     "deploy:mainnet": "npx hardhat run scripts/deploy.js --network mainnet",
     "deployNewModule:rinkeby": "npx hardhat run scripts/deploy-new-module.js --network rinkeby",
-    "deployNewModule:mainnet": "npx hardhat run scripts/deploy-new-module.js --network mainnet"
+    "deployNewModule:mainnet": "npx hardhat run scripts/deploy-new-module.js --network mainnet",
+    "deployCurves:rinkeby": "npx hardhat run scripts/deploy-configurable-curves.js --network rinkeby",
+    "deployCurves:mainnet": "npx hardhat run scripts/deploy-configurable-curves.js --network mainnet"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.0.0",
