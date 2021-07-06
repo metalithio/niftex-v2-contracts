@@ -35,7 +35,7 @@ module.exports.networks.mainnet = {
       ? process.env.MAINNET_PRIVATE_KEY
       : '0x' + process.env.MAINNET_PRIVATE_KEY,
   ],
-  gasPrice: 14000000000, // 14 gwei
+  gasPrice: 50000000000, // 50 gwei
   timeout: 60*1000*10,
 }
 
