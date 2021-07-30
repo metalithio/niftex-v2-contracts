@@ -51,8 +51,6 @@ contract NftBidModule
         if (bid.proposer != address(0)) {
             _transferETH(previousBidder, amount);
         }
-
-        
     }
 
     function bidWithERC20(address _registry, uint256 _tokenId, address _erc20, uint256 _amount) external {
@@ -70,6 +68,29 @@ contract NftBidModule
         if (bid.proposer != address(0)) {
             _transferERC20(previousBidder, _erc20, amount);
         }
+    }
+
+    function withdrawBidETH(address _registry, uint256 _tokenId) external {
+        Bid storage bid = bids[_registry][_tokenId][address(0)];
+        require(msg.sender == bid.proposer);
+
+        uint256 amount = bid.amount;
+
+        bid.proposer = address(0);
+        bid.amount = 0;
+
+        _transferETH(msg.sender, amount);
+    }
+
+    function withdrawBidERC20(address _registry, uint256 _tokenId, address _erc20) external {
+        Bid storage bid = bids[_registry][_tokenId][_erc20];
+        require(msg.sender == bid.proposer);
+
+        uint256 amount = bid.amount;
+        bid.proposer = address(0);
+        bid.amount = 0;
+
+        _transferERC20(msg.sender, _erc20, amount);
     }
 
     function _acceptOffer(address _nftOwner, address _erc20, uint256 _amountBeforeFee) internal {
