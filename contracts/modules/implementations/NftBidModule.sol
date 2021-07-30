@@ -76,8 +76,7 @@ contract NftBidModule
 
         uint256 amount = bid.amount;
 
-        bid.proposer = address(0);
-        bid.amount = 0;
+        delete bid;
 
         _transferETH(msg.sender, amount);
     }
@@ -87,8 +86,7 @@ contract NftBidModule
         require(msg.sender == bid.proposer);
 
         uint256 amount = bid.amount;
-        bid.proposer = address(0);
-        bid.amount = 0;
+        delete bid;
 
         _transferERC20(msg.sender, _erc20, amount);
     }
@@ -116,9 +114,7 @@ contract NftBidModule
         address proposer = bid.proposer;
         uint256 amount = bid.amount;
         
-
-        bid.proposer = address(0);
-        bid.amount = 0;
+        delete bid;
 
         IERC721(_registry).transferFrom(msg.sender, proposer, _tokenId);
         _acceptOffer(msg.sender, _erc20, amount);
@@ -141,8 +137,7 @@ contract NftBidModule
         address proposer = bid.proposer;
         uint256 amount = bid.amount;
 
-        bid.proposer = address(0);
-        bid.amount = 0;
+        delete bid;
 
         IERC1155(_registry).safeTransferFrom(msg.sender, proposer, _tokenId, 1, _data);
         _acceptOffer(msg.sender, _erc20, amount);
