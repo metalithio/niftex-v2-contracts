@@ -16,6 +16,9 @@ contract NftBidModule
     // bytes32 public constant NFT_BID_FEE_NIFTEX = bytes32(uint256(keccak256("NFT_BID_FEE_NIFTEX")) - 1);
     bytes32 public constant NFT_BID_FEE_NIFTEX  = 0xb82ab1c0e54c999f699ee285649a071a5a4ae87070afbab6656d8ef85e6bd1c9;
 
+    event NewBid(address registry, uint256 tokenId, address erc20, address proposer, uint256 amount);
+    event AcceptBid(address registry, uint256 tokenId, address erc20, address proposer, address nftOwner, uint256 amount);
+
     IGovernance public governance;
 
     constructor(address _governance) {
@@ -51,6 +54,8 @@ contract NftBidModule
         if (bid.proposer != address(0)) {
             _transferETH(previousBidder, amount);
         }
+
+        emit NewBid(_registry, _tokenId, address(0), msg.sender, msg.value);
     }
 
     function bidWithERC20(address _registry, uint256 _tokenId, address _erc20, uint256 _amount) external {
@@ -68,6 +73,8 @@ contract NftBidModule
         if (bid.proposer != address(0)) {
             _transferERC20(previousBidder, _erc20, amount);
         }
+
+        emit NewBid(_registry, _tokenId, _erc20, msg.sender, _amount);
     }
 
     function withdrawBidETH(address _registry, uint256 _tokenId) external {
@@ -79,6 +86,7 @@ contract NftBidModule
         delete bid;
 
         _transferETH(msg.sender, amount);
+        emit NewBid(_registry, _tokenId, address(0), msg.sender, 0);
     }
 
     function withdrawBidERC20(address _registry, uint256 _tokenId, address _erc20) external {
@@ -89,6 +97,8 @@ contract NftBidModule
         delete bid;
 
         _transferERC20(msg.sender, _erc20, amount);
+
+        emit NewBid(_registry, _tokenId, _erc20, msg.sender, 0);
     }
 
     function _acceptOffer(address _nftOwner, address _erc20, uint256 _amountBeforeFee) internal {
@@ -118,6 +128,8 @@ contract NftBidModule
 
         IERC721(_registry).transferFrom(msg.sender, proposer, _tokenId);
         _acceptOffer(msg.sender, _erc20, amount);
+
+        emit AcceptBid(_registry, _tokenId, _erc20, proposer, msg.sender, amount);
     }
 
     function acceptERC1155(
@@ -141,5 +153,6 @@ contract NftBidModule
 
         IERC1155(_registry).safeTransferFrom(msg.sender, proposer, _tokenId, 1, _data);
         _acceptOffer(msg.sender, _erc20, amount);
+        emit AcceptBid(_registry, _tokenId, _erc20, proposer, msg.sender, amount);
     }
 }
