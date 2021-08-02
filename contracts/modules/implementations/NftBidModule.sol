@@ -14,10 +14,10 @@ contract NftBidModule is IModule, ModuleBase
 {
     string public constant override name = type(NftBidModule).name;
 
-    // bytes32 public constant NFT_BID_FEE_NIFTEX = bytes32(uint256(keccak256("NFT_BID_FEE_NIFTEX")) - 1);
-    bytes32 public constant NFT_BID_FEE_NIFTEX  = 0xb82ab1c0e54c999f699ee285649a071a5a4ae87070afbab6656d8ef85e6bd1c9;
-    // bytes32 public constant NFT_BID_FEE_ARTIST = bytes32(uint256(keccak256("NFT_BID_FEE_ARTIST")) - 1);
-    bytes32 public constant NFT_BID_FEE_ARTIST  = 0xcf0cdc02e74c2b30628ad7c9ce080d4e1a8c1acf718349956f318864f54d888a;
+    // bytes32 public constant NFT_TRANSFER_FEE_NIFTEX = bytes32(uint256(keccak256("NFT_TRANSFER_FEE_NIFTEX")) - 1);
+    bytes32 public constant NFT_TRANSFER_FEE_NIFTEX  = 0xee6d8ce214fe5e3e7b812c79d0f84bc7716ab8c4211f5d63367b91a9f2ac45d2;
+    // bytes32 public constant NFT_TRANSFER_FEE_ARTIST = bytes32(uint256(keccak256("NFT_TRANSFER_FEE_ARTIST")) - 1);
+    bytes32 public constant NFT_TRANSFER_FEE_ARTIST  = 0x101a13becc3ce73b196e11acd6b3c7da90ed4a8fbc490c8bb8388f1b5d520be6;
 
 
     event NewBid(address registry, uint256 tokenId, address erc20, address proposer, uint256 amount);
@@ -33,17 +33,21 @@ contract NftBidModule is IModule, ModuleBase
     mapping(address => mapping(uint256 => mapping(address => Bid))) public bids;
 
     function _transferETH(address _recipient, uint256 _amount) internal {
-        Address.sendValue(payable(_recipient), _amount);
+        if (_amount > 0 && _recipient != address(0)) {
+            Address.sendValue(payable(_recipient), _amount);
+        }
     }
 
     function _transferERC20(address _recipient, address _erc20, uint256 _amount) internal {
-        IERC20(_erc20).transfer(_recipient, _amount);
+        if (_amount > 0 && _recipient != address(0)) {
+            IERC20(_erc20).transfer(_recipient, _amount);
+        }
     }
 
     function _acceptOffer(ShardedWallet wallet, address _erc20, uint256 _amountBeforeFee) internal {
         IGovernance governance = wallet.governance();
-        uint256 niftexFee = _amountBeforeFee * governance.getConfig(address(wallet), NFT_BID_FEE_NIFTEX) / 10**18;
-        uint256 artistFee = _amountBeforeFee * governance.getConfig(address(wallet), NFT_BID_FEE_ARTIST) / 10**18;
+        uint256 niftexFee = _amountBeforeFee * governance.getConfig(address(wallet), NFT_TRANSFER_FEE_NIFTEX) / 10**18;
+        uint256 artistFee = _amountBeforeFee * governance.getConfig(address(wallet), NFT_TRANSFER_FEE_ARTIST) / 10**18;
         address niftexWallet = governance.getNiftexWallet();
         address artistWallet = wallet.artistWallet();
 
