@@ -46,11 +46,11 @@ contract NftBidModule is IModule, ModuleBase
 
     function _acceptOffer(ShardedWallet wallet, address _erc20, uint256 _amountBeforeFee) internal {
         IGovernance governance = wallet.governance();
-        uint256 niftexFee = _amountBeforeFee * governance.getConfig(address(wallet), NFT_TRANSFER_FEE_NIFTEX) / 10**18;
-        uint256 artistFee = _amountBeforeFee * governance.getConfig(address(wallet), NFT_TRANSFER_FEE_ARTIST) / 10**18;
         address niftexWallet = governance.getNiftexWallet();
         address artistWallet = wallet.artistWallet();
-
+        uint256 niftexFee = niftexWallet != address(0) ? _amountBeforeFee * governance.getConfig(address(wallet), NFT_TRANSFER_FEE_NIFTEX) / 10**18 : 0;
+        uint256 artistFee = artistWallet != address(0) ? _amountBeforeFee * governance.getConfig(address(wallet), NFT_TRANSFER_FEE_ARTIST) / 10**18 : 0;
+        
         if (_erc20 == address(0)) {
             _transferETH(niftexWallet, niftexFee);
             _transferETH(artistWallet, artistFee);

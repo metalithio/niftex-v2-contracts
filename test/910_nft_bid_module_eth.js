@@ -1,7 +1,8 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
+const BigNumber = require('bignumber.js');
 
 contract('Workflow', function (accounts) {
-	const [ admin, user1, user2, user3, other1, other2, other3 ] = accounts;
+	const [ admin, user1, user2, user3, other1, other2, other3, artist ] = accounts;
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const Governance           = artifacts.require('Governance');
@@ -22,6 +23,8 @@ contract('Workflow', function (accounts) {
 	};
 
 	let instance;
+	let offerDeadline;
+	let setApprovalForAll = null;
 
 	before(async function () {
 		// Deploy template
@@ -66,7 +69,7 @@ contract('Workflow', function (accounts) {
 				user1,                        // owner_
 				'Tokenized NFT',              // name_
 				'TNFT',                       // symbol_
-				constants.ZERO_ADDRESS        // artistWallet_
+				artist,                       // artistWallet_
 			);
 			instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewInstance').args.instance);
 			console.log('tx.receipt.gasUsed:', receipt.gasUsed);
@@ -197,6 +200,426 @@ contract('Workflow', function (accounts) {
 				assert.equal(await instance.balanceOf(other3),                  		'0');
 				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
 				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('0'));
+			});
+		});
+
+		describe('other1 bids 7 ETH', function () {
+			it('perform', async function () {
+				const { receipt } = await this.modules.nftbid.bidWithETH(
+					this.mocks.erc721.address,
+					1,
+					{
+						from: other1,
+						value: web3.utils.toWei('7')
+					}
+				);
+			});
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('7'));
+			});
+		});
+
+		describe('other2 bids 10 ETH', function () {
+			let diffOther1Bal = '0';
+			it('perform', async function () {
+				const other1PrevBal = await web3.eth.getBalance(other1);
+				const { receipt } = await this.modules.nftbid.bidWithETH(
+					this.mocks.erc721.address,
+					1,
+					{
+						from: other2,
+						value: web3.utils.toWei('10')
+					}
+				);
+
+				const other1Bal = await web3.eth.getBalance(other1);
+
+				diffOther1Bal = new BigNumber(other1Bal).minus(other1PrevBal).toFixed();
+			});
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+				assert.equal(diffOther1Bal,                                         web3.utils.toWei('7'));
+			});
+		});
+
+		describe('compile setApprovalForAll data for ActionModule', function() {
+			it('perform', async function() {
+				const to = this.mocks.erc721.address;
+				const value = web3.utils.toWei('0');
+				const data = this.mocks.erc721.contract.methods.setApprovalForAll(this.modules.nftbid.address, true).encodeABI();
+
+				setApprovalForAll = {
+					to,
+					value,
+					data
+				}
+			})
+		});
+
+		describe('Schedule action - acceptOfferERC721 with invalid deadline', function () {
+			it('perform', async function () {
+				offerDeadline   = Math.round(new Date().valueOf()/1000) - 10000;
+				const to    = this.modules.nftbid.address;
+				const value = web3.utils.toWei('0');
+				const data  = this.modules.nftbid.contract.methods.acceptERC721(
+					this.mocks.erc721.address,
+					1,
+					constants.ZERO_ADDRESS,
+					web3.utils.toWei('10'),
+					offerDeadline
+				).encodeABI();
+
+				// console.log('data', data);
+				id = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+					[ 'address[]', 'uint256[]', 'bytes[]' ],
+					[[ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ]],
+				));
+				uid = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+					[ 'address', 'bytes32' ],
+					[ instance.address, id ],
+				));
+
+				const { receipt } = await this.modules.action.schedule(instance.address, [ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ], { from: user1 });
+				expectEvent(receipt, 'TimerStarted', { timer: uid });
+				expectEvent(receipt, 'ActionScheduled', { wallet: instance.address, uid, id, i: '1', to, value, data });
+				deadline = receipt.logs.find(({ event }) => event == 'TimerStarted').args.deadline;
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+			});
+		});
+
+		describe('Wait action - acceptOfferERC721 with invalid deadline', function () {
+			it('perform', async function () {
+				await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ Number(deadline) - (await web3.eth.getBlock('latest')).timestamp ], id: 0 }, () => {});
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+			});
+		});
+
+		describe('Execute action - acceptOfferERC721 with invalid deadline', function () {
+			it('perform', async function () {
+				const to    = this.modules.nftbid.address;
+				const value = web3.utils.toWei('0');
+				const data  = this.modules.nftbid.contract.methods.acceptERC721(
+					this.mocks.erc721.address,
+					1,
+					constants.ZERO_ADDRESS,
+					web3.utils.toWei('10'),
+					offerDeadline
+				).encodeABI();
+
+				await expectRevert.unspecified(this.modules.action.execute(instance.address, [ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ], { from: user1 }))
+
+				// const { receipt } = await this.modules.action.execute(instance.address, [ to ], [ value ], [ data ], { from: user1 });
+				// expectEvent(receipt, 'ActionExecuted', { id, i: '0', to, value, data });
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+			});
+		});
+
+		describe('Schedule action - acceptOfferERC721 with min amount higher than highest bid', function () {
+			it('perform', async function () {
+				offerDeadline = (await web3.eth.getBlock('latest')).timestamp + 100000;
+				const to    = this.modules.nftbid.address;
+				const value = web3.utils.toWei('0');
+				const data  = this.modules.nftbid.contract.methods.acceptERC721(
+					this.mocks.erc721.address,
+					1,
+					constants.ZERO_ADDRESS,
+					web3.utils.toWei('12'),
+					offerDeadline
+				).encodeABI();
+
+				// console.log('data', data);
+				id = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+					[ 'address[]', 'uint256[]', 'bytes[]' ],
+					[[ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ]],
+				));
+				uid = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+					[ 'address', 'bytes32' ],
+					[ instance.address, id ],
+				));
+
+				const { receipt } = await this.modules.action.schedule(instance.address, [ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ], { from: user1 });
+				expectEvent(receipt, 'TimerStarted', { timer: uid });
+				expectEvent(receipt, 'ActionScheduled', { wallet: instance.address, uid, id, i: '1', to, value, data });
+				deadline = receipt.logs.find(({ event }) => event == 'TimerStarted').args.deadline;
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+			});
+		});
+
+		describe('Wait action - acceptOfferERC721 with min amount higher than highest bid', function () {
+			it('perform', async function () {
+				await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ Number(deadline) - (await web3.eth.getBlock('latest')).timestamp ], id: 0 }, () => {});
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+			});
+		});
+
+		describe('Execute action - acceptOfferERC721 with min amount higher than highest bid', function () {
+			it('perform', async function () {
+				const to    = this.modules.nftbid.address;
+				const value = web3.utils.toWei('0');
+				const data  = this.modules.nftbid.contract.methods.acceptERC721(
+					this.mocks.erc721.address,
+					1,
+					constants.ZERO_ADDRESS,
+					web3.utils.toWei('12'),
+					offerDeadline
+				).encodeABI();
+
+				await expectRevert.unspecified(this.modules.action.execute(instance.address, [ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ], { from: user1 }))
+
+				// const { receipt } = await this.modules.action.execute(instance.address, [ to ], [ value ], [ data ], { from: user1 });
+				// expectEvent(receipt, 'ActionExecuted', { id, i: '0', to, value, data });
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+			});
+		});
+
+		describe('Schedule action - acceptOfferERC721 with right min amount and deadline', function () {
+			it('perform', async function () {
+				offerDeadline = (await web3.eth.getBlock('latest')).timestamp + 100000;
+				const to    = this.modules.nftbid.address;
+				const value = web3.utils.toWei('0');
+				const data  = this.modules.nftbid.contract.methods.acceptERC721(
+					this.mocks.erc721.address,
+					1,
+					constants.ZERO_ADDRESS,
+					web3.utils.toWei('10'),
+					offerDeadline
+				).encodeABI();
+
+				// console.log('data', data);
+				id = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+					[ 'address[]', 'uint256[]', 'bytes[]' ],
+					[[ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ]],
+				));
+				uid = web3.utils.keccak256(web3.eth.abi.encodeParameters(
+					[ 'address', 'bytes32' ],
+					[ instance.address, id ],
+				));
+
+				const { receipt } = await this.modules.action.schedule(instance.address, [ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ], { from: user1 });
+				expectEvent(receipt, 'TimerStarted', { timer: uid });
+				expectEvent(receipt, 'ActionScheduled', { wallet: instance.address, uid, id, i: '1', to, value, data });
+				deadline = receipt.logs.find(({ event }) => event == 'TimerStarted').args.deadline;
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+			});
+		});
+
+		describe('Wait action - acceptOfferERC721 with right min amount and deadline', function () {
+			it('perform', async function () {
+				await web3.currentProvider.send({ jsonrpc: '2.0', method: 'evm_increaseTime', params: [ Number(deadline) - (await web3.eth.getBlock('latest')).timestamp ], id: 0 }, () => {});
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
+			});
+		});
+
+		describe('Execute action - acceptOfferERC721 with right min amount and deadline', function () {
+			let diffAdmin = '0';
+			let diffArtist = '0';
+			it('perform', async function () {
+				const adminBalBefore = await web3.eth.getBalance(admin);
+				const artistBalBefore = await web3.eth.getBalance(artist);
+				const to    = this.modules.nftbid.address;
+				const value = web3.utils.toWei('0');
+				const data  = this.modules.nftbid.contract.methods.acceptERC721(
+					this.mocks.erc721.address,
+					1,
+					constants.ZERO_ADDRESS,
+					web3.utils.toWei('10'),
+					offerDeadline
+				).encodeABI();
+
+				// await expectRevert.unspecified(this.modules.action.execute(instance.address, [ to ], [ value ], [ data ], { from: user1 }))
+
+				const { receipt } = await this.modules.action.execute(instance.address, [ setApprovalForAll.to, to ], [ setApprovalForAll.value, value ], [ setApprovalForAll.data, data ], { from: user1 });
+				expectEvent(receipt, 'ActionExecuted', { id, i: '1', to, value, data });
+
+				const adminBalAfter = await web3.eth.getBalance(admin);
+				const artistBalAfter = await web3.eth.getBalance(artist);
+
+				diffAdmin = new BigNumber(adminBalAfter).minus(adminBalBefore).toFixed();
+				diffArtist = new BigNumber(artistBalAfter).minus(artistBalBefore).toFixed();
+			});
+
+			after(async function () {
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		other2);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('9.65'));
+				assert.equal(diffAdmin,       		                                  web3.utils.toWei('0.1'));
+				assert.equal(diffArtist,       		                                  web3.utils.toWei('0.25'));
 				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('0'));
 			});
 		});
