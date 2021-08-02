@@ -1,7 +1,7 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 
 contract('Workflow', function (accounts) {
-	const [ admin, user1, user2, user3, bidder1, bidder2, bidder3 ] = accounts;
+	const [ admin, user1, user2, user3, other1, other2, other3 ] = accounts;
 
 	const ShardedWallet        = artifacts.require('ShardedWallet');
 	const Governance           = artifacts.require('Governance');
@@ -33,8 +33,6 @@ contract('Workflow', function (accounts) {
 			...await acc,
 			[key.toLowerCase()]: await artifact.new(this.template.address, ...(this.extraargs || []))
 		}), Promise.resolve({}));
-		// Extra module (MagneticPool)
-		this.modules.magneticpool = await artifacts.require('MagneticPool').new(this.modules.factory.address, this.governance.address);
 		// whitelist modules
 		await this.governance.initialize(); // Performed by proxy
 		for ({ address } of Object.values(this.modules))
@@ -144,205 +142,62 @@ contract('Workflow', function (accounts) {
 	});
 
 	describe('Workflow NftBidModule ETH - ERC721', function () {
-		before(async function() {
-			await this.mocks.erc721.mint(user1, 1);
-		});
-
-		describe('#0 Create Pool', function () {
+		describe('other1 bids 5 ETH', function () {
 			it('perform', async function () {
-				const { receipt } = await this.modules.magneticpool.createPool(
+				const { receipt } = await this.modules.nftbid.bidWithETH(
 					this.mocks.erc721.address,
 					1,
-					constants.ZERO_ADDRESS, // use ETH
-					'MyOfferPoolWallet',
-					'MOPW',
-					constants.ZERO_ADDRESS, // artist
+					{
+						from: other1,
+						value: web3.utils.toWei('5')
+					}
 				);
-				instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewPool').args.pool);
 			});
 			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc721.address, 1, constants.ZERO_ADDRESS), instance.address);
-				assert.equal(await instance.owner(),                                                                        this.modules.magneticpool.address);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWallet');
-				assert.equal(await instance.symbol(),                                                                       'MOPW');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('0'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('0'));
-				assert.equal(await this.mocks.erc721.ownerOf(1),                                                            user1);
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('5'));
 			});
 		});
 
-		describe('#1 Deposit', function () {
+		describe('other1 withdraws bid', function () {
 			it('perform', async function () {
-				const { receipt } = await this.modules.magneticpool.depositETH(this.mocks.erc721.address, 1, { from: user2, value: web3.utils.toWei('8') });
-			});
-			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc721.address, 1, constants.ZERO_ADDRESS), instance.address);
-				assert.equal(await instance.owner(),                                                                        this.modules.magneticpool.address);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWallet');
-				assert.equal(await instance.symbol(),                                                                       'MOPW');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('8'));
-				assert.equal(await instance.balanceOf(user2),                                                               web3.utils.toWei('8'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('8'));
-				assert.equal(await this.mocks.erc721.ownerOf(1),                                                            user1);
-			});
-		});
-
-		describe('#2 Deposit', function () {
-			it('perform', async function () {
-				const { receipt } = await this.modules.magneticpool.depositETH(this.mocks.erc721.address, 1, { from: user3, value: web3.utils.toWei('2') });
-			});
-			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc721.address, 1, constants.ZERO_ADDRESS), instance.address);
-				assert.equal(await instance.owner(),                                                                        this.modules.magneticpool.address);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWallet');
-				assert.equal(await instance.symbol(),                                                                       'MOPW');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('10'));
-				assert.equal(await instance.balanceOf(user2),                                                               web3.utils.toWei('8'));
-				assert.equal(await instance.balanceOf(user3),                                                               web3.utils.toWei('2'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('10'));
-				assert.equal(await this.mocks.erc721.ownerOf(1),                                                            user1);
-			});
-		});
-
-		describe('#3 Withdraw', function () {
-			it('perform', async function () {
-				const { receipt } = await this.modules.magneticpool.withdrawETH(this.mocks.erc721.address, 1, web3.utils.toWei('2'), { from: user2 });
-			});
-			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc721.address, 1, constants.ZERO_ADDRESS), instance.address);
-				assert.equal(await instance.owner(),                                                                        this.modules.magneticpool.address);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWallet');
-				assert.equal(await instance.symbol(),                                                                       'MOPW');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('8'));
-				assert.equal(await instance.balanceOf(user2),                                                               web3.utils.toWei('6'));
-				assert.equal(await instance.balanceOf(user3),                                                               web3.utils.toWei('2'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('8'));
-				assert.equal(await this.mocks.erc721.ownerOf(1),                                                            user1);
-			});
-		});
-
-		describe('#4 AcceptOfferERC721', function () {
-			it('perform', async function () {
-				await this.mocks.erc721.approve(this.modules.magneticpool.address, 1, { from: user1 });
-				const { receipt } = await this.modules.magneticpool.acceptOfferERC721(this.mocks.erc721.address, 1, constants.ZERO_ADDRESS, web3.utils.toWei('8'), { from: user1 });
-			});
-			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc721.address, 1, constants.ZERO_ADDRESS), constants.ZERO_ADDRESS);
-				assert.equal(await instance.owner(),                                                                        constants.ZERO_ADDRESS);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWallet');
-				assert.equal(await instance.symbol(),                                                                       'MOPW');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('8'));
-				assert.equal(await instance.balanceOf(user2),                                                               web3.utils.toWei('6'));
-				assert.equal(await instance.balanceOf(user3),                                                               web3.utils.toWei('2'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('0'));
-				assert.equal(await this.mocks.erc721.ownerOf(1),                                                            instance.address);
-			});
-		});
-	});
-
-	describe('Workflow NftBidModule ETH - ERC1155', function () {
-		before(async function() {
-			await this.mocks.erc1155.mint(user1, 1, 100, '0x');
-		});
-
-		describe('#0 Create Pool', function () {
-			it('perform', async function () {
-				const { receipt } = await this.modules.magneticpool.createPool(
-					this.mocks.erc1155.address,
+				const { receipt } = await this.modules.nftbid.withdrawBidETH(
+					this.mocks.erc721.address,
 					1,
-					constants.ZERO_ADDRESS, // use ETH
-					'MyOfferPoolWalletERC1155',
-					'MOPW1155',
-					constants.ZERO_ADDRESS, // artist
+					{
+						from: other1,
+					}
 				);
-				instance = await ShardedWallet.at(receipt.logs.find(({ event}) => event == 'NewPool').args.pool);
 			});
 			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc1155.address, 1, constants.ZERO_ADDRESS),instance.address);
-				assert.equal(await instance.owner(),                                                                        this.modules.magneticpool.address);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWalletERC1155');
-				assert.equal(await instance.symbol(),                                                                       'MOPW1155');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('0'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('0'));
-				assert.equal(await this.mocks.erc1155.balanceOf(user1, 1),                                                  100);
-			});
-		});
-
-		describe('#1 Deposit', function () {
-			it('perform', async function () {
-				const { receipt } = await this.modules.magneticpool.depositETH(this.mocks.erc1155.address, 1, { from: user2, value: web3.utils.toWei('8') });
-			});
-			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc1155.address, 1, constants.ZERO_ADDRESS),instance.address);
-				assert.equal(await instance.owner(),                                                                        this.modules.magneticpool.address);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWalletERC1155');
-				assert.equal(await instance.symbol(),                                                                       'MOPW1155');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('8'));
-				assert.equal(await instance.balanceOf(user2),                                                               web3.utils.toWei('8'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('8'));
-				assert.equal(await this.mocks.erc1155.balanceOf(user1, 1),                                                  100);
-			});
-		});
-
-		describe('#2 Deposit', function () {
-			it('perform', async function () {
-				const { receipt } = await this.modules.magneticpool.depositETH(this.mocks.erc1155.address, 1, { from: user3, value: web3.utils.toWei('2') });
-			});
-			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc1155.address, 1, constants.ZERO_ADDRESS),instance.address);
-				assert.equal(await instance.owner(),                                                                        this.modules.magneticpool.address);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWalletERC1155');
-				assert.equal(await instance.symbol(),                                                                       'MOPW1155');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('10'));
-				assert.equal(await instance.balanceOf(user2),                                                               web3.utils.toWei('8'));
-				assert.equal(await instance.balanceOf(user3),                                                               web3.utils.toWei('2'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('10'));
-				assert.equal(await this.mocks.erc1155.balanceOf(user1, 1),                                                  100);
-			});
-		});
-
-		describe('#3 Withdraw', function () {
-			it('perform', async function () {
-				const { receipt } = await this.modules.magneticpool.withdrawETH(this.mocks.erc1155.address, 1, web3.utils.toWei('2'), { from: user2 });
-			});
-			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc1155.address, 1, constants.ZERO_ADDRESS),instance.address);
-				assert.equal(await instance.owner(),                                                                        this.modules.magneticpool.address);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWalletERC1155');
-				assert.equal(await instance.symbol(),                                                                       'MOPW1155');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('8'));
-				assert.equal(await instance.balanceOf(user2),                                                               web3.utils.toWei('6'));
-				assert.equal(await instance.balanceOf(user3),                                                               web3.utils.toWei('2'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('8'));
-				assert.equal(await this.mocks.erc1155.balanceOf(user1, 1),                                                  100);
-			});
-		});
-
-		describe('#4 AcceptOfferERC1155', function () {
-			it('perform', async function () {
-				await this.mocks.erc1155.setApprovalForAll(this.modules.magneticpool.address, true, { from: user1 });
-				const { receipt } = await this.modules.magneticpool.acceptOfferERC1155(this.mocks.erc1155.address, 1, constants.ZERO_ADDRESS, web3.utils.toWei('8'), '0x', { from: user1 });
-			});
-			after(async function () {
-				assert.equal(await this.modules.magneticpool.getPool(this.mocks.erc1155.address, 1, constants.ZERO_ADDRESS),constants.ZERO_ADDRESS);
-				assert.equal(await instance.owner(),                                                                        constants.ZERO_ADDRESS);
-				assert.equal(await instance.name(),                                                                         'MyOfferPoolWalletERC1155');
-				assert.equal(await instance.symbol(),                                                                       'MOPW1155');
-				assert.equal(await instance.decimals(),                                                                     '18');
-				assert.equal(await instance.totalSupply(),                                                                  web3.utils.toWei('8'));
-				assert.equal(await instance.balanceOf(user2),                                                               web3.utils.toWei('6'));
-				assert.equal(await instance.balanceOf(user3),                                                               web3.utils.toWei('2'));
-				assert.equal(await web3.eth.getBalance(this.modules.magneticpool.address),                                  web3.utils.toWei('0'));
-				assert.equal(await this.mocks.erc1155.balanceOf(user1, 1),                                                  99);
+				assert.equal(await instance.owner(),                            		constants.ZERO_ADDRESS);
+				assert.equal(await instance.name(),                             		'Tokenized NFT');
+				assert.equal(await instance.symbol(),                           		'TNFT');
+				assert.equal(await instance.decimals(),                         		'18');
+				assert.equal(await instance.totalSupply(),                      		'10');
+				assert.equal(await instance.balanceOf(instance.address),        		'0');
+				assert.equal(await instance.balanceOf(user1),                   		'8');
+				assert.equal(await instance.balanceOf(user2),                   		'2');
+				assert.equal(await instance.balanceOf(user3),                   		'0');
+				assert.equal(await instance.balanceOf(other1),                  		'0');
+				assert.equal(await instance.balanceOf(other2),                  		'0');
+				assert.equal(await instance.balanceOf(other3),                  		'0');
+				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
+				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('0'));
 			});
 		});
 	});
