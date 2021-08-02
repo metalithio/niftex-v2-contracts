@@ -204,14 +204,14 @@ contract('Workflow', function (accounts) {
 			});
 		});
 
-		describe('other1 bids 7 ETH', function () {
+		describe('other1 bids 1 ETH', function () {
 			it('perform', async function () {
 				const { receipt } = await this.modules.nftbid.bidWithETH(
 					this.mocks.erc721.address,
 					1,
 					{
 						from: other1,
-						value: web3.utils.toWei('7')
+						value: web3.utils.toWei('1')
 					}
 				);
 			});
@@ -230,7 +230,7 @@ contract('Workflow', function (accounts) {
 				assert.equal(await instance.balanceOf(other3),                  		'0');
 				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
 				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
-				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('7'));
+				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('1'));
 			});
 		});
 
@@ -267,7 +267,7 @@ contract('Workflow', function (accounts) {
 				assert.equal(await this.mocks.erc721.ownerOf(1),                		instance.address);
 				assert.equal(await web3.eth.getBalance(instance.address),       		web3.utils.toWei('0'));
 				assert.equal(await web3.eth.getBalance(this.modules.nftbid.address),web3.utils.toWei('10'));
-				assert.equal(diffOther1Bal,                                         web3.utils.toWei('7'));
+				assert.equal(diffOther1Bal,                                         web3.utils.toWei('1'));
 			});
 		});
 
