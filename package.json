@@ -19,6 +19,8 @@
     "test:910": "hardhat test ./test/910_nft_bid_module_eth_erc721.js",
     "test:911": "hardhat test ./test/911_nft_bid_module_eth_erc1155.js",
     "test:912": "hardhat test ./test/912_nft_bid_module_erc20_erc721.js",
+    "test:913": "hardhat test ./test/913_nft_bid_module_erc20_erc1155.js",
+    "test:nftBidModule": "npm run test:910 && npm run test:911 && npm run test:912 && npm run test:913",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
