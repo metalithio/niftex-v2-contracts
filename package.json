@@ -18,6 +18,7 @@
     "test:904": "hardhat test ./test/904_custom_pricing_curve_update_k.js",
     "test:910": "hardhat test ./test/910_nft_bid_module_eth_erc721.js",
     "test:911": "hardhat test ./test/911_nft_bid_module_eth_erc1155.js",
+    "test:912": "hardhat test ./test/912_nft_bid_module_erc20_erc721.js",
     "lint": "hardhat check",
     "clean": "rimraf artifacts cache coverage",
     "deploy:rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby",
