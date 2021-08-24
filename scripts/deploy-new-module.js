@@ -13,10 +13,10 @@ async function main() {
   const shardedWalletTemplate = process.env.SHARDED_WALLET_TEMPLATE;
   console.log(`SHARDED_WALLET_TEMPLATE: ${shardedWalletTemplate}`);
 
-  // Deploy BondingCurve4
-  const BondingCurve = await ethers.getContractFactory("BondingCurve4");
-  const bondingcurve = await BondingCurve.deploy();
-  console.log(`BondingCurve4 address: ${bondingcurve.address}`);
+  // // Deploy BondingCurve4
+  // const BondingCurve = await ethers.getContractFactory("BondingCurve4");
+  // const bondingcurve = await BondingCurve.deploy();
+  // console.log(`BondingCurve4 address: ${bondingcurve.address}`);
 
   const modules = await Object.entries({
     // "action":              "ActionModule",
@@ -28,6 +28,7 @@ async function main() {
     // "tokenreceiver":       "TokenReceiverModule",
     // "erc20managermodule":  "ERC20ManagerModule",
     // "swmanagermodule":     "SWManagerModule",
+    "nftbidmodule":     "NftBidModule",
   }).reduce(
     async (accAsPromise, [key, name ]) => {
       const acc    = await accAsPromise;
