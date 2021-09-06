@@ -26,22 +26,22 @@
     "deployCurves:mainnet": "npx hardhat run scripts/deploy-configurable-curves.js --network mainnet"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.0.0",
+    "@openzeppelin/contracts": "^4.3.1",
     "env-cmd": "^10.1.0"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
-    "@nomiclabs/hardhat-etherscan": "^2.1.1",
+    "@nomiclabs/hardhat-etherscan": "^2.1.6",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@nomiclabs/hardhat-truffle5": "^2.0.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/hardhat-upgrades": "^1.6.0",
-    "@openzeppelin/test-helpers": "^0.5.9",
-    "dotenv": "^8.2.0",
-    "ethers": "^5.0.29",
+    "@openzeppelin/hardhat-upgrades": "^1.10.0",
+    "@openzeppelin/test-helpers": "^0.5.13",
+    "dotenv": "^10.0.0",
+    "ethers": "^5.4.6",
     "ganache-cli": "^6.12.1",
-    "hardhat": "^2.0.4",
-    "solidity-coverage": "^0.7.13",
-    "truffle": "^5.1.56"
+    "hardhat": "^2.6.2",
+    "solidity-coverage": "^0.7.17",
+    "truffle": "^5.4.9"
   }
 }
