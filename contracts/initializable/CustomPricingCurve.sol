@@ -271,14 +271,14 @@ contract CustomPricingCurve is IERC1363Spender {
 
     function calcNewShardLPTokensToIssue(uint256 amount) public view returns (uint256) {
         uint256 pool = _shardLPExtra.underlyingSupply;
-        if (pool == 0) { return amount; }
+        if (shardLPToken.totalSupply() == 0) { return amount; }
         uint256 proportion = amount * 10**18 / (pool + amount);
         return proportion * shardLPToken.totalSupply() / (10**18 - proportion);
     }
 
     function calcNewEthLPTokensToIssue(uint256 amount) public view returns (uint256) {
         uint256 pool = _etherLPExtra.underlyingSupply;
-        if (pool == 0) { return amount; }
+        if (etherLPToken.totalSupply() == 0) { return amount; }
         uint256 proportion = amount * 10**18 / (pool + amount);
         return proportion * etherLPToken.totalSupply() / (10**18 - proportion);
     }
